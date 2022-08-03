@@ -1,0 +1,53 @@
+project = "hugo"
+[build_settings]
+    binary   = "hugo"
+    go_proxy = "https://proxy.golang.org"
+    go_exe   = "go"
+    flags    = ["-buildmode", "exe"]
+    env      = ["CGO_ENABLED=0"]
+    ldflags  = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+[archive_settings]
+    format        = "tar.gz"
+    name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+    extra_files   = ["README.md", "LICENSE"]
+    [archive_settings.replacements]
+        amd64   = "64bit"
+        386     = "32bit"
+        arm64   = "ARM64"
+        darwin  = "macOS"
+        windows = "Windows"
+
+[[builds]]
+    path = "main/base"
+
+    [builds.build_settings]
+        goarm = "7"
+
+    [[builds.os]]
+        goos = "darwin"
+        [[builds.os.archs]]
+            goarch = "amd64"
+        [[builds.os.archs]]
+            goarch = "arm64"
+
+    [[builds.os]]
+        goos = "linux"
+        [[builds.os.archs]]
+            goarch = "amd64"
+        [[builds.os.archs]]
+            goarch = "arm"
+
+    [[builds.os]]
+        goos = "windows"
+        [builds.os.build_settings]
+            binary = "hugo.exe"
+        [[builds.os.archs]]
+            goarch = "amd64"
+
+[[archives]]
+    paths = "/builds/**/{darwin,linux}/amd64"
+    [[archives.archive_settings]]
+[[archives]]
+    paths = "/builds/**/windows/*"
+    [[archives.archive_settings]]
+        format = "zip"

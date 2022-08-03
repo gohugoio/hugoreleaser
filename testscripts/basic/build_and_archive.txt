@@ -1,0 +1,97 @@
+env GOCACHE=$WORK/gocache
+env READMEFILE=README.md
+
+# Build binaries.
+hugoreleaser build -ref v1.2.0
+! stderr .
+
+exists $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo
+exists $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo
+exists $WORK/dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo
+exists $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
+exists $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe
+
+# Check Go binaries vs build settings.
+# TODO(bep) this fails on Windows for some reason.
+gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo CGO_ENABLED=0.*GOARCH=amd64\b.*GOOS=darwin
+gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo CGO_ENABLED=0.*GOARCH=arm64\b.*GOOS=darwin
+gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo CGO_ENABLED=0.*GOARCH=arm\b
+gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe CGO_ENABLED=0
+
+# Build archives
+hugoreleaser archive -ref v1.2.0
+! stderr .
+
+# Check some samples.
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-64bit.tar.gz
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.tar.gz
+exists  $WORK/dist/hugo/v1.2.0/archives/main/base/windows/amd64/hugo_1.2.0_Windows-64bit.zip
+! exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.zip
+! exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/arm64/hugo_1.2.0_macOS-ARM64.tar.gz
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+go_proxy = "https://proxy.golang.org"
+go_exe = "go"
+[archive_settings]
+format        = "tar.gz"
+name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+extra_files = ["${READMEFILE}", "license.txt"]
+[archive_settings.replacements]
+amd64 ="64bit"
+386 = "32bit"
+arm64 = "ARM64"
+darwin = "macOS"
+windows = "Windows"
+
+[[builds]]
+path = "main/base"
+[builds.build_settings]
+env = ["CGO_ENABLED=0"]
+ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+flags = ["-buildmode", "exe"]
+goarm = "7"
+
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm"
+
+[[builds.os]]
+goos = "windows"
+[builds.os.build_settings]
+binary = "hugo.exe"
+[[builds.os.archs]]
+goarch = "amd64"
+
+[[archives]]
+paths         = "/builds/**/{darwin,linux}/amd64"
+[[archives.archive_settings]]
+[[archives]]
+paths         = "/builds/**/windows/*"
+[[archives.archive_settings]]
+format = "zip"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

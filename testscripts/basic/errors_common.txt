@@ -1,0 +1,9 @@
+env GOCACHE=$WORK/gocache
+
+! hugoreleaser build
+stderr 'flag -ref is required'
+
+! hugoreleaser build -ref v1.2.0
+stderr 'error opening config file.*hugoreleaser\.toml'
+
+! hugoreleaser archive -ref v1.2.0

@@ -1,0 +1,35 @@
+env GOCACHE=$WORK/gocache
+
+hugoreleaser build -ref v1.2.0 -quiet
+! stdout .
+
+hugoreleaser archive -ref v1.2.0 -quiet
+! stdout .
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+[[builds]]
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths = "/builds/**"
+[archive_settings]
+format        = "tar.gz"
+name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

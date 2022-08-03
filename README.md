@@ -1,1 +1,1 @@
-# hugoreleaser
+New build script(s) for Hugo. Very much a work in progress.

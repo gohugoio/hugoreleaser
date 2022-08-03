@@ -1,0 +1,49 @@
+env GOCACHE=$WORK/gocache
+
+hugoreleaser build -ref v1.2.0
+
+hugoreleaser archive -ref v1.2.0
+
+checkfile $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.deb
+
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+go_proxy = "https://proxy.golang.org"
+go_exe = "go"
+[archive_settings]
+format        = "deb"
+name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+extra_files = ["README.md", "license.txt"]
+[[builds]]
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths = "/builds/**"
+[[archives.archive_settings]]
+# Nothing extra.
+# TODO(bep) deb needs a destionation folder.
+extra_files = []
+[[archives.archive_settings.meta]]
+vendor = "gohugo.io"
+homepage = "https://gohugo.io/"
+maintainer = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"
+description = "A Fast and Flexible Static Site Generator built with love in GoLang."
+license = "Apache-2.0"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.
