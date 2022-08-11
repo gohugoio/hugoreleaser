@@ -4,15 +4,15 @@ import (
 	"context"
 	"flag"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/internal/archives"
-	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
 	"github.com/bep/hugoreleaser/internal/common/templ"
 	"github.com/bep/hugoreleaser/internal/external"
-	"github.com/bep/hugoreleaser/internal/external/messages"
-	"github.com/bep/hugoreleaser/internal/model"
+	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+
+	"github.com/bep/hugoreleaser/pkg/model"
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -51,13 +51,14 @@ type Archivist struct {
 func (b *Archivist) Exec(ctx context.Context, args []string) error {
 	r, _ := b.core.Workforce.Start(ctx)
 	for _, archive := range b.core.Config.Archives {
+		archive := archive
 		archs := b.core.Config.GlobArchs(archive.PathsCompiled)
+		archiveSettings := archive.ArchiveSettings
 
 		for _, arch := range archs {
 			// Capture these for the Go routine below.
 			archive := archive
 			arch := arch
-			archiveSettings := archive.ArchiveSettings
 
 			r.Run(func() (err error) {
 				ctx := ArchiveTemplateContext{
@@ -69,9 +70,8 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					},
 				}
 
-				archiveFormat := archive.ArchiveSettings.Formati
 				name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, ctx)
-				name = archiveSettings.ReplacementsReplacer.Replace(name)
+				name = archiveSettings.ReplacementsCompiled.Replace(name)
 
 				outFilename := filepath.Join(
 					b.core.DistDir,
@@ -84,51 +84,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					name,
 				)
 
-				if archiveFormat == archiveformats.External {
-					/*message := ArchiveExternalToolRequest{
-						ArchiveTemplateContext: ctx,
-						BaseOutFileName:        outFilename,
-					}
-					fmt.Println(message)*/
-					// The extension is determined by the external tool.
-					b.infoLog.WithField("file", outFilename+".unknown").Log(logg.String("Archiving using external tool"))
-					resp, err := external.BuildArchive(messages.ArchiveRequest{
-						BuildContext:    ctx.BuildContext,
-						BaseOutFilename: outFilename,
-					})
-					if err != nil {
-						return err
-					}
-
-					outFilename += resp.Ext
-
-					b.infoLog.WithField("file", outFilename).Log(logg.String("Archiving using external tool"))
-
-					return nil
-				}
-
-				outFilename += "." + archiveFormat.String()
-
-				b.infoLog.WithField("file", outFilename).Log(logg.String("Archiving"))
-
-				if b.core.Try {
-					return nil
-				}
-
-				if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
-					return err
-				}
-
-				outFile, err := os.Create(outFilename)
-				if err != nil {
-					return err
-				}
-
-				archiver := archives.New(archive.ArchiveSettings, outFile)
-				defer func() {
-					err = archiver.Finalize()
-				}()
-
+				outFilename += archiveSettings.Type.Extension
 				binaryFilename := filepath.Join(
 					b.core.DistDir,
 					b.core.Config.Project,
@@ -137,30 +93,48 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					arch.BinaryPath(),
 				)
 
-				// First add the main binary.
-				entryFile, err := os.Open(binaryFilename)
+				if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
+					return err
+				}
+
+				// TODO(bep) core.Try
+
+				b.infoLog.WithField("file", outFilename).Log(logg.String("Archiving"))
+
+				buildRequest := archiveplugin.Request{
+					BuildContext: ctx.BuildContext,
+					OutFilename:  outFilename,
+				}
+
+				buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
+					SourcePathAbs: binaryFilename,
+					TargetPath:    path.Join(archiveSettings.BinaryDir, arch.BuildSettings.Binary),
+				})
+
+				for _, extraFile := range archiveSettings.ExtraFiles {
+					buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
+						// TODO(bep) unify slashes.
+						SourcePathAbs: filepath.Join(b.core.ProjectDir, extraFile.SourcePath),
+						TargetPath:    extraFile.TargetPath,
+					})
+				}
+
+				if b.core.Try {
+					return nil
+				}
+
+				err = external.BuildArchive(
+					b.infoLog,
+					archiveSettings,
+					buildRequest,
+				)
+
 				if err != nil {
 					return err
 				}
 
-				if err := archiver.AddAndClose(arch.BuildSettings.Binary, entryFile); err != nil {
-					return err
-				}
+				return nil
 
-				// Then, finally, add any extra files confgured,
-				// e.g. a README.md file or a LICENSE file.
-				for _, name := range archiveSettings.ExtraFiles {
-					filename := filepath.Join(b.core.ProjectDir, name)
-					entryFile, err := os.Open(filename)
-					if err != nil {
-						return err
-					}
-					if err := archiver.AddAndClose(name, entryFile); err != nil {
-						return err
-					}
-				}
-
-				return
 			})
 		}
 	}

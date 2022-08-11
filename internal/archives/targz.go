@@ -15,7 +15,7 @@ func newTarGz(out io.WriteCloser) *ArchiveTarGz {
 		out: out,
 	}
 
-	gw := gzip.NewWriter(out)
+	gw, _ := gzip.NewWriterLevel(out, gzip.BestCompression)
 	tw := tar.NewWriter(gw)
 
 	archive.gw = gw
@@ -30,7 +30,7 @@ type ArchiveTarGz struct {
 	tw  *tar.Writer
 }
 
-func (a *ArchiveTarGz) AddAndClose(name string, f ioh.File) error {
+func (a *ArchiveTarGz) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
 
 	info, err := f.Stat()
@@ -38,14 +38,11 @@ func (a *ArchiveTarGz) AddAndClose(name string, f ioh.File) error {
 		return err
 	}
 
-	// TODO(bep) check second argument vs symlinks.
-	header, err := tar.FileInfoHeader(info, info.Name())
+	header, err := tar.FileInfoHeader(info, "") // TODO(bep) symlink handling?
 	if err != nil {
 		return err
 	}
-
-	// Use full path as name to preserve structure.
-	header.Name = f.Name()
+	header.Name = targetPath
 
 	err = a.tw.WriteHeader(header)
 	if err != nil {
@@ -61,15 +58,12 @@ func (a *ArchiveTarGz) AddAndClose(name string, f ioh.File) error {
 }
 
 func (a *ArchiveTarGz) Finalize() error {
-	err1 := a.gw.Close()
-	err2 := a.out.Close()
-
-	if err1 != nil {
-		return err1
+	if err := a.tw.Close(); err != nil {
+		return err
 	}
-	if err2 != nil {
-		return err2
+	if err := a.gw.Close(); err != nil {
+		return err
 	}
+	return a.out.Close()
 
-	return nil
 }

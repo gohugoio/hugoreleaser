@@ -21,8 +21,10 @@ goarch = "amd64"
 [[archives]]
 paths = "/builds/**"
 [archive_settings]
-format        = "tar.gz"
 name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
 
 -- go.mod --
 module foo

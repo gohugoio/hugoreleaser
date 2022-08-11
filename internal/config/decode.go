@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/bep/varexpand"
+	"github.com/bep/helpers/envhelpers"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -27,7 +27,7 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 	s := buf.String()
 
-	s = varexpand.Expand(s, func(k string) string {
+	s = envhelpers.Expand(s, func(k string) string {
 		// TODO(bep) additional env.
 		return os.Getenv(k)
 	})
@@ -69,9 +69,9 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 		shallowMerge(&cfg.Archives[i].ArchiveSettings, cfg.ArchiveSettings)
 	}
 
-	// Init and alidate archive configs.
+	// Init and validate archive configs.
 	for i := range cfg.Archives {
-		if err := cfg.Archives[i].init(); err != nil {
+		if err := cfg.Archives[i].Init(); err != nil {
 			return *cfg, err
 		}
 	}
@@ -90,18 +90,6 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	return *cfg, nil
 }
 
-// SetEnvVars sets vars on the form key=value in the oldVars slice.
-func SetEnvVars(oldVars *[]string, keyValues ...string) {
-	for i := 0; i < len(keyValues); i += 2 {
-		setEnvVar(oldVars, keyValues[i], keyValues[i+1])
-	}
-}
-
-func SplitEnvVar(v string) (string, string) {
-	name, value, _ := strings.Cut(v, "=")
-	return name, value
-}
-
 // IsTruthful returns whether in represents a truthful value.
 // See IsTruthfulValue
 func IsTruthful(in any) bool {
@@ -115,17 +103,6 @@ func IsTruthful(in any) bool {
 
 type zeroer interface {
 	IsZero() bool
-}
-
-func setEnvVar(vars *[]string, key, value string) {
-	for i := range *vars {
-		if strings.HasPrefix((*vars)[i], key+"=") {
-			(*vars)[i] = key + "=" + value
-			return
-		}
-	}
-	// New var.
-	*vars = append(*vars, key+"="+value)
 }
 
 // This is based on "thruthy" function used in the Hugo template system, reused for a slightly different domain.

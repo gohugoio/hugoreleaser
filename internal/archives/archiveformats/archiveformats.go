@@ -19,7 +19,6 @@ const (
 
 var formatString = map[Format]string{
 	// The string values is what users can specify in the config.
-	// This is also used for the file extensions.
 	Deb:      "deb",
 	TarGz:    "tar.gz",
 	Zip:      "zip",
@@ -42,6 +41,22 @@ type Format int
 
 func (f Format) String() string {
 	return formatString[f]
+}
+
+// Extension returns this archive format's default file extension, including the "."
+// It returns blank if the extension cannot be determined, which is the case for the External format.
+func (f Format) Extension() string {
+	switch f {
+	case External:
+		return ""
+	default:
+		return fmt.Sprintf(".%s", f.String())
+	}
+}
+
+// IsExternal returns true if this archive format is handled by an external tool.
+func (f Format) IsExternal() bool {
+	return f == External
 }
 
 func init() {

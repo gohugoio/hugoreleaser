@@ -6,8 +6,46 @@ import (
 	"strings"
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
+	"github.com/bep/hugoreleaser/pkg/model"
 	"github.com/gobwas/glob"
 )
+
+var (
+	_ model.Initializer = (*Archive)(nil)
+	_ model.Initializer = (*ArchiveSettings)(nil)
+	_ model.Initializer = (*ArchiveType)(nil)
+)
+
+type Config struct {
+	Project  string   `toml:"project"`
+	Builds   Builds   `toml:"builds"`
+	Archives Archives `toml:"archives"`
+
+	BuildSettings   BuildSettings   `toml:"build_settings"`
+	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
+}
+
+// GlobArchs returns the archs that match the given path pattern.
+// Note that the build paths starts at '/builds'.
+func (c Config) GlobArchs(pattern glob.Glob) []BuildArch {
+	const rootPath = "/builds/"
+
+	var archs []BuildArch
+	for _, build := range c.Builds {
+		buildPath := rootPath + build.Path
+
+		for _, os := range build.Os {
+			osPath := buildPath + "/" + os.Goos
+			for _, arch := range os.Archs {
+				archPath := osPath + "/" + arch.Goarch
+				if pattern.Match(archPath) {
+					archs = append(archs, arch)
+				}
+			}
+		}
+	}
+	return archs
+}
 
 type Archive struct {
 	Paths           string          `toml:"paths"`
@@ -16,7 +54,8 @@ type Archive struct {
 	PathsCompiled glob.Glob `toml:"-"`
 }
 
-func (a *Archive) init() error {
+func (a *Archive) Init() error {
+	what := path.Join("archives", a.Paths)
 	if a.Paths == "" {
 		return fmt.Errorf("archive has no paths")
 	}
@@ -27,63 +66,43 @@ func (a *Archive) init() error {
 		return fmt.Errorf("failed to compile archive paths glob %q: %v", a.Paths, err)
 	}
 
-	return a.ArchiveSettings.init()
-}
-
-// ArchiveMeta is used by the Deb archive format.
-type ArchiveMeta struct {
-	Vendor      string `toml:"vendor"`
-	Homepage    string `toml:"homepage"`
-	Maintainer  string `toml:"maintainer"`
-	Description string `toml:"description"`
-	License     string `toml:"license"`
-}
-
-type ArchiveSettings struct {
-	Format       string            `toml:"format"`
-	NameTemplate string            `toml:"name_template"`
-	ExtraFiles   []string          `toml:"extra_files"`
-	Replacements map[string]string `toml:"replacements"`
-	Meta         ArchiveMeta       `toml:"meta"`
-	ExternalTool ExternalTool      `toml:"external_tool"`
-
-	ReplacementsReplacer *strings.Replacer     `toml:"-"`
-	Formati              archiveformats.Format `toml:"-"`
-}
-
-type ExternalTool struct {
-	Name    string `toml:"name"`
-	Type    string `toml:"type"`
-	Command string `toml:"command"`
-}
-
-func (t *ExternalTool) init() error {
-	op := "external_tool"
-	if t.Name == "" {
-		return fmt.Errorf("%s: has no name", op)
+	if err := a.ArchiveSettings.Init(); err != nil {
+		return fmt.Errorf("%s: %v", what, err)
 	}
-	if t.Type == "" {
-		return fmt.Errorf("%s: %q has no type", op, t.Name)
-	}
-	if t.Command == "" {
-		return fmt.Errorf("%s: %q has no command", op, t.Name)
-	}
+
 	return nil
 }
 
-func (a *ArchiveSettings) init() error {
-	op := "archive_settings"
+// UnmarshalTOML(in any) error
 
-	var err error
-	if a.Formati, err = archiveformats.ParseFormat(a.Format); err != nil {
-		return err
+type ArchiveSettings struct {
+	Type ArchiveType `toml:"type"`
+
+	BinaryDir    string             `toml:"binary_dir"`
+	NameTemplate string             `toml:"name_template"`
+	ExtraFiles   []SourceTargetPath `toml:"extra_files"`
+	Replacements map[string]string  `toml:"replacements"`
+	ExternalTool ExternalTool       `toml:"external_tool"`
+
+	// Meta is archive type specific metadata.
+	// See in the documentation for the archive type.
+	Meta map[string]any `toml:"meta"`
+
+	ReplacementsCompiled *strings.Replacer `toml:"-"`
+}
+
+func (a *ArchiveSettings) Init() error {
+	what := "archive_settings"
+
+	if err := a.Type.Init(); err != nil {
+		return fmt.Errorf("%s: %v", what, err)
 	}
 
 	// Validate format setup.
-	switch a.Formati {
+	switch a.Type.FormatParsed {
 	case archiveformats.External:
-		if err := a.ExternalTool.init(); err != nil {
-			return fmt.Errorf("%s: %v", op, err)
+		if err := a.ExternalTool.Init(); err != nil {
+			return fmt.Errorf("%s: %v", what, err)
 		}
 	}
 
@@ -92,9 +111,36 @@ func (a *ArchiveSettings) init() error {
 		oldNew = append(oldNew, k, v)
 	}
 
-	a.ReplacementsReplacer = strings.NewReplacer(oldNew...)
+	a.ReplacementsCompiled = strings.NewReplacer(oldNew...)
 
 	return nil
+}
+
+type ArchiveType struct {
+	Format    string `toml:"format"`
+	Extension string `toml:"extension"`
+
+	FormatParsed archiveformats.Format `toml:"-"`
+}
+
+func (a *ArchiveType) Init() error {
+	what := "type"
+	if a.Format == "" {
+		return fmt.Errorf("%s: has no format", what)
+	}
+	if a.Extension == "" {
+		return fmt.Errorf("%s: has no extension", what)
+	}
+	var err error
+	if a.FormatParsed, err = archiveformats.ParseFormat(a.Format); err != nil {
+		return err
+	}
+	return nil
+}
+
+// IsZero is needed to get the shallow merge correct.
+func (a ArchiveType) IsZero() bool {
+	return a.Format == "" && a.Extension == ""
 }
 
 type Archives []Archive
@@ -150,36 +196,27 @@ type BuildSettings struct {
 
 type Builds []Build
 
-type Config struct {
-	// The configuration version.
-	Version string `toml:"version"`
-
-	Project  string   `toml:"project"`
-	Builds   Builds   `toml:"builds"`
-	Archives Archives `toml:"archives"`
-
-	BuildSettings   BuildSettings   `toml:"build_settings"`
-	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
+type ExternalTool struct {
+	Name    string `toml:"name"`
+	Type    string `toml:"type"`
+	Command string `toml:"command"`
 }
 
-// GlobArchs returns the archs that match the given path pattern.
-// Note that the build paths starts at '/builds'.
-func (c Config) GlobArchs(pattern glob.Glob) []BuildArch {
-	const rootPath = "/builds/"
-
-	var archs []BuildArch
-	for _, build := range c.Builds {
-		buildPath := rootPath + build.Path
-
-		for _, os := range build.Os {
-			osPath := buildPath + "/" + os.Goos
-			for _, arch := range os.Archs {
-				archPath := osPath + "/" + arch.Goarch
-				if pattern.Match(archPath) {
-					archs = append(archs, arch)
-				}
-			}
-		}
+func (t *ExternalTool) Init() error {
+	what := "external_tool"
+	if t.Name == "" {
+		return fmt.Errorf("%s: has no name", what)
 	}
-	return archs
+	if t.Type == "" {
+		return fmt.Errorf("%s: %q has no type", what, t.Name)
+	}
+	if t.Command == "" {
+		return fmt.Errorf("%s: %q has no command", what, t.Name)
+	}
+	return nil
+}
+
+type SourceTargetPath struct {
+	SourcePath string `toml:"source_path"`
+	TargetPath string `toml:"target_path"`
 }

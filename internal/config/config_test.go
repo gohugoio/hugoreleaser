@@ -17,7 +17,7 @@ func TestDecode(t *testing.T) {
 	c.Run("Invalid archive format", func(c *qt.C) {
 		file := `
 [[archives]]
-[[archives.archive_settings]]
+[archives.archive_settings]
 format = "foo"
 `
 

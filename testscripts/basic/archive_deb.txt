@@ -1,11 +1,11 @@
 env GOCACHE=$WORK/gocache
+env GOPATH=$WORK/gopath
 
 hugoreleaser build -ref v1.2.0
 
 hugoreleaser archive -ref v1.2.0
 
 checkfile $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.deb
-
 
 # Test files
 -- hugoreleaser.toml --
@@ -15,9 +15,11 @@ binary = "hugo"
 go_proxy = "https://proxy.golang.org"
 go_exe = "go"
 [archive_settings]
-format        = "deb"
 name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files = ["README.md", "license.txt"]
+extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+[archive_settings.type]
+format        = "deb"
+extension = ".deb"
 [[builds]]
 [[builds.os]]
 goos = "linux"
@@ -25,11 +27,11 @@ goos = "linux"
 goarch = "amd64"
 [[archives]]
 paths = "/builds/**"
-[[archives.archive_settings]]
+[archives.archive_settings]
 # Nothing extra.
 # TODO(bep) deb needs a destionation folder.
 extra_files = []
-[[archives.archive_settings.meta]]
+[archives.archive_settings.meta]
 vendor = "gohugo.io"
 homepage = "https://gohugo.io/"
 maintainer = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"

@@ -9,7 +9,7 @@ project = "hugo"
 [archive_settings]
     format        = "tar.gz"
     name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-    extra_files   = ["README.md", "LICENSE"]
+    extra_files   = [{ source_path = "README.md", target_path = "meta/README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]
     [archive_settings.replacements]
         amd64   = "64bit"
         386     = "32bit"
@@ -46,8 +46,8 @@ project = "hugo"
 
 [[archives]]
     paths = "/builds/**/{darwin,linux}/amd64"
-    [[archives.archive_settings]]
+    [archives.archive_settings]
 [[archives]]
     paths = "/builds/**/windows/*"
-    [[archives.archive_settings]]
+    [archives.archive_settings]
         format = "zip"

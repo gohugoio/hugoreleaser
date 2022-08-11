@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/bep/helpers/envhelpers"
+
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/logg"
@@ -95,7 +97,7 @@ func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
 
 	if buildSettings.Env != nil {
 		for _, env := range buildSettings.Env {
-			key, val := config.SplitEnvVar(env)
+			key, val := envhelpers.SplitEnvVar(env)
 			keyVals = append(keyVals, key, val)
 		}
 	}
@@ -104,7 +106,7 @@ func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
 	}
 
 	environ := os.Environ()
-	config.SetEnvVars(&environ, keyVals...)
+	envhelpers.SetEnvVars(&environ, keyVals...)
 
 	if buildSettings.Ldflags != "" {
 		args = append(args, "-ldflags", buildSettings.Ldflags)

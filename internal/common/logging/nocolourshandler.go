@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/bep/logg"
@@ -33,9 +34,23 @@ func (h *NoColoursHandler) HandleLog(e *logg.Entry) error {
 		w = h.outWriter
 	}
 
-	fmt.Fprintf(w, "%s", e.Message)
+	const cmdName = "cmd"
+
+	var prefix string
 	for _, field := range e.Fields {
-		if field.Name == "cmd" {
+		if field.Name == cmdName {
+			prefix = fmt.Sprint(field.Value)
+			break
+		}
+	}
+
+	if prefix != "" {
+		prefix = strings.ToUpper(prefix) + ":\t"
+	}
+
+	fmt.Fprintf(w, "%s%s", prefix, e.Message)
+	for _, field := range e.Fields {
+		if field.Name == cmdName {
 			continue
 		}
 		fmt.Fprintf(w, " %s %v", field.Name, field.Value)

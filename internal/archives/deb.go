@@ -6,6 +6,7 @@ import (
 
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 	"github.com/bep/hugoreleaser/internal/config"
+	"github.com/bep/hugoreleaser/pkg/model"
 	"github.com/goreleaser/nfpm/v2"
 	_ "github.com/goreleaser/nfpm/v2/deb" // init format
 	"github.com/goreleaser/nfpm/v2/files"
@@ -13,32 +14,44 @@ import (
 
 var _ Archiver = &ArchiveDeb{}
 
-func newDeb(cfg config.ArchiveSettings, out io.WriteCloser) *ArchiveDeb {
-	archive := &ArchiveDeb{
-		out:    out,
-		cfg:    cfg,
-		binDir: "/usr/bin", // TODO(bep)
+func newDeb(cfg config.ArchiveSettings, out io.WriteCloser) (*ArchiveDeb, error) {
+	meta, err := model.FromMap[Meta](cfg.Meta)
+	if err != nil {
+		return nil, err
 	}
 
-	return archive
+	archive := &ArchiveDeb{
+		out:  out,
+		cfg:  cfg,
+		meta: meta,
+	}
+
+	return archive, nil
+}
+
+// Meta is fetched from archive_settings.meta in the archive configuration.
+type Meta struct {
+	Vendor      string
+	Homepage    string
+	Maintainer  string
+	Description string
+	License     string
 }
 
 type ArchiveDeb struct {
-	out    io.WriteCloser
-	files  files.Contents
-	binDir string
-	cfg    config.ArchiveSettings
+	out   io.WriteCloser
+	files files.Contents
+	cfg   config.ArchiveSettings
+	meta  Meta
 }
 
-func (a *ArchiveDeb) AddAndClose(name string, f ioh.File) error {
+func (a *ArchiveDeb) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
-
 	src := f.Name()
-	dst := filepath.Join(a.binDir, name)
 
 	a.files = append(a.files, &files.Content{
 		Source:      filepath.ToSlash(src),
-		Destination: filepath.ToSlash(dst),
+		Destination: targetPath,
 		FileInfo: &files.ContentFileInfo{
 			Mode: 0o755,
 		},
@@ -50,7 +63,7 @@ func (a *ArchiveDeb) AddAndClose(name string, f ioh.File) error {
 func (a *ArchiveDeb) Finalize() error {
 	defer a.out.Close()
 
-	meta := a.cfg.Meta
+	meta := a.meta
 
 	info := &nfpm.Info{
 		Platform: "linux",

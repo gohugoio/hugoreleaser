@@ -23,10 +23,10 @@ type ArchiveZip struct {
 	zipw *zip.Writer
 }
 
-func (a *ArchiveZip) AddAndClose(name string, f ioh.File) error {
+func (a *ArchiveZip) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
 
-	zw, err := a.zipw.Create(f.Name())
+	zw, err := a.zipw.Create(targetPath)
 	if err != nil {
 		return err
 	}

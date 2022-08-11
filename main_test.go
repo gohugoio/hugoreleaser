@@ -2,19 +2,27 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/bep/helpers/envhelpers"
+	"github.com/bep/helpers/filehelpers"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
 func TestBasic(t *testing.T) {
+	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/basic",
+		Setup: func(env *testscript.Env) error {
+			return setup(env)
+		},
 	})
 }
 
@@ -23,13 +31,35 @@ func TestUnfinished(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("skip unfinished tests on CI")
 	}
+
+	setup := testSetupFunc()
+
 	testscript.Run(t, testscript.Params{
-		Dir:      "testscripts/unfinished",
-		TestWork: false,
+		Dir: "testscripts/unfinished",
+		//TestWork: true,
+		Setup: func(env *testscript.Env) error {
+			return setup(env)
+		},
 	})
 }
 
+func testSetupFunc() func(env *testscript.Env) error {
+	sourceDir, _ := os.Getwd()
+	return func(env *testscript.Env) error {
+		// SOURCE is where the hugoreleaser source code lives.
+		// We do this so we can
+		// 1. Copy the example/test plugins into the WORK dir where the test script is running.
+		// 2. Append a replace directive to the plugins' go.mod to get the up-to-date version of the plugin API.
+		//
+		// This is a hybrid setup neeed to get a quick development cycle going.
+		// In production, the plugin Go modules would be addressed on their full form, e.g. "github.com/bep/hugoreleaser/internal/plugins/archives/tar@v1.0.0".
+		envhelpers.SetEnvVars(&env.Vars, "SOURCE", sourceDir)
+		return nil
+	}
+}
+
 func TestMain(m *testing.M) {
+
 	os.Exit(
 		testscript.RunMain(m, map[string]func() int{
 			// The main program.
@@ -38,6 +68,67 @@ func TestMain(m *testing.M) {
 					fmt.Fprintln(os.Stderr, err)
 					return -1
 				}
+				return 0
+			},
+
+			// log prints to stderr.
+			"log": func() int {
+				log.Println(os.Args[1])
+				return 0
+			},
+
+			// cpdir copies a directory recursively.
+			"cpdir": func() int {
+				if len(os.Args) != 3 {
+					fmt.Fprintln(os.Stderr, "usage: cpdir SRC DST")
+					return 1
+				}
+
+				fromDir := os.Args[1]
+				toDir := os.Args[2]
+
+				if !filepath.IsAbs(fromDir) {
+					fromDir = filepath.Join(os.Getenv("SOURCE"), fromDir)
+				}
+
+				err := filehelpers.CopyDir(fromDir, toDir, nil)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					return 1
+				}
+				return 0
+			},
+
+			// append appends to a file with a leaading newline.
+			"append": func() int {
+				if len(os.Args) < 3 {
+
+					fmt.Fprintln(os.Stderr, "usage: append FILE TEXT")
+					return 1
+				}
+
+				filename := os.Args[1]
+				words := os.Args[2:]
+				for i, word := range words {
+					words[i] = strings.Trim(word, "\"")
+				}
+				text := strings.Join(words, " ")
+
+				_, err := os.Stat(filename)
+
+				f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "failed to open file:", filename)
+					return 1
+				}
+				defer f.Close()
+
+				_, err = f.WriteString("\n" + text)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "failed to write to file:", filename)
+					return 1
+				}
+
 				return 0
 			},
 

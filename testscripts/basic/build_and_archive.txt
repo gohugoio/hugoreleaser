@@ -12,7 +12,6 @@ exists $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
 exists $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe
 
 # Check Go binaries vs build settings.
-# TODO(bep) this fails on Windows for some reason.
 gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo CGO_ENABLED=0.*GOARCH=amd64\b.*GOOS=darwin
 gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo CGO_ENABLED=0.*GOARCH=arm64\b.*GOOS=darwin
 gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo CGO_ENABLED=0.*GOARCH=arm\b
@@ -37,9 +36,11 @@ binary = "hugo"
 go_proxy = "https://proxy.golang.org"
 go_exe = "go"
 [archive_settings]
-format        = "tar.gz"
 name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files = ["${READMEFILE}", "license.txt"]
+extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
 [archive_settings.replacements]
 amd64 ="64bit"
 386 = "32bit"
@@ -78,11 +79,13 @@ goarch = "amd64"
 
 [[archives]]
 paths         = "/builds/**/{darwin,linux}/amd64"
-[[archives.archive_settings]]
+[archives.archive_settings]
 [[archives]]
 paths         = "/builds/**/windows/*"
-[[archives.archive_settings]]
+[archives.archive_settings]
+[archives.archive_settings.type]
 format = "zip"
+extension = ".zip"
 
 -- go.mod --
 module foo
