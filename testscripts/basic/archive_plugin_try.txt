@@ -4,8 +4,8 @@ env GOPATH=$WORK/gopath
 mkdir $WORK/examples/plugins/archives/tar
 cpdir $SOURCE/examples/plugins/archives $WORK/examples/plugins/archives
 append $WORK/examples/plugins/archives/tar/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
-hugoreleaser build -ref v1.2.0
-hugoreleaser archive -ref v1.2.0 -try
+hugoreleaser build -tag v1.2.0
+hugoreleaser archive -tag v1.2.0 -try
 
 # Created by plugin.
 ! exists $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.tar
@@ -18,7 +18,7 @@ binary = "hugo"
 go_proxy = "https://proxy.golang.org"
 go_exe = "go"
 [archive_settings]
-name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
 [archive_settings.type]
 format        = "_plugin"

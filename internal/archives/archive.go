@@ -15,7 +15,7 @@ import (
 func New(settings config.ArchiveSettings, out io.WriteCloser) (Archiver, error) {
 	switch settings.Type.FormatParsed {
 	case archiveformats.TarGz:
-		return targz.New(out), nil
+		return targz.New(out, settings.Type.HeaderModTimeParsed), nil
 	case archiveformats.Zip:
 		return zip.New(out), nil
 	case archiveformats.Deb:

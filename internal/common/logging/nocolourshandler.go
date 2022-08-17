@@ -53,7 +53,7 @@ func (h *NoColoursHandler) HandleLog(e *logg.Entry) error {
 		if field.Name == cmdName {
 			continue
 		}
-		fmt.Fprintf(w, " %s %v", field.Name, field.Value)
+		fmt.Fprintf(w, " %s %q", field.Name, field.Value)
 	}
 	fmt.Fprintln(w)
 

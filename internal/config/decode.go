@@ -69,9 +69,22 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 		shallowMerge(&cfg.Archives[i].ArchiveSettings, cfg.ArchiveSettings)
 	}
 
+	// Merge release settings.
+	// We may have release settings on all of project > release.
+	for i := range cfg.Releases {
+		shallowMerge(&cfg.Releases[i].ReleaseSettings, cfg.ReleaseSettings)
+	}
+
 	// Init and validate archive configs.
 	for i := range cfg.Archives {
 		if err := cfg.Archives[i].Init(); err != nil {
+			return *cfg, err
+		}
+	}
+
+	// Init and validate release configs.
+	for i := range cfg.Releases {
+		if err := cfg.Releases[i].Init(); err != nil {
 			return *cfg, err
 		}
 	}

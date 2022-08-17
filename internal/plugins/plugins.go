@@ -30,5 +30,4 @@ func StartArchivePlugin(infoLogger logg.LevelLogger, options config.Plugin) (*ex
 			Codec: codecs.TOMLCodec[archiveplugin.Request, archiveplugin.Response]{},
 		},
 	)
-
 }

@@ -27,6 +27,12 @@ var formatString = map[Format]string{
 
 var stringFormat = map[string]Format{}
 
+func init() {
+	for k, v := range formatString {
+		stringFormat[v] = k
+	}
+}
+
 // ParseFormat parses a string into a Format.
 func ParseFormat(s string) (Format, error) {
 	f := stringFormat[s]
@@ -41,26 +47,4 @@ type Format int
 
 func (f Format) String() string {
 	return formatString[f]
-}
-
-// Extension returns this archive format's default file extension, including the "."
-// It returns blank if the extension cannot be determined, which is the case for the External format.
-func (f Format) Extension() string {
-	switch f {
-	case Plugin:
-		return ""
-	default:
-		return fmt.Sprintf(".%s", f.String())
-	}
-}
-
-// IsExternal returns true if this archive format is handled by an external tool.
-func (f Format) IsExternal() bool {
-	return f == Plugin
-}
-
-func init() {
-	for k, v := range formatString {
-		stringFormat[v] = k
-	}
 }

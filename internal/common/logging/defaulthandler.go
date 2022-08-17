@@ -23,7 +23,7 @@ type DefaultHandler struct {
 }
 
 // NewDefaultHandler handler.
-func NewDefaultHandler(outWriter, errWriter io.Writer) *DefaultHandler {
+func NewDefaultHandler(outWriter, errWriter io.Writer) logg.Handler {
 	return &DefaultHandler{
 		outWriter: outWriter,
 		errWriter: errWriter,

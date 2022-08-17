@@ -14,7 +14,7 @@ type Initializer interface {
 
 type BuildContext struct {
 	Project string `toml:"project"`
-	Ref     string `toml:"ref"`
+	Tag     string `toml:"ref"`
 	Goos    string `toml:"goos"`
 	Goarch  string `toml:"goarch"`
 }

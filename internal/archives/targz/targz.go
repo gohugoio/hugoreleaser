@@ -4,13 +4,15 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"io"
+	"time"
 
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 )
 
-func New(out io.WriteCloser) *Archive {
+func New(out io.WriteCloser, headerModTime time.Time) *Archive {
 	archive := &Archive{
-		out: out,
+		out:           out,
+		headerModTime: headerModTime,
 	}
 
 	gw, _ := gzip.NewWriterLevel(out, gzip.BestCompression)
@@ -26,6 +28,8 @@ type Archive struct {
 	out io.WriteCloser
 	gw  *gzip.Writer
 	tw  *tar.Writer
+
+	headerModTime time.Time
 }
 
 func (a *Archive) AddAndClose(targetPath string, f ioh.File) error {
@@ -41,6 +45,9 @@ func (a *Archive) AddAndClose(targetPath string, f ioh.File) error {
 		return err
 	}
 	header.Name = targetPath
+	if !a.headerModTime.IsZero() {
+		header.ModTime = a.headerModTime
+	}
 
 	err = a.tw.WriteHeader(header)
 	if err != nil {

@@ -1,9 +1,9 @@
 env GOCACHE=$WORK/gocache
 
-hugoreleaser build -ref v1.2.0 -quiet
+hugoreleaser build -tag v1.2.0 -quiet
 ! stdout .
 
-hugoreleaser archive -ref v1.2.0 -quiet
+hugoreleaser archive -tag v1.2.0 -quiet
 ! stdout .
 
 # Test files
@@ -19,7 +19,7 @@ goarch = "amd64"
 [[archives]]
 paths = "/builds/**"
 [archive_settings]
-name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 [archive_settings.type]
 format        = "tar.gz"
 extension = ".tar.gz"

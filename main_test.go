@@ -20,6 +20,7 @@ func TestBasic(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/basic",
+		//TestWork: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -37,6 +38,7 @@ func TestUnfinished(t *testing.T) {
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/unfinished",
 		//TestWork: true,
+		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -66,7 +68,7 @@ func TestMain(m *testing.M) {
 			"hugoreleaser": func() int {
 				if err := parseAndRun(os.Args[1:]); err != nil {
 					fmt.Fprintln(os.Stderr, err)
-					return -1
+					return 1
 				}
 				return 0
 			},
@@ -115,6 +117,14 @@ func TestMain(m *testing.M) {
 				text := strings.Join(words, " ")
 
 				_, err := os.Stat(filename)
+				if err != nil {
+					if os.IsNotExist(err) {
+						fmt.Fprintln(os.Stderr, "file does not exist:", filename)
+						return 1
+					}
+					fmt.Fprintln(os.Stderr, err)
+					return 1
+				}
 
 				f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
 				if err != nil {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/bep/execrpc"
@@ -16,6 +17,7 @@ import (
 	"github.com/bep/hugoreleaser/internal/plugins"
 	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
 	"github.com/bep/logg"
+	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -61,8 +63,9 @@ type Core struct {
 	// Trial run, no builds or releases.
 	Try bool
 
-	// The Git ref to build, e.g. a tag.
-	Ref string
+	// The Git tag to use for the release.
+	// This tag will eventually be created at release time if it does not exist.
+	Tag string
 
 	// Abolute path to the project root.
 	ProjectDir string
@@ -76,6 +79,9 @@ type Core struct {
 	// We store archives in ./dist/<project>/<ref>/<DistRootArchives>/<os>/<arch>/<build
 	DistRootArchives string
 
+	// We store release artifacts in ./dist/<project>/<ref>/<DistRootReleases>/<release.dir>
+	DistRootReleases string
+
 	// The config file to use.
 	ConfigFile string
 
@@ -87,9 +93,6 @@ type Core struct {
 
 	// Archive plugins started and ready to use.
 	PluginsRegistryArchive map[config.Plugin]*execrpc.Client[archiveplugin.Request, archiveplugin.Response]
-
-	// These will be set after Init() is sueccussfully executed.
-	initDoneListeners []func()
 }
 
 // Exec function for this command.
@@ -104,16 +107,12 @@ func (c *Core) Exec(context.Context, []string) error {
 // flagsets, creating "global" flags that can be passed after any subcommand at
 // the commandline.
 func (c *Core) RegisterFlags(fs *flag.FlagSet) {
-	fs.StringVar(&c.Ref, "ref", "", "The Git ref to build.")
+	fs.StringVar(&c.Tag, "tag", "", "The name of the release tag (e.g. v1.2.0). Does not need to exist.")
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
 	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
 	fs.IntVar(&c.NumWorkers, "workers", 0, "Number of parallel builds.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
-}
-
-func (c *Core) AddInitDoneListener(cb func()) {
-	c.initDoneListeners = append(c.initDoneListeners, cb)
 }
 
 func (c *Core) Init() error {
@@ -124,6 +123,7 @@ func (c *Core) Init() error {
 		stdOut = os.Stdout
 	}
 
+	// Configure logging.
 	var logHandler logg.Handler
 	if logging.IsTerminal(os.Stdout) {
 		logHandler = logging.NewDefaultHandler(stdOut, os.Stderr)
@@ -135,23 +135,10 @@ func (c *Core) Init() error {
 		logg.Options{
 			Level:   logg.LevelInfo,
 			Handler: logHandler,
-		})
+		},
+	)
 
-	// Configure logging.
-	c.InfoLog = l.WithLevel(logg.LevelInfo).WithField("cmd", "core")
-	c.WarnLog = l.WithLevel(logg.LevelWarn).WithField("cmd", "core")
-	c.ErrorLog = l.WithLevel(logg.LevelError).WithField("cmd", "core")
-
-	if c.Ref == "" {
-		return fmt.Errorf("flag -ref is required")
-	}
-
-	// Set up the workers for parallel execution.
-	if c.NumWorkers == 0 {
-		c.NumWorkers = runtime.NumCPU()
-	}
-
-	c.Workforce = workers.New(c.NumWorkers)
+	c.InfoLog = l.WithLevel(logg.LevelInfo).WithField("cmd", "init")
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -168,9 +155,39 @@ func (c *Core) Init() error {
 		}
 	}
 
+	c.InfoLog.WithField("directory", c.DistDir).Log(logg.String("Writing files to"))
+
+	logHandler = multi.New(
+		// Replace the Dist dir (usually long path) in the log messages with a shorter version.
+		logging.Replacer(strings.NewReplacer(c.DistDir, "$DIST")), logHandler,
+	)
+
+	l = logg.New(
+		logg.Options{
+			Level:   logg.LevelInfo,
+			Handler: logHandler,
+		},
+	)
+
+	c.InfoLog = l.WithLevel(logg.LevelInfo).WithField("cmd", "core")
+	c.WarnLog = l.WithLevel(logg.LevelWarn).WithField("cmd", "core")
+	c.ErrorLog = l.WithLevel(logg.LevelError).WithField("cmd", "core")
+
+	if c.Tag == "" {
+		return fmt.Errorf("flag -tag is required")
+	}
+
+	// Set up the workers for parallel execution.
+	if c.NumWorkers == 0 {
+		c.NumWorkers = runtime.NumCPU()
+	}
+
+	c.Workforce = workers.New(c.NumWorkers)
+
 	// These are not user-configurable.
 	c.DistRootArchives = "archives"
 	c.DistRootBuilds = "builds"
+	c.DistRootReleases = "releases"
 
 	if c.NumWorkers < 1 {
 		c.NumWorkers = runtime.NumCPU()
@@ -236,10 +253,6 @@ func (c *Core) Init() error {
 		if err := startAndRegister(archive.ArchiveSettings.Plugin); err != nil {
 			return err
 		}
-	}
-
-	for _, l := range c.initDoneListeners {
-		l()
 	}
 
 	return nil

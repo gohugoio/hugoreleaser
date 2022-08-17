@@ -1,46 +1,58 @@
 env GOCACHE=$WORK/gocache
 env READMEFILE=README.md
+env GITHUB_TOKEN=faketoken
 
-# Build binaries.
-hugoreleaser build -tag v1.2.0
-! stderr .
-
-exists $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo
-exists $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo
-exists $WORK/dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo
-exists $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
-exists $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe
-
-# Check Go binaries vs build settings.
-gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo CGO_ENABLED=0.*GOARCH=amd64\b.*GOOS=darwin
-gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo CGO_ENABLED=0.*GOARCH=arm64\b.*GOOS=darwin
-gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo CGO_ENABLED=0.*GOARCH=arm\b
-gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe CGO_ENABLED=0
+# Skip build, see fake binaries below.
 
 # Build archives
 hugoreleaser archive -tag v1.2.0
 ! stderr .
-
-# Check some samples.
 exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-64bit.tar.gz
-exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.tar.gz
-exists  $WORK/dist/hugo/v1.2.0/archives/main/base/windows/amd64/hugo_1.2.0_Windows-64bit.zip
-! exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.zip
-! exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/arm64/hugo_1.2.0_macOS-ARM64.tar.gz
+
+# Run with the -try flag to avoid actually creating a remote release.
+hugoreleaser release -tag v1.2.0 -commitish main -try
+# 3 archives + checksum.txt
+stdout 'Prepared 4 files to archive'
+stdout 'checksum\.txt'
+cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/checksum.txt $WORK/expected/dist/myrelease/checksum.txt
 
 # Test files
+# Fake binaries to get stable archive checksum.txt.
+-- dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe --
+win-amd64
+-- dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo --
+darwin-armd64
+-- dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo --
+darwin-amd64
+-- dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo --
+linux-amd64
+-- dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo --
+linux-amd
+
+# Expected output
+-- expected/dist/myrelease/checksum.txt --
+8f285fefa374ac4dbd4c4a1f6a21e6dd11ce348c8506ae25a1212a463870df6d  hugo_1.2.0_macOS-64bit.tar.gz
+c0e7dfade2d78cb7fd7e3d2a81711f13fb456edfa8241a7246e5fce9fefa07ec  hugo_1.2.0_linux-64bit.tar.gz
+d49781882076dd98ed90f31b733172a33440bdad8acc317152d763ee0787b5f5  hugo_1.2.0_Windows-64bit.zip
 -- hugoreleaser.toml --
 project = "hugo"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "bep"
+draft = true
 [build_settings]
 binary = "hugo"
 go_proxy = "https://proxy.golang.org"
 go_exe = "go"
+flags = ["-trimpath"]
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
 [archive_settings.type]
 format        = "tar.gz"
 extension = ".tar.gz"
+header_mod_time = "1976-10-24T12:15:02+00:00"
 [archive_settings.replacements]
 amd64 ="64bit"
 386 = "32bit"
@@ -86,6 +98,10 @@ paths         = "/builds/**/windows/*"
 [archives.archive_settings.type]
 format = "zip"
 extension = ".zip"
+
+[[releases]]
+paths = "/archives/**"
+dir = "myrelease"
 
 -- go.mod --
 module foo

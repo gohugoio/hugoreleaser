@@ -11,9 +11,9 @@ import (
 	"github.com/bep/hugoreleaser/cmd/archivecmd"
 	"github.com/bep/hugoreleaser/cmd/buildcmd"
 	"github.com/bep/hugoreleaser/cmd/corecmd"
+	"github.com/bep/hugoreleaser/cmd/releasecmd"
 	"github.com/bep/hugoreleaser/internal/common/logging"
 	"github.com/bep/logg"
-	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -37,24 +37,26 @@ func parseAndRun(args []string) (err error) {
 		coreCommand, core = corecmd.New()
 		buildCommand      = buildcmd.New(core)
 		archiveCommand    = archivecmd.New(core)
+		releasecmd        = releasecmd.New(core)
 	)
 
 	coreCommand.Subcommands = []*ffcli.Command{
 		buildCommand,
 		archiveCommand,
-	}
-
-	coreCommand.Options = []ff.Option{
-		ff.WithEnvVarPrefix("HUGORELEASER"),
+		releasecmd,
 	}
 
 	defer func() {
-		if err = core.Close(); err != nil {
+		if closeErr := core.Close(); closeErr != nil && err == nil {
 			err = fmt.Errorf("error closing app: %w", err)
 		}
-
 		elapsed := time.Since(start)
-		core.InfoLog.Log(logg.String(fmt.Sprintf("Total in %s …", logging.FormatBuildDuration(elapsed))))
+		s := logg.String(fmt.Sprintf("Total in %s …", logging.FormatBuildDuration(elapsed)))
+		if core.InfoLog != nil {
+			core.InfoLog.Log(s)
+		} else {
+			log.Print(s)
+		}
 	}()
 
 	if err := coreCommand.Parse(args); err != nil {
@@ -65,6 +67,7 @@ func parseAndRun(args []string) (err error) {
 		return fmt.Errorf("error initializing config: %w", err)
 	}
 
+	// TODO(bep) add a global timeout.
 	if err := coreCommand.Run(context.Background()); err != nil {
 		return fmt.Errorf("error running command: %w", err)
 	}

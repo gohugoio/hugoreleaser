@@ -27,11 +27,7 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create server: %s", err)
 	}
 
 	if err := server.Start(); err != nil {

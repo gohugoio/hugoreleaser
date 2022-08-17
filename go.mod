@@ -9,6 +9,7 @@ require (
 	github.com/bep/workers v1.1.0
 	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.14.3
+	github.com/google/go-github/v45 v45.2.0
 	github.com/goreleaser/nfpm/v2 v2.17.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/mapstructure v1.5.0
@@ -16,6 +17,7 @@ require (
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/rogpeppe/go-internal v1.8.1
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
+	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 )
 
 require (
@@ -59,8 +61,11 @@ require (
 
 require (
 	github.com/cloudflare/circl v1.2.0 // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 )
 
 require (

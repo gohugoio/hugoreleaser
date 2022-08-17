@@ -15,6 +15,8 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
+const commandName = "build"
+
 // New returns a usable ffcli.Command for the build subcommand.
 // TODO(bep): Add -paths (slice)
 // TODO(bep): Add a coverage command (JSON?)
@@ -23,12 +25,9 @@ func New(core *corecmd.Core) *ffcli.Command {
 		core: core,
 	}
 
-	fs := flag.NewFlagSet(corecmd.CommandName+" build", flag.ExitOnError)
+	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
 
 	core.RegisterFlags(fs)
-	core.AddInitDoneListener(func() {
-		builder.infoLogg = core.InfoLog.WithField("cmd", "build")
-	})
 
 	return &ffcli.Command{
 		Name:       "build",
@@ -40,11 +39,20 @@ func New(core *corecmd.Core) *ffcli.Command {
 }
 
 type Builder struct {
-	core     *corecmd.Core
-	infoLogg logg.LevelLogger
+	core    *corecmd.Core
+	infoLog logg.LevelLogger
+}
+
+func (b *Builder) init() error {
+	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+	return nil
 }
 
 func (b *Builder) Exec(ctx context.Context, args []string) error {
+	if err := b.init(); err != nil {
+		return err
+	}
+
 	r, ctx := b.core.Workforce.Start(ctx)
 	for _, build := range b.core.Config.Builds {
 		for _, os := range build.Os {
@@ -65,7 +73,7 @@ func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
 	outFilename := filepath.Join(
 		b.core.DistDir,
 		b.core.Config.Project,
-		b.core.Ref,
+		b.core.Tag,
 		b.core.DistRootBuilds,
 		arch.Build.Path,
 		arch.Os.Goos,
@@ -73,12 +81,14 @@ func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
 		arch.BuildSettings.Binary,
 	)
 
-	b.infoLogg.WithField("file", outFilename).Log(logg.String("Building"))
+	b.infoLog.WithField("binary", outFilename).WithFields(b.core.Config.BuildSettings).Log(logg.String("Building"))
+
 	if b.core.Try {
 		return nil
 	}
 
 	args := []string{"build", "-o", outFilename}
+
 	buildSettings := arch.BuildSettings
 
 	os.ExpandEnv("$GOPATH")

@@ -1,10 +1,10 @@
 env GOCACHE=$WORK/gocache
 
-hugoreleaser build -ref v1.2.0 -try
+hugoreleaser build -tag v1.2.0 -try
 ! exists $WORK/dist/hugo/v1.2.0/builds/linux/amd64/hugo
-stdout 'Building file.*hugo'
+stdout 'Building binary.*hugo'
 
-hugoreleaser archive -ref v1.2.0 -try
+hugoreleaser archive -tag v1.2.0 -try
 ! exists $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.tar.gz
 stdout 'Archiving file.*hugo_1.2.0_linux-amd64.tar.gz'
 
@@ -21,7 +21,7 @@ goarch = "amd64"
 [[archives]]
 paths = "/builds/**"
 [archive_settings]
-name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 [archive_settings.type]
 format        = "tar.gz"
 extension = ".tar.gz"

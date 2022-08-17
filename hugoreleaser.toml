@@ -1,29 +1,28 @@
-project = "hugo"
+project = "hugoreleaser"
 [build_settings]
-    binary   = "hugo"
+    binary   = "hugoreleaser"
     go_proxy = "https://proxy.golang.org"
     go_exe   = "go"
     flags    = ["-buildmode", "exe"]
     env      = ["CGO_ENABLED=0"]
-    ldflags  = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+    ldflags  = ""
 [archive_settings]
     name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-    extra_files   = [{ source_path = "README.md", target_path = "meta/README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]
+    extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]
     [archive_settings.type]
         format    = "tar.gz"
         extension = ".tar.gz"
-    [archive_settings.replacements]
-        amd64   = "64bit"
-        386     = "32bit"
-        arm64   = "ARM64"
-        darwin  = "macOS"
-        windows = "Windows"
+
+[release_settings]
+    name                           = "${HR_RELEASE_NAME}"
+    type                           = "github"
+    repository                     = "hugoreleaser"
+    repository_owner               = "bep"
+    generate_release_notes_on_host = true
+    draft                          = true
 
 [[builds]]
-    path = "main/base"
-
-    [builds.build_settings]
-        goarm = "7"
+    path = "unix"
 
     [[builds.os]]
         goos = "darwin"
@@ -36,8 +35,9 @@ project = "hugo"
         goos = "linux"
         [[builds.os.archs]]
             goarch = "amd64"
-        [[builds.os.archs]]
-            goarch = "arm"
+
+[[builds]]
+    path = "windows"
 
     [[builds.os]]
         goos = "windows"
@@ -47,11 +47,14 @@ project = "hugo"
             goarch = "amd64"
 
 [[archives]]
-    paths = "/builds/**/{darwin,linux}/amd64"
+    paths = "/builds/unix/**"
     [archives.archive_settings]
 [[archives]]
-    paths = "/builds/**/windows/*"
+    paths = "/builds/windows/**"
     [archives.archive_settings]
         [archives.archive_settings.type]
             format    = "zip"
             extension = "zip"
+[[releases]]
+    paths = "/archives/**"
+    dir   = "myrelease"

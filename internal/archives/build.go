@@ -3,7 +3,6 @@ package archives
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -27,7 +26,7 @@ func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.Archive
 			io.Closer
 		}{
 			io.Discard,
-			ioutil.NopCloser(nil),
+			io.NopCloser(nil),
 		})
 		if err != nil {
 			return err
