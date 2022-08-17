@@ -17,6 +17,9 @@ func main() {
 
 	server, err := plugins.NewServer(
 		func(d plugins.Dispatcher, req archiveplugin.Request) archiveplugin.Response {
+			if req.Heartbeat != "" {
+				return archiveplugin.Response{Heartbeat: req.Heartbeat}
+			}
 			d.Infof("Creating archive %s", req.OutFilename)
 			if err := createArchive(req); err != nil {
 				return errResponse(err)

@@ -1,0 +1,59 @@
+env GOCACHE=$WORK/gocache
+env GOPATH=$WORK/gopath
+
+mkdir $WORK/examples/plugins/archives/tar
+cpdir $SOURCE/examples/plugins/archives $WORK/examples/plugins/archives
+append $WORK/examples/plugins/archives/tar/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
+hugoreleaser build -ref v1.2.0
+hugoreleaser archive -ref v1.2.0 -try
+
+# Created by plugin.
+! exists $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.tar
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+go_proxy = "https://proxy.golang.org"
+go_exe = "go"
+[archive_settings]
+name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+[archive_settings.type]
+format        = "_external"
+extension = ".tar"
+[[builds]]
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths = "/builds/**"
+[archives.archive_settings]
+extra_files = []
+[archives.archive_settings.plugin]
+name = "tar"
+type = "gorun"
+command = "."
+dir = "./examples/plugins/archives/tar"
+[archives.archive_settings.meta]
+vendor = "gohugo.io"
+homepage = "https://gohugo.io/"
+maintainer = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"
+description = "A Fast and Flexible Static Site Generator built with love in GoLang."
+license = "Apache-2.0"
+
+-- go.mod --
+module foo 
+
+
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

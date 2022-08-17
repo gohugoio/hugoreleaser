@@ -1,6 +1,7 @@
 package archives
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
@@ -20,7 +21,7 @@ func New(settings config.ArchiveSettings, out io.WriteCloser) (Archiver, error) 
 	case archiveformats.Deb:
 		return deb.New(settings, out)
 	default:
-		panic("unsupported format")
+		return nil, fmt.Errorf("unsupported archive format %q", settings.Type.Format)
 	}
 }
 

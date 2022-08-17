@@ -119,12 +119,9 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					})
 				}
 
-				if b.core.Try {
-					return nil
-				}
-
 				err = archives.Build(
 					b.infoLog,
+					b.core.Try,
 					archiveSettings,
 					buildRequest,
 				)
