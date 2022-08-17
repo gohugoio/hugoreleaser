@@ -14,15 +14,15 @@ const (
 	Deb
 	TarGz
 	Zip
-	External // External is a special format that is used to indicate that the archive operation is handled by an external tool.
+	Plugin // Plugin is a special format that is used to indicate that the archive operation is handled by an external tool.
 )
 
 var formatString = map[Format]string{
 	// The string values is what users can specify in the config.
-	Deb:      "deb",
-	TarGz:    "tar.gz",
-	Zip:      "zip",
-	External: "_external",
+	Deb:    "deb",
+	TarGz:  "tar.gz",
+	Zip:    "zip",
+	Plugin: "_plugin",
 }
 
 var stringFormat = map[string]Format{}
@@ -47,7 +47,7 @@ func (f Format) String() string {
 // It returns blank if the extension cannot be determined, which is the case for the External format.
 func (f Format) Extension() string {
 	switch f {
-	case External:
+	case Plugin:
 		return ""
 	default:
 		return fmt.Sprintf(".%s", f.String())
@@ -56,7 +56,7 @@ func (f Format) Extension() string {
 
 // IsExternal returns true if this archive format is handled by an external tool.
 func (f Format) IsExternal() bool {
-	return f == External
+	return f == Plugin
 }
 
 func init() {

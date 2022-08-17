@@ -21,7 +21,7 @@ go_exe = "go"
 name_template = "{{ .Project }}_{{ .Ref | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
 [archive_settings.type]
-format        = "_external"
+format        = "_plugin"
 extension = ".tar"
 [[builds]]
 [[builds.os]]

@@ -13,11 +13,12 @@ var (
 
 // Request is what is sent to an external archive tool.
 type Request struct {
-	// When Heartbeat is set, the server is expected to respond with a
-	// response with only the Heartbeat set, and other no side-effects.
+	// Heartbeat is a string that is echoed back to the caller,
+	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
 	// Information about the build to archive.
+	// TODO(bep) needed?
 	model.BuildContext
 
 	Files []ArchiveFile `toml:"files"`
@@ -26,13 +27,22 @@ type Request struct {
 	OutFilename string `toml:"out_filename"`
 }
 
-func (a *Request) Init() error {
+// HeartbeatResponse returns a Response that, if the second return value is true,
+// will be returned to the caller.
+func (r Request) HeartbeatResponse() (Response, bool) {
+	if r.Heartbeat == "" {
+		return Response{}, false
+	}
+	return Response{Heartbeat: r.Heartbeat}, true
+}
+
+func (r *Request) Init() error {
 	what := "archive_request"
-	if a.OutFilename == "" {
+	if r.OutFilename == "" {
 		return fmt.Errorf("%s: archive request has no output filename", what)
 	}
-	for i := range a.Files {
-		f := &a.Files[i]
+	for i := range r.Files {
+		f := &r.Files[i]
 		if err := f.Init(); err != nil {
 			return fmt.Errorf("%s: %v", what, err)
 		}
@@ -42,8 +52,8 @@ func (a *Request) Init() error {
 
 // Response is what is sent back from an external archive tool.
 type Response struct {
-	// When Heartbeat is set in the request, the server is expected to respond with a
-	// response with only the Heartbeat set, and other no side-effects.
+	// Heartbeat is a string that is echoed back to the caller,
+	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
 	Error *model.BasicError `toml:"err"`

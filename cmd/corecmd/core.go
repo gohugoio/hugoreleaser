@@ -8,9 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
+	"github.com/bep/execrpc"
 	"github.com/bep/hugoreleaser/internal/common/logging"
 	"github.com/bep/hugoreleaser/internal/config"
+	"github.com/bep/hugoreleaser/internal/plugins"
+	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
 	"github.com/bep/logg"
 	"github.com/bep/workers"
 	"github.com/pelletier/go-toml/v2"
@@ -45,6 +49,9 @@ type Core struct {
 	// The common Info logger.
 	InfoLog logg.LevelLogger
 
+	// The common Warn logger.
+	WarnLog logg.LevelLogger
+
 	// The common Error logger.
 	ErrorLog logg.LevelLogger
 
@@ -77,6 +84,9 @@ type Core struct {
 
 	// The global workforce.
 	Workforce *workers.Workforce
+
+	// Archive plugins started and ready to use.
+	PluginsRegistryArchive map[config.Plugin]*execrpc.Client[archiveplugin.Request, archiveplugin.Response]
 
 	// These will be set after Init() is sueccussfully executed.
 	initDoneListeners []func()
@@ -129,6 +139,8 @@ func (c *Core) Init() error {
 
 	// Configure logging.
 	c.InfoLog = l.WithLevel(logg.LevelInfo).WithField("cmd", "core")
+	c.WarnLog = l.WithLevel(logg.LevelWarn).WithField("cmd", "core")
+	c.ErrorLog = l.WithLevel(logg.LevelError).WithField("cmd", "core")
 
 	if c.Ref == "" {
 		return fmt.Errorf("flag -ref is required")
@@ -188,9 +200,56 @@ func (c *Core) Init() error {
 		return fmt.Errorf("%s %q: %w", msg, c.ConfigFile, err)
 	}
 
+	// Start and register the archive plugins.
+	c.PluginsRegistryArchive = make(map[config.Plugin]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
+
+	startAndRegister := func(p config.Plugin) error {
+		if p.IsZero() {
+			return nil
+		}
+		if _, found := c.PluginsRegistryArchive[p]; found {
+			// Already started.
+			return nil
+		}
+		client, err := plugins.StartArchivePlugin(c.InfoLog, p)
+		if err != nil {
+			return fmt.Errorf("error starting archive plugin %q: %w", p.Name, err)
+		}
+
+		// Send a heartbeat to the plugin to make sure it's alive.
+		heartbeat := fmt.Sprintf("heartbeat-%s", time.Now())
+		resp, err := client.Execute(archiveplugin.Request{Heartbeat: heartbeat})
+		if err != nil {
+			return fmt.Errorf("error testing archive plugin %q: %w", p.Name, err)
+		}
+		if resp.Heartbeat != heartbeat {
+			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.Name)
+		}
+		c.PluginsRegistryArchive[p] = client
+		return nil
+	}
+
+	if err := startAndRegister(c.Config.ArchiveSettings.Plugin); err != nil {
+		return err
+	}
+	for _, archive := range c.Config.Archives {
+		if err := startAndRegister(archive.ArchiveSettings.Plugin); err != nil {
+			return err
+		}
+	}
+
 	for _, l := range c.initDoneListeners {
 		l()
 	}
 
+	return nil
+}
+
+func (c *Core) Close() error {
+	for k, v := range c.PluginsRegistryArchive {
+		if err := v.Close(); err != nil {
+			c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k.Name, err)))
+		}
+	}
 	return nil
 }

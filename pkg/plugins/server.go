@@ -13,12 +13,19 @@ type Server[Q, R any] struct {
 	*execrpc.Server[Q, R]
 }
 
+type Heartbeater[R any] interface {
+	HeartbeatResponse() (R, bool)
+}
+
 // NewServer creates a new server which will call the given function with a request Q.
 // The Dispatcher an be used for logging. Any errors needs to be sent in R.
-func NewServer[Q, R any](call func(Dispatcher, Q) R) (*Server[Q, R], error) {
+func NewServer[Q Heartbeater[R], R any](call func(Dispatcher, Q) R) (*Server[Q, R], error) {
 	rpcServer, err := execrpc.NewServer(
 		execrpc.ServerOptions[Q, R]{
 			Call: func(d execrpc.Dispatcher, req Q) R {
+				if r, ok := req.HeartbeatResponse(); ok {
+					return r
+				}
 				return call(dispatcherAdapter{d}, req)
 			},
 		},

@@ -49,6 +49,10 @@ func parseAndRun(args []string) (err error) {
 	}
 
 	defer func() {
+		if err = core.Close(); err != nil {
+			err = fmt.Errorf("error closing app: %w", err)
+		}
+
 		elapsed := time.Since(start)
 		core.InfoLog.Log(logg.String(fmt.Sprintf("Total in %s …", logging.FormatBuildDuration(elapsed))))
 	}()
@@ -65,5 +69,5 @@ func parseAndRun(args []string) (err error) {
 		return fmt.Errorf("error running command: %w", err)
 	}
 
-	return nil
+	return
 }

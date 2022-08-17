@@ -7,23 +7,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/bep/execrpc"
-	"github.com/bep/execrpc/codecs"
+	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
 	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/plugins"
 	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
 	"github.com/bep/logg"
 )
 
 // Build builds an archive from the given settings and writes it to req.OutFilename
-func Build(infoLogger logg.LevelLogger, try bool, settings config.ArchiveSettings, req archiveplugin.Request) (err error) {
-	if settings.Type.FormatParsed == archiveformats.External {
+func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) (err error) {
+	if settings.Type.FormatParsed == archiveformats.Plugin {
 		// Delegate to external tool.
-		return buildExternal(infoLogger, try, settings, req)
+		return buildExternal(c, infoLogger, settings, req)
 	}
 
-	if try {
+	if c.Try {
 		archive, err := New(settings, struct {
 			io.Writer
 			io.Closer
@@ -63,45 +61,21 @@ func Build(infoLogger logg.LevelLogger, try bool, settings config.ArchiveSetting
 	}
 
 	return
-
 }
 
-func buildExternal(infoLogger logg.LevelLogger, try bool, settings config.ArchiveSettings, req archiveplugin.Request) error {
-	infoLogger = infoLogger.WithField("plugin", "tar")
+func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) error {
+	infoLogger = infoLogger.WithField("plugin", settings.Plugin.Name)
 
-	var heartbeat string
-	if try {
-		heartbeat = fmt.Sprintf("heartbeat-%s", time.Now())
+	if c.Try {
+		req.Heartbeat = fmt.Sprintf("heartbeat-%s", time.Now())
 	}
 
-	req.Heartbeat = heartbeat
 	pluginSettings := settings.Plugin
 
-	client, err := execrpc.StartClient(
-		execrpc.ClientOptions[archiveplugin.Request, archiveplugin.Response]{
-			ClientRawOptions: execrpc.ClientRawOptions{
-				Version: 1,
-				Cmd:     "go",
-				Args:    []string{"run", pluginSettings.Command},
-				Dir:     pluginSettings.Dir,
-
-				OnMessage: func(msg execrpc.Message) {
-					statusCode := msg.Header.Status
-					switch statusCode {
-					case plugins.StatusInfoLog:
-						infoLogger.Log(logg.String(string(msg.Body)))
-					}
-				},
-			},
-			Codec: codecs.JSONCodec[archiveplugin.Request, archiveplugin.Response]{},
-		},
-	)
-
-	if err != nil {
-		return err
+	client, found := c.PluginsRegistryArchive[pluginSettings]
+	if !found {
+		return fmt.Errorf("archive plugin %q not found in registry", pluginSettings.Name)
 	}
-
-	defer client.Close() // TODO(bep) consider making these live for the whole build process.
 
 	resp, err := client.Execute(req)
 	if err != nil {
@@ -112,9 +86,9 @@ func buildExternal(infoLogger logg.LevelLogger, try bool, settings config.Archiv
 		return err
 	}
 
-	if heartbeat != "" && resp.Heartbeat != heartbeat {
+	if req.Heartbeat != resp.Heartbeat {
 		// TODO(bep) make this into a typed error with a better error message further up.
-		return fmt.Errorf("heartbeat mismatch: expected %q, got %q", heartbeat, resp.Heartbeat)
+		return fmt.Errorf("heartbeat mismatch: expected %q, got %q", req.Heartbeat, resp.Heartbeat)
 	}
 
 	return nil

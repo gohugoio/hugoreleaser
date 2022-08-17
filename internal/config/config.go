@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
+	"github.com/bep/hugoreleaser/internal/plugins/plugintypes"
 	"github.com/bep/hugoreleaser/pkg/model"
 	"github.com/gobwas/glob"
 )
@@ -73,8 +74,6 @@ func (a *Archive) Init() error {
 	return nil
 }
 
-// UnmarshalTOML(in any) error
-
 type ArchiveSettings struct {
 	Type ArchiveType `toml:"type"`
 
@@ -100,10 +99,14 @@ func (a *ArchiveSettings) Init() error {
 
 	// Validate format setup.
 	switch a.Type.FormatParsed {
-	case archiveformats.External:
+	case archiveformats.Plugin:
 		if err := a.Plugin.Init(); err != nil {
 			return fmt.Errorf("%s: %v", what, err)
 		}
+	default:
+		// Clear it to we don't need to start it.
+		a.Plugin.Clear()
+
 	}
 
 	var oldNew []string
@@ -201,6 +204,12 @@ type Plugin struct {
 	Type    string `toml:"type"`
 	Command string `toml:"command"`
 	Dir     string `toml:"dir"`
+
+	TypeParsed plugintypes.Type `toml:"-"`
+}
+
+func (t Plugin) IsZero() bool {
+	return t.Name == ""
 }
 
 func (t *Plugin) Init() error {
@@ -208,13 +217,24 @@ func (t *Plugin) Init() error {
 	if t.Name == "" {
 		return fmt.Errorf("%s: has no name", what)
 	}
-	if t.Type == "" {
-		return fmt.Errorf("%s: %q has no type", what, t.Name)
-	}
 	if t.Command == "" {
 		return fmt.Errorf("%s: %q has no command", what, t.Name)
 	}
+
+	var err error
+	if t.TypeParsed, err = plugintypes.ParseType(t.Type); err != nil {
+		return fmt.Errorf("%s: %v", what, err)
+	}
+
 	return nil
+}
+
+func (t *Plugin) Clear() {
+	t.Name = ""
+	t.Type = ""
+	t.Command = ""
+	t.Dir = ""
+	t.TypeParsed = plugintypes.Invalid
 }
 
 type SourceTargetPath struct {
