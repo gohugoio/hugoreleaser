@@ -1,4 +1,4 @@
-package archives
+package deb
 
 import (
 	"io"
@@ -12,15 +12,13 @@ import (
 	"github.com/goreleaser/nfpm/v2/files"
 )
 
-var _ Archiver = &ArchiveDeb{}
-
-func newDeb(cfg config.ArchiveSettings, out io.WriteCloser) (*ArchiveDeb, error) {
+func New(cfg config.ArchiveSettings, out io.WriteCloser) (*Archive, error) {
 	meta, err := model.FromMap[Meta](cfg.Meta)
 	if err != nil {
 		return nil, err
 	}
 
-	archive := &ArchiveDeb{
+	archive := &Archive{
 		out:  out,
 		cfg:  cfg,
 		meta: meta,
@@ -38,14 +36,14 @@ type Meta struct {
 	License     string
 }
 
-type ArchiveDeb struct {
+type Archive struct {
 	out   io.WriteCloser
 	files files.Contents
 	cfg   config.ArchiveSettings
 	meta  Meta
 }
 
-func (a *ArchiveDeb) AddAndClose(targetPath string, f ioh.File) error {
+func (a *Archive) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
 	src := f.Name()
 
@@ -60,7 +58,7 @@ func (a *ArchiveDeb) AddAndClose(targetPath string, f ioh.File) error {
 	return nil
 }
 
-func (a *ArchiveDeb) Finalize() error {
+func (a *Archive) Finalize() error {
 	defer a.out.Close()
 
 	meta := a.meta

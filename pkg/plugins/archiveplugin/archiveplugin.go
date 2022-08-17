@@ -13,6 +13,10 @@ var (
 
 // Request is what is sent to an external archive tool.
 type Request struct {
+	// When Heartbeat is set, the server is expected to respond with a
+	// response with only the Heartbeat set, and other no side-effects.
+	Heartbeat string `toml:"heartbeat"`
+
 	// Information about the build to archive.
 	model.BuildContext
 
@@ -38,6 +42,10 @@ func (a *Request) Init() error {
 
 // Response is what is sent back from an external archive tool.
 type Response struct {
+	// When Heartbeat is set in the request, the server is expected to respond with a
+	// response with only the Heartbeat set, and other no side-effects.
+	Heartbeat string `toml:"heartbeat"`
+
 	Error *model.BasicError `toml:"err"`
 }
 

@@ -1,11 +1,10 @@
-package external
+package archives
 
 import (
 	"os"
 
 	"github.com/bep/execrpc"
 	"github.com/bep/execrpc/codecs"
-	"github.com/bep/hugoreleaser/internal/archives"
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/pkg/plugins"
@@ -13,12 +12,11 @@ import (
 	"github.com/bep/logg"
 )
 
-type GoRun struct {
-}
-
-func BuildArchive(infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) (err error) {
+// Build builds an archive from the given settings and writes it to req.OutFilename
+func Build(infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) (err error) {
 	if settings.Type.FormatParsed == archiveformats.External {
-		return buildArchiveExternal(infoLogger, req)
+		// Delegate to external tool.
+		return buildExternal(infoLogger, settings, req)
 	}
 
 	outFile, err := os.Create(req.OutFilename)
@@ -27,7 +25,7 @@ func BuildArchive(infoLogger logg.LevelLogger, settings config.ArchiveSettings, 
 	}
 	defer outFile.Close()
 
-	archiver, err := archives.New(settings, outFile)
+	archiver, err := New(settings, outFile)
 	if err != nil {
 		return err
 	}
@@ -50,16 +48,18 @@ func BuildArchive(infoLogger logg.LevelLogger, settings config.ArchiveSettings, 
 
 }
 
-func buildArchiveExternal(infoLogger logg.LevelLogger, req archiveplugin.Request) error {
+func buildExternal(infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) error {
 	infoLogger = infoLogger.WithField("plugin", "tar")
+
+	pluginSettings := settings.Plugin
 
 	client, err := execrpc.StartClient(
 		execrpc.ClientOptions[archiveplugin.Request, archiveplugin.Response]{
 			ClientRawOptions: execrpc.ClientRawOptions{
 				Version: 1,
 				Cmd:     "go",
-				Args:    []string{"run", "."},
-				Dir:     "./examples/plugins/archives/tar",
+				Args:    []string{"run", pluginSettings.Command},
+				Dir:     pluginSettings.Dir,
 
 				OnMessage: func(msg execrpc.Message) {
 					statusCode := msg.Header.Status
@@ -77,7 +77,7 @@ func buildArchiveExternal(infoLogger logg.LevelLogger, req archiveplugin.Request
 		return err
 	}
 
-	defer client.Close() // TODO(bep)
+	defer client.Close() // TODO(bep) consider making these live for the whole build process.
 
 	resp, err := client.Execute(req)
 	if err != nil {

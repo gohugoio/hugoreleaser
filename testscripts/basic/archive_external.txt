@@ -32,10 +32,11 @@ goarch = "amd64"
 paths = "/builds/**"
 [archives.archive_settings]
 extra_files = []
-[archives.archive_settings.external_tool]
+[archives.archive_settings.plugin]
 name = "tar"
 type = "gorun"
-command = "foo"
+command = "."
+dir = "./examples/plugins/archives/tar"
 [archives.archive_settings.meta]
 vendor = "gohugo.io"
 homepage = "https://gohugo.io/"

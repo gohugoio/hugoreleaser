@@ -1,4 +1,4 @@
-package externaltooltypes
+package plugintypes
 
 import (
 	"fmt"

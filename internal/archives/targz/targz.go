@@ -1,4 +1,4 @@
-package archives
+package targz
 
 import (
 	"archive/tar"
@@ -8,10 +8,8 @@ import (
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 )
 
-var _ Archiver = &ArchiveTarGz{}
-
-func newTarGz(out io.WriteCloser) *ArchiveTarGz {
-	archive := &ArchiveTarGz{
+func New(out io.WriteCloser) *Archive {
+	archive := &Archive{
 		out: out,
 	}
 
@@ -24,13 +22,13 @@ func newTarGz(out io.WriteCloser) *ArchiveTarGz {
 	return archive
 }
 
-type ArchiveTarGz struct {
+type Archive struct {
 	out io.WriteCloser
 	gw  *gzip.Writer
 	tw  *tar.Writer
 }
 
-func (a *ArchiveTarGz) AddAndClose(targetPath string, f ioh.File) error {
+func (a *Archive) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
 
 	info, err := f.Stat()
@@ -57,7 +55,7 @@ func (a *ArchiveTarGz) AddAndClose(targetPath string, f ioh.File) error {
 	return nil
 }
 
-func (a *ArchiveTarGz) Finalize() error {
+func (a *Archive) Finalize() error {
 	if err := a.tw.Close(); err != nil {
 		return err
 	}

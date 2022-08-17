@@ -82,7 +82,7 @@ type ArchiveSettings struct {
 	NameTemplate string             `toml:"name_template"`
 	ExtraFiles   []SourceTargetPath `toml:"extra_files"`
 	Replacements map[string]string  `toml:"replacements"`
-	ExternalTool ExternalTool       `toml:"external_tool"`
+	Plugin       Plugin             `toml:"plugin"`
 
 	// Meta is archive type specific metadata.
 	// See in the documentation for the archive type.
@@ -101,7 +101,7 @@ func (a *ArchiveSettings) Init() error {
 	// Validate format setup.
 	switch a.Type.FormatParsed {
 	case archiveformats.External:
-		if err := a.ExternalTool.Init(); err != nil {
+		if err := a.Plugin.Init(); err != nil {
 			return fmt.Errorf("%s: %v", what, err)
 		}
 	}
@@ -196,14 +196,15 @@ type BuildSettings struct {
 
 type Builds []Build
 
-type ExternalTool struct {
+type Plugin struct {
 	Name    string `toml:"name"`
 	Type    string `toml:"type"`
 	Command string `toml:"command"`
+	Dir     string `toml:"dir"`
 }
 
-func (t *ExternalTool) Init() error {
-	what := "external_tool"
+func (t *Plugin) Init() error {
+	what := "plugin"
 	if t.Name == "" {
 		return fmt.Errorf("%s: has no name", what)
 	}

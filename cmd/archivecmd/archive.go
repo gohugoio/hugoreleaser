@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/bep/hugoreleaser/cmd/corecmd"
+	"github.com/bep/hugoreleaser/internal/archives"
 	"github.com/bep/hugoreleaser/internal/common/templ"
-	"github.com/bep/hugoreleaser/internal/external"
 	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
 
 	"github.com/bep/hugoreleaser/pkg/model"
@@ -123,7 +123,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					return nil
 				}
 
-				err = external.BuildArchive(
+				err = archives.Build(
 					b.infoLog,
 					archiveSettings,
 					buildRequest,

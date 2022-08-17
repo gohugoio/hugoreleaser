@@ -1,4 +1,4 @@
-package archives
+package zip
 
 import (
 	"archive/zip"
@@ -7,10 +7,8 @@ import (
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 )
 
-var _ Archiver = &ArchiveTarGz{}
-
-func newZip(out io.WriteCloser) *ArchiveZip {
-	archive := &ArchiveZip{
+func New(out io.WriteCloser) *Archive {
+	archive := &Archive{
 		out:  out,
 		zipw: zip.NewWriter(out),
 	}
@@ -18,12 +16,12 @@ func newZip(out io.WriteCloser) *ArchiveZip {
 	return archive
 }
 
-type ArchiveZip struct {
+type Archive struct {
 	out  io.WriteCloser
 	zipw *zip.Writer
 }
 
-func (a *ArchiveZip) AddAndClose(targetPath string, f ioh.File) error {
+func (a *Archive) AddAndClose(targetPath string, f ioh.File) error {
 	defer f.Close()
 
 	zw, err := a.zipw.Create(targetPath)
@@ -36,7 +34,7 @@ func (a *ArchiveZip) AddAndClose(targetPath string, f ioh.File) error {
 	return err
 }
 
-func (a *ArchiveZip) Finalize() error {
+func (a *Archive) Finalize() error {
 	err1 := a.zipw.Close()
 	err2 := a.out.Close()
 

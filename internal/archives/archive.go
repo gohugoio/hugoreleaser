@@ -4,6 +4,9 @@ import (
 	"io"
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
+	"github.com/bep/hugoreleaser/internal/archives/deb"
+	"github.com/bep/hugoreleaser/internal/archives/targz"
+	"github.com/bep/hugoreleaser/internal/archives/zip"
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 	"github.com/bep/hugoreleaser/internal/config"
 )
@@ -11,11 +14,11 @@ import (
 func New(settings config.ArchiveSettings, out io.WriteCloser) (Archiver, error) {
 	switch settings.Type.FormatParsed {
 	case archiveformats.TarGz:
-		return newTarGz(out), nil
+		return targz.New(out), nil
 	case archiveformats.Zip:
-		return newZip(out), nil
+		return zip.New(out), nil
 	case archiveformats.Deb:
-		return newDeb(settings, out)
+		return deb.New(settings, out)
 	default:
 		panic("unsupported format")
 	}
