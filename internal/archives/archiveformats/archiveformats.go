@@ -8,12 +8,12 @@ import (
 
 // Goreleaser supports `tar.gz`, `tar.xz`, `tar`, `gz`, `zip` and `binary`.
 // We currently limit ourselves to what Hugo uses: `tar.gz` and 'zip' (for Windows).
-// TODO(bep) where does deb fit in?
 const (
 	InvalidFormat Format = iota
 	Deb
 	TarGz
 	Zip
+	Rename
 	Plugin // Plugin is a special format that is used to indicate that the archive operation is handled by an external tool.
 )
 
@@ -22,6 +22,7 @@ var formatString = map[Format]string{
 	Deb:    "deb",
 	TarGz:  "tar.gz",
 	Zip:    "zip",
+	Rename: "rename",
 	Plugin: "_plugin",
 }
 

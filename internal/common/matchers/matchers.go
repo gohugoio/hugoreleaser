@@ -5,15 +5,13 @@ type Matcher interface {
 }
 
 func And(matchers ...Matcher) Matcher {
-	return and{matchers}
+	return and(matchers)
 }
 
-type and struct {
-	matchers []Matcher
-}
+type and []Matcher
 
 func (m and) Match(s string) bool {
-	for _, matcher := range m.matchers {
+	for _, matcher := range m {
 		if !matcher.Match(s) {
 			return false
 		}

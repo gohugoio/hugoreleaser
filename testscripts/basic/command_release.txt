@@ -2,8 +2,6 @@ env GOCACHE=$WORK/gocache
 env READMEFILE=README.md
 env GITHUB_TOKEN=faketoken
 
-skip 'Fails on CI (checksum mismatches) TODO(bep)'
-
 # Skip build, see fake binaries below.
 
 # Build archives
@@ -33,9 +31,9 @@ linux-amd
 
 # Expected output
 -- expected/dist/myrelease/checksum.txt --
-8f285fefa374ac4dbd4c4a1f6a21e6dd11ce348c8506ae25a1212a463870df6d  hugo_1.2.0_macOS-64bit.tar.gz
-c0e7dfade2d78cb7fd7e3d2a81711f13fb456edfa8241a7246e5fce9fefa07ec  hugo_1.2.0_linux-64bit.tar.gz
-d49781882076dd98ed90f31b733172a33440bdad8acc317152d763ee0787b5f5  hugo_1.2.0_Windows-64bit.zip
+19c2308936cdc630dfb1c3620d54fc22dc072dd6d04f8aa0872963c3fb547572  hugo_1.2.0_Windows-64bit.zip
+8a49e492c1b787821fe81695617dcaf211ca3c0428094f3a4a4c1401678993a0  hugo_1.2.0_macOS-64bit.tar.gz
+df51345af47d4122b133055aa8bb6109cc47504026c29634b0a6e77f6aa7ebcf  hugo_1.2.0_linux-64bit.tar.gz
 -- hugoreleaser.toml --
 project = "hugo"
 [release_settings]
@@ -52,9 +50,8 @@ flags = ["-trimpath"]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
 [archive_settings.type]
-format        = "tar.gz"
+format        = "rename"
 extension = ".tar.gz"
-header_mod_time = "1976-10-24T12:15:02+00:00"
 [archive_settings.replacements]
 amd64 ="64bit"
 386 = "32bit"
@@ -98,7 +95,7 @@ paths         = "/builds/**/{darwin,linux}/amd64"
 paths         = "/builds/**/windows/*"
 [archives.archive_settings]
 [archives.archive_settings.type]
-format = "zip"
+format = "rename"
 extension = ".zip"
 
 [[releases]]

@@ -105,11 +105,6 @@ type ArchiveType struct {
 	Format    string `toml:"format"`
 	Extension string `toml:"extension"`
 
-	// If set will be used as the header ModTime for tar.gz (may be relevant for others later).
-	// Must be on iso8601 format: 2006-01-02T15:04:05-07:00.
-	// This is mostly relevant for tests to get stable output.
-	HeaderModTime string `toml:"header_mod_time"`
-
 	FormatParsed        archiveformats.Format `toml:"-"`
 	HeaderModTimeParsed time.Time             `toml:"-"`
 }
@@ -125,13 +120,6 @@ func (a *ArchiveType) Init() error {
 	var err error
 	if a.FormatParsed, err = archiveformats.ParseFormat(a.Format); err != nil {
 		return err
-	}
-
-	if a.HeaderModTime != "" {
-		if a.HeaderModTimeParsed, err = time.Parse("2006-01-02T15:04:05-07:00", a.HeaderModTime); err != nil {
-			return fmt.Errorf("%s: failed to parse header_mod_time %q: %v", what, a.HeaderModTime, err)
-		}
-		a.HeaderModTimeParsed = a.HeaderModTimeParsed.UTC()
 	}
 
 	return nil
