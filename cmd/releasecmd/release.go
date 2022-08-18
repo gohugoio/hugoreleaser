@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/gobwas/glob"
 
@@ -22,14 +23,10 @@ const commandName = "release"
 
 // New returns a usable ffcli.Command for the release subcommand.
 func New(core *corecmd.Core) *ffcli.Command {
-	releaser := &Releaser{
-		core: core,
-	}
 
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
 
-	fs.StringVar(&releaser.commitish, "commitish", "", "The commitish value that determines where the Git tag is created from.")
-	fs.StringVar(&releaser.paths, "paths", "/archives/**", "The archives to release (defaults to all).")
+	releaser := NewReleaser(core, fs)
 
 	core.RegisterFlags(fs)
 
@@ -42,6 +39,18 @@ func New(core *corecmd.Core) *ffcli.Command {
 	}
 }
 
+// NewReleaser returns a new Releaser.
+func NewReleaser(core *corecmd.Core, fs *flag.FlagSet) *Releaser {
+	r := &Releaser{
+		core: core,
+	}
+
+	fs.StringVar(&r.commitish, "commitish", "", "The commitish value that determines where the Git tag is created from.")
+	fs.StringVar(&r.paths, "paths", "/archives/**", "The archives to release (defaults to all).")
+
+	return r
+}
+
 type Releaser struct {
 	core    *corecmd.Core
 	infoLog logg.LevelLogger
@@ -51,35 +60,44 @@ type Releaser struct {
 	paths     string
 
 	pathsCompiled matchers.Matcher
+
+	initOnce sync.Once
+	initErr  error
 }
 
-func (b *Releaser) init() error {
-	if b.commitish == "" {
-		return fmt.Errorf("%s: flag -commitish is required", commandName)
-	}
+func (b *Releaser) Init() error {
+	b.initOnce.Do(func() {
+		if b.commitish == "" {
+			b.initErr = fmt.Errorf("%s: flag -commitish is required", commandName)
+			return
+		}
 
-	const prefix = "/archives/"
+		const prefix = "/archives/"
 
-	if !strings.HasPrefix(b.paths, prefix) {
-		return fmt.Errorf("%s: flag -paths must start with %s", commandName, prefix)
-	}
+		if !strings.HasPrefix(b.paths, prefix) {
+			b.initErr = fmt.Errorf("%s: flag -paths must start with %s", commandName, prefix)
+			return
+		}
 
-	// Strip the /archives/ prefix. We currently don't use that,
-	// it's just there to make the config easier to understand.
-	paths := strings.TrimPrefix(b.paths, prefix)
+		// Strip the /archives/ prefix. We currently don't use that,
+		// it's just there to make the config easier to understand.
+		paths := strings.TrimPrefix(b.paths, prefix)
 
-	var err error
-	b.pathsCompiled, err = glob.Compile(paths)
-	if err != nil {
-		return fmt.Errorf("%s: invalid -paths value: %s", commandName, err)
-	}
+		var err error
+		b.pathsCompiled, err = glob.Compile(paths)
+		if err != nil {
+			b.initErr = fmt.Errorf("%s: invalid -paths value: %s", commandName, err)
+			return
+		}
 
-	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-	return nil
+		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+	})
+	return b.initErr
+
 }
 
 func (b *Releaser) Exec(ctx context.Context, args []string) error {
-	if err := b.init(); err != nil {
+	if err := b.Init(); err != nil {
 		return err
 	}
 
@@ -153,7 +171,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		}
 
 		if len(archiveFilenames) == 0 {
-			return fmt.Errorf("%s: no files found for release %s", commandName, release.Dir)
+			return fmt.Errorf("%s: no files found for release %q", commandName, release.Dir)
 		}
 
 		// Create a checksum.txt file.

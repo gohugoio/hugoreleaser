@@ -23,6 +23,11 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
+type CommandHandler interface {
+	Exec(ctx context.Context, args []string) error
+	Init() error
+}
+
 // CommandName is the main command's binary name.
 const CommandName = "hugoreleaser"
 

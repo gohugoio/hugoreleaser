@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/bep/hugoreleaser/cmd/allcmd"
 	"github.com/bep/hugoreleaser/cmd/archivecmd"
 	"github.com/bep/hugoreleaser/cmd/buildcmd"
 	"github.com/bep/hugoreleaser/cmd/corecmd"
@@ -37,13 +38,15 @@ func parseAndRun(args []string) (err error) {
 		coreCommand, core = corecmd.New()
 		buildCommand      = buildcmd.New(core)
 		archiveCommand    = archivecmd.New(core)
-		releasecmd        = releasecmd.New(core)
+		releaseCommand    = releasecmd.New(core)
+		allCommand        = allcmd.New(core)
 	)
 
 	coreCommand.Subcommands = []*ffcli.Command{
 		buildCommand,
 		archiveCommand,
-		releasecmd,
+		releaseCommand,
+		allCommand,
 	}
 
 	defer func() {

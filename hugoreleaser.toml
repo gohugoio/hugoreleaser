@@ -54,7 +54,7 @@ project = "hugoreleaser"
     [archives.archive_settings]
         [archives.archive_settings.type]
             format    = "zip"
-            extension = "zip"
+            extension = ".zip"
 [[releases]]
     paths = "/archives/**"
     dir   = "myrelease"

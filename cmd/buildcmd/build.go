@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 
 	"github.com/bep/helpers/envhelpers"
 
@@ -21,13 +22,9 @@ const commandName = "build"
 // TODO(bep): Add -paths (slice)
 // TODO(bep): Add a coverage command (JSON?)
 func New(core *corecmd.Core) *ffcli.Command {
-	builder := &Builder{
-		core: core,
-	}
-
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
-
 	core.RegisterFlags(fs)
+	builder := NewBuilder(core, fs)
 
 	return &ffcli.Command{
 		Name:       "build",
@@ -38,18 +35,43 @@ func New(core *corecmd.Core) *ffcli.Command {
 	}
 }
 
+// NewBuilder returns a new Builder.
+func NewBuilder(core *corecmd.Core, fs *flag.FlagSet) *Builder {
+	return &Builder{
+		core: core,
+	}
+}
+
 type Builder struct {
 	core    *corecmd.Core
 	infoLog logg.LevelLogger
+
+	initOnce sync.Once
+	initErr  error
 }
 
-func (b *Builder) init() error {
-	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-	return nil
+func (b *Builder) Init() error {
+	b.initOnce.Do(func() {
+		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+	})
+	return b.initErr
 }
 
 func (b *Builder) Exec(ctx context.Context, args []string) error {
-	if err := b.init(); err != nil {
+	if err := b.Init(); err != nil {
+		return err
+	}
+
+	buildsDistDir := filepath.Join(
+		b.core.DistDir,
+		b.core.Config.Project,
+		b.core.Tag,
+		b.core.DistRootBuilds,
+	)
+
+	// Remove and recreate the builds dist dir.
+	_ = os.RemoveAll(buildsDistDir)
+	if err := os.MkdirAll(buildsDistDir, 0o755); err != nil {
 		return err
 	}
 

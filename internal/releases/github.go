@@ -25,6 +25,13 @@ func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
 		return nil, fmt.Errorf("github: missing %q env var", tokenEnvVar)
 	}
 
+	// Set in tests to test the all command.
+	// We cannot curently use the -try flag because
+	// that does not create any archives.
+	if token == "faketoken" {
+		return &FakeClient{}, nil
+	}
+
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
