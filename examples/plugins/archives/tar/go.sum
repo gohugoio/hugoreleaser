@@ -1,11 +1,9 @@
-github.com/bep/execrpc v0.4.0 h1:yNpn3NvUiEKAeDDVvpY/ix2dhkPzomXaL4toOmdaMto=
-github.com/bep/execrpc v0.4.0/go.mod h1:dhMMXFX/IfDRQrp4/EHqqYbYfHS53bF/9kiHIG/ChJw=
-github.com/bep/execrpc v0.4.1-0.20220818185428-da870b60c877 h1:qh030Fgv51zHJcbRQvi2TEdGWJZLIsx2pBQW6KFgrPs=
-github.com/bep/execrpc v0.4.1-0.20220818185428-da870b60c877/go.mod h1:dhMMXFX/IfDRQrp4/EHqqYbYfHS53bF/9kiHIG/ChJw=
+github.com/bep/execrpc v0.5.0 h1:k04hzf2Gm/HLZmH43gpzfVuDE/aSC/2lSw4o5ieDZz8=
+github.com/bep/execrpc v0.5.0/go.mod h1:dhMMXFX/IfDRQrp4/EHqqYbYfHS53bF/9kiHIG/ChJw=
 github.com/bep/helpers v0.1.1-0.20220814074348-06fedc00e585 h1:OoR2+masHcCZTwZw3bu9E8FDdf52SY/vww20w+zqAjQ=
 github.com/bep/helpers v0.1.1-0.20220814074348-06fedc00e585/go.mod h1:Xe6iDWl7hS0VYXnEOZeNZy/WVjhyAb7K+dr/jZF9zUU=
-github.com/bep/hugoreleaser v0.0.0-20220817074640-6a41a7e2305d h1:k4gERtVlws8Dk/+RKovlB3KiEeaazZO2N4qCGjR8xwI=
-github.com/bep/hugoreleaser v0.0.0-20220817074640-6a41a7e2305d/go.mod h1:rn5xmqlU7eFTTK4exCRsZiR6GaBIuHu7zc2ZADelUag=
+github.com/bep/hugoreleaser v0.0.0-20220818205513-173a0f15e025 h1:EPapwR3B6lSzQj2cPCYyruPguy/0La4kBW/hxTy3b0Q=
+github.com/bep/hugoreleaser v0.0.0-20220818205513-173a0f15e025/go.mod h1:5NsFNn2em8SUEW3+ivynnOYBJRhhf80hMeauwLHQVpo=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
