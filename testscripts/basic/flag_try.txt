@@ -6,7 +6,7 @@ stdout 'Building binary.*hugo'
 
 hugoreleaser archive -tag v1.2.0 -try
 ! exists $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.tar.gz
-stdout 'Archiving file.*hugo_1.2.0_linux-amd64.tar.gz'
+stdout 'Archive file.*hugo_1.2.0_linux-amd64.tar.gz'
 
 # Test files
 -- hugoreleaser.toml --

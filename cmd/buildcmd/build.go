@@ -11,6 +11,7 @@ import (
 	"github.com/bep/helpers/envhelpers"
 
 	"github.com/bep/hugoreleaser/cmd/corecmd"
+	"github.com/bep/hugoreleaser/internal/builds"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -109,47 +110,78 @@ func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
 		return nil
 	}
 
-	args := []string{"build", "-o", outFilename}
-
 	buildSettings := arch.BuildSettings
 
-	os.ExpandEnv("$GOPATH")
+	buildBinary := func(filename, goarch string) error {
+		var keyVals []string
+		args := []string{"build", "-o", filename}
 
-	var keyVals []string
+		keyVals = append(
+			keyVals,
+			"GOOS", arch.Os.Goos,
+			"GOARCH", goarch,
+		)
 
-	keyVals = append(
-		keyVals,
-		"GOOS", arch.Os.Goos,
-		"GOARCH", arch.Goarch,
-	)
+		if arch.BuildSettings.Goarm != "" {
+			keyVals = append(keyVals, "GOARM", arch.BuildSettings.Goarm)
+		}
 
-	if arch.BuildSettings.Goarm != "" {
-		keyVals = append(keyVals, "GOARM", arch.BuildSettings.Goarm)
+		if buildSettings.Env != nil {
+			for _, env := range buildSettings.Env {
+				key, val := envhelpers.SplitEnvVar(env)
+				keyVals = append(keyVals, key, val)
+			}
+		}
+		if buildSettings.GoProxy != "" {
+			keyVals = append(keyVals, "GOPROXY", buildSettings.GoProxy)
+		}
+
+		environ := os.Environ()
+		envhelpers.SetEnvVars(&environ, keyVals...)
+
+		if buildSettings.Ldflags != "" {
+			args = append(args, "-ldflags", buildSettings.Ldflags)
+		}
+		if buildSettings.Flags != nil {
+			args = append(args, buildSettings.Flags...)
+		}
+
+		cmd := exec.CommandContext(ctx, goexe, args...)
+		cmd.Env = environ
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		return cmd.Run()
+
 	}
 
-	if buildSettings.Env != nil {
-		for _, env := range buildSettings.Env {
-			key, val := envhelpers.SplitEnvVar(env)
-			keyVals = append(keyVals, key, val)
+	if arch.Goarch == builds.UniversalGoarch {
+		// Build for both arm64 and amd64 and then combine them into a universal binary.
+		goarchs := []string{"arm64", "amd64"}
+		var outFilenames []string
+		for _, goarch := range goarchs {
+			filename := outFilename + "_" + goarch
+			outFilenames = append(outFilenames, filename)
+			if err := buildBinary(filename, goarch); err != nil {
+				return err
+			}
+		}
+		if err := builds.CreateMacOSUniversalBinary(outFilename, outFilenames...); err != nil {
+			return err
+		}
+
+		// Remove the individual binary files.
+		for _, filename := range outFilenames {
+			if err := os.Remove(filename); err != nil {
+				return err
+			}
+		}
+
+	} else {
+		if err := buildBinary(outFilename, arch.Goarch); err != nil {
+			return err
 		}
 	}
-	if buildSettings.GoProxy != "" {
-		keyVals = append(keyVals, "GOPROXY", buildSettings.GoProxy)
-	}
 
-	environ := os.Environ()
-	envhelpers.SetEnvVars(&environ, keyVals...)
+	return nil
 
-	if buildSettings.Ldflags != "" {
-		args = append(args, "-ldflags", buildSettings.Ldflags)
-	}
-	if buildSettings.Flags != nil {
-		args = append(args, buildSettings.Flags...)
-	}
-
-	cmd := exec.CommandContext(ctx, goexe, args...)
-	cmd.Env = environ
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
 }

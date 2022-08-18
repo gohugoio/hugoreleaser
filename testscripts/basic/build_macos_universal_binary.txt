@@ -1,0 +1,56 @@
+env GOCACHE=$WORK/gocache
+env READMEFILE=README.md
+# faketoken is a magic string that will create a FakeClient.
+env GITHUB_TOKEN=faketoken
+
+hugoreleaser all -tag v1.2.0 -commitish main
+! stderr .
+
+stdout 'Prepared 2 files'
+stdout 'Uploading.*darwin-universal'
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+go_proxy = "https://proxy.golang.org"
+go_exe = "go"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "bep"
+draft = true
+[archive_settings]
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+extra_files  = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+
+[[builds]]
+path = "mac"
+
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "universal"
+
+[[archives]]
+paths         = "/builds/mac/**"
+
+[[releases]]
+paths = "/archives/**"
+dir = "myrelease"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

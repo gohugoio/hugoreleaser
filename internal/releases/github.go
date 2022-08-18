@@ -75,7 +75,7 @@ func (c GitHubClient) Release(ctx context.Context, tagName, committish string, s
 		TagName:              s(tagName),
 		TargetCommitish:      s(committish),
 		Name:                 s(settings.Name),
-		Body:                 s("TODO(bep)" + body),
+		Body:                 s(body),
 		Draft:                github.Bool(settings.Draft),
 		Prerelease:           github.Bool(settings.Prerelease),
 		GenerateReleaseNotes: github.Bool(settings.GenerateReleaseNotesOnHost),

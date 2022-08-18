@@ -1,9 +1,16 @@
 package config
 
 import (
+	"fmt"
 	"path"
 
+	"github.com/bep/hugoreleaser/internal/builds"
+	"github.com/bep/hugoreleaser/pkg/model"
 	"github.com/bep/logg"
+)
+
+var (
+	_ model.Initializer = (*Build)(nil)
 )
 
 type Build struct {
@@ -11,6 +18,17 @@ type Build struct {
 	Os   []BuildOs `toml:"os"`
 
 	BuildSettings BuildSettings `toml:"build_settings"`
+}
+
+func (b *Build) Init() error {
+	for _, os := range b.Os {
+		for _, arch := range os.Archs {
+			if arch.Goarch == builds.UniversalGoarch && os.Goos != "darwin" {
+				return fmt.Errorf("universal arch is only supported on MacOS (GOOS=darwin)")
+			}
+		}
+	}
+	return nil
 }
 
 func (b Build) IsZero() bool {

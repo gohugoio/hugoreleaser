@@ -27,9 +27,7 @@ project = "hugoreleaser"
     [[builds.os]]
         goos = "darwin"
         [[builds.os.archs]]
-            goarch = "amd64"
-        [[builds.os.archs]]
-            goarch = "arm64"
+            goarch = "universal"
 
     [[builds.os]]
         goos = "linux"

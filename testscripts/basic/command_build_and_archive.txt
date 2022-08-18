@@ -20,6 +20,8 @@ gobinary $WORK/dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe CGO_ENAB
 # Build archives
 hugoreleaser archive -tag v1.2.0
 ! stderr .
+stdout 'Archive file.*macOS-64bit'
+
 
 # Check some samples.
 exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-64bit.tar.gz

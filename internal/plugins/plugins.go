@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"time"
+
 	"github.com/bep/execrpc"
 	"github.com/bep/execrpc/codecs"
 	"github.com/bep/hugoreleaser/internal/config"
@@ -18,6 +20,7 @@ func StartArchivePlugin(infoLogger logg.LevelLogger, options config.Plugin) (*ex
 				Cmd:     "go",
 				Args:    []string{"run", options.Command},
 				Dir:     options.Dir,
+				Timeout: 40 * time.Second, // TODO(bep) make configurable
 
 				OnMessage: func(msg execrpc.Message) {
 					statusCode := msg.Header.Status

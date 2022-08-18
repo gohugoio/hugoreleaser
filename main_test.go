@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bep/helpers/envhelpers"
 	"github.com/bep/helpers/filehelpers"
@@ -19,8 +21,8 @@ import (
 func TestBasic(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
-		Dir: "testscripts/basic",
-		//TestWork: true,
+		Dir:      "testscripts/basic",
+		TestWork: false,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -36,8 +38,8 @@ func TestUnfinished(t *testing.T) {
 	setup := testSetupFunc()
 
 	testscript.Run(t, testscript.Params{
-		Dir: "testscripts/unfinished",
-		//TestWork: true,
+		Dir:      "testscripts/unfinished",
+		TestWork: false,
 		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
@@ -76,6 +78,14 @@ func TestMain(m *testing.M) {
 			// log prints to stderr.
 			"log": func() int {
 				log.Println(os.Args[1])
+				return 0
+			},
+			"sleep": func() int {
+				i, err := strconv.Atoi(os.Args[1])
+				if err != nil {
+					i = 1
+				}
+				time.Sleep(time.Duration(i) * time.Second)
 				return 0
 			},
 

@@ -69,22 +69,25 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 
 	r, _ := b.core.Workforce.Start(ctx)
 
+	archiveDistDir := filepath.Join(
+		b.core.DistDir,
+		b.core.Config.Project,
+		b.core.Tag,
+		b.core.DistRootArchives,
+	)
+
+	// Remove and recreate the archive dist dir.
+	// We do it on this level to allow adding artifacts between the archive and release steps.
+	// TODO(bep) this and the similar construcst on builds needs to be refinded.
+	// This isn't great if you want to run multiple times with different --paths flag (not implemented).
+	_ = os.RemoveAll(archiveDistDir)
+	if err := os.MkdirAll(archiveDistDir, 0o755); err != nil {
+		return err
+	}
+
 	err := b.core.Config.ForEachArchiveArch(nil, func(archive config.Archive, archPath config.BuildArchPath) error {
 		archiveSettings := archive.ArchiveSettings
 		arch := archPath.Arch
-		archiveDistDir := filepath.Join(
-			b.core.DistDir,
-			b.core.Config.Project,
-			b.core.Tag,
-			b.core.DistRootArchives,
-		)
-
-		// Remove and recreate the archive dist dir.
-		// We do it on this level to allow adding artifacts between the archive and release steps.
-		_ = os.RemoveAll(archiveDistDir)
-		if err := os.MkdirAll(archiveDistDir, 0o755); err != nil {
-			return err
-		}
 
 		r.Run(func() (err error) {
 			archiveTemplCtx := ArchiveTemplateContext{
@@ -106,6 +109,9 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			)
 
 			outFilename += archiveSettings.Type.Extension
+
+			b.infoLog.WithField("file", outFilename).Log(logg.String("Archive"))
+
 			binaryFilename := filepath.Join(
 				b.core.DistDir,
 				b.core.Config.Project,
@@ -117,8 +123,6 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
 				return err
 			}
-
-			b.infoLog.WithField("file", outFilename).Log(logg.String("Archiving"))
 
 			buildRequest := archiveplugin.Request{
 				BuildContext: archiveTemplCtx.BuildContext,
@@ -152,6 +156,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			return nil
 
 		})
+
 		return nil
 	})
 

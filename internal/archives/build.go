@@ -38,7 +38,6 @@ func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.Archive
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
 
 	archiver, err := New(settings, outFile)
 	if err != nil {
