@@ -1,0 +1,69 @@
+env GOCACHE=$WORK/gocache
+env GITHUB_TOKEN=faketoken
+env HUGORELEASER_TAG=v1.2.3
+
+env NAME3_FROM_ENV=name3os
+
+# This file tests the environemt handling, namely:
+#
+# * Setting flags (HUGORELEASER_TAG)
+# * Setting env in hugoreleaser.env
+# * Setting flags in hugoreleaser.env
+# * Having the same env in OS as in hugoreleaser.env (OS will win).
+# * Do env var replacement in hugoreleaser.toml.
+# 
+
+hugoreleaser build
+hugoreleaser archive
+hugoreleaser release -try
+
+# Draft is set to false in env.
+stdout 'fake.*release.*Draft:false'
+stdout 'First Release!'
+
+! stderr .
+exists $WORK/dist/hugo/v1.2.3/archives/mybuilds/darwin/amd64/name1_darwin_name2-name3os-amd64.zip
+
+-- hugoreleaser.toml --
+project = "hugo"
+[archive_settings]
+name_template = "${NAME1_FROM_ENV}_{{ .Goos }}_${NAME2_FROM_ENV}-${NAME3_FROM_ENV}-{{ .Goarch }}"
+[archive_settings.type]
+format        = "zip"
+extension = ".zip"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "bep"
+name = "${MYPROJECT_RELEASE_NAME}"
+draft = "${MYPROJECT_RELEASE_DRAFT@U}"
+[[builds]]
+path = "mybuilds"
+[builds.build_settings]
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths         = "/builds/**"
+[[releases]]
+paths = "/archives/**"
+dir = "myrelease"
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- hugoreleaser.env --
+HUGORELEASER_COMMITISH=main
+MYPROJECT_RELEASE_NAME=First Release!
+MYPROJECT_RELEASE_DRAFT=false
+NAME1_FROM_ENV=name1
+NAME2_FROM_ENV=name2
+NAME3_FROM_ENV=name3
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

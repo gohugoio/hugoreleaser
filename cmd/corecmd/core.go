@@ -28,8 +28,17 @@ type CommandHandler interface {
 	Init() error
 }
 
-// CommandName is the main command's binary name.
-const CommandName = "hugoreleaser"
+const (
+
+	// CommandName is the main command's binary name.
+	CommandName = "hugoreleaser"
+
+	// The prefix used for any flag overrides.
+	EnvPrefix = "HUGORELEASER"
+
+	// The env file to look for in the current directory.
+	EnvFile = "hugoreleaser.env"
+)
 
 // New constructs a usable ffcli.Command and an empty Config. The config
 // will be set after a successful parse. The caller must
@@ -120,6 +129,28 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
 }
 
+// PreInit is called before the flags are parsed.
+func (c *Core) PreInit() error {
+	// We need to do this as early as possible (before the flags and config is parsed).
+	wd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting working directory: %w", err)
+	}
+
+	c.ProjectDir = wd
+
+	// Note that OS env will override config env.
+	if env, err := config.LoadEnvFile(filepath.Join(c.ProjectDir, EnvFile)); err == nil {
+		for k, v := range env {
+			if os.Getenv(k) == "" {
+				os.Setenv(k, v)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c *Core) Init() error {
 	var stdOut io.Writer
 	if c.Quiet {
@@ -145,15 +176,8 @@ func (c *Core) Init() error {
 
 	c.InfoLog = l.WithLevel(logg.LevelInfo).WithField("cmd", "init")
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("error getting working directory: %w", err)
-	}
-
-	c.ProjectDir = wd
-
 	if !filepath.IsAbs(c.DistDir) {
-		c.DistDir = filepath.Join(wd, c.DistDir)
+		c.DistDir = filepath.Join(c.ProjectDir, c.DistDir)
 
 		if err := os.MkdirAll(c.DistDir, 0o755); err != nil {
 			return fmt.Errorf("error creating dist directory: %w", err)
@@ -199,7 +223,7 @@ func (c *Core) Init() error {
 	}
 
 	if !filepath.IsAbs(c.ConfigFile) {
-		c.ConfigFile = filepath.Join(wd, c.ConfigFile)
+		c.ConfigFile = filepath.Join(c.ProjectDir, c.ConfigFile)
 	}
 
 	f, err := os.Open(c.ConfigFile)

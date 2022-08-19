@@ -123,6 +123,8 @@ type FakeClient struct {
 }
 
 func (c *FakeClient) Release(ctx context.Context, tagName string, committish string, settings config.ReleaseSettings) (int64, error) {
+	// Tests depen on this string.
+	fmt.Printf("fake: release: tag:%s committish:%s %#v\n", tagName, committish, settings)
 	c.releaseID = rand.Int63()
 	return c.releaseID, nil
 }

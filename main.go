@@ -15,6 +15,7 @@ import (
 	"github.com/bep/hugoreleaser/cmd/releasecmd"
 	"github.com/bep/hugoreleaser/internal/common/logging"
 	"github.com/bep/logg"
+	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -49,6 +50,19 @@ func parseAndRun(args []string) (err error) {
 		allCommand,
 	}
 
+	opts := []ff.Option{
+		ff.WithEnvVarPrefix(corecmd.EnvPrefix),
+	}
+
+	coreCommand.Options = opts
+	for _, subCommand := range coreCommand.Subcommands {
+		subCommand.Options = opts
+	}
+
+	releaseCommand.Options = []ff.Option{
+		ff.WithEnvVarPrefix(corecmd.EnvPrefix),
+	}
+
 	defer func() {
 		if closeErr := core.Close(); closeErr != nil && err == nil {
 			err = fmt.Errorf("error closing app: %w", err)
@@ -61,6 +75,10 @@ func parseAndRun(args []string) (err error) {
 			log.Print(s)
 		}
 	}()
+
+	if err := core.PreInit(); err != nil {
+		return fmt.Errorf("error in foo: %w", err)
+	}
 
 	if err := coreCommand.Parse(args); err != nil {
 		return fmt.Errorf("error parsing command line: %w", err)

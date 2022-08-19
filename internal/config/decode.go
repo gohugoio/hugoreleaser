@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"io"
 	"os"
 	"reflect"
@@ -108,6 +109,36 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 
 	return *cfg, nil
+}
+
+// LoadEnvFile loads environment variables from text file on the form key=value.
+// It ignores empty lines and lines starting with # and lines without an equals sign.
+func LoadEnvFile(filename string) (map[string]string, error) {
+	fi, err := os.Stat(filename)
+	if err != nil || fi.IsDir() {
+		return nil, nil
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	env := make(map[string]string)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, found := strings.Cut(line, "=")
+		if !found {
+			continue
+		}
+		env[strings.TrimSpace(key)] = strings.TrimSpace(value)
+	}
+	return env, scanner.Err()
 }
 
 // IsTruthful returns whether in represents a truthful value.
