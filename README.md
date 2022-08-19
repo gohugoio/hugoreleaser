@@ -1,11 +1,17 @@
 New build script(s) for Hugo. Very much a work in progress.
 
+## Table of Contents
+
+* [Configuration](#configuration)
+    * [Configuration File](#configuration-file)
+    * [Environment Variables](#environment-variables)
+* [Development of this project](#development-of-this-project)
 
 ## Configuration
 
-## Configuration File
+### Configuration File
 
-## Environment Variables
+### Environment Variables
 
 The order of presedence for environment variables/flags:
 
@@ -44,3 +50,6 @@ This project contains some example plugins as sub modules, which makes it conven
 
 But we don't want that setup in the production build, so the `go.work*` files are currently in `.gitignore`. Copy the `go.work.dev` file to `go.work` and you should be good. And I agree, this setup leaves something to be desired.
 
+## Notes
+
+* Plugins: Vendoring (`go mod vendor`) or not.

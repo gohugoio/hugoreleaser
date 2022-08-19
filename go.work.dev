@@ -2,5 +2,6 @@ go 1.19
 
 use (
 	.
+	./maintainance
 	./examples/plugins/archives/tar
 )
