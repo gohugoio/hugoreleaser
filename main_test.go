@@ -1,3 +1,17 @@
+// Copyright 2022 The Hugoreleaser Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -40,7 +54,7 @@ func TestUnfinished(t *testing.T) {
 	testscript.Run(t, testscript.Params{
 		Dir:      "testscripts/unfinished",
 		TestWork: false,
-		//UpdateScripts: true,
+		// UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -63,7 +77,6 @@ func testSetupFunc() func(env *testscript.Env) error {
 }
 
 func TestMain(m *testing.M) {
-
 	os.Exit(
 		testscript.RunMain(m, map[string]func() int{
 			// The main program.
@@ -136,7 +149,7 @@ func TestMain(m *testing.M) {
 					return 1
 				}
 
-				f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+				f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0o644)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, "failed to open file:", filename)
 					return 1

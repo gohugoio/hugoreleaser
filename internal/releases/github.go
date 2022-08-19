@@ -1,3 +1,17 @@
+// Copyright 2022 The Hugoreleaser Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package releases
 
 import (
@@ -41,7 +55,6 @@ func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
 	return &GitHubClient{
 		client: github.NewClient(httpClient),
 	}, nil
-
 }
 
 type Client interface {
@@ -105,7 +118,6 @@ func (c GitHubClient) UploadAssetsFile(ctx context.Context, settings config.Rele
 		},
 		f,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -114,7 +126,6 @@ func (c GitHubClient) UploadAssetsFile(ctx context.Context, settings config.Rele
 		return fmt.Errorf("github: unexpected status code: %d", resp.StatusCode)
 	}
 	return nil
-
 }
 
 // Fake client is only used in tests.

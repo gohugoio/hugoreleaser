@@ -1,3 +1,17 @@
+// Copyright 2022 The Hugoreleaser Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package builds
 
 import (
@@ -25,7 +39,6 @@ const (
 // Adapted from:  https://github.com/randall77/makefat
 // Public domain.
 func CreateMacOSUniversalBinary(outputFilename string, inputFilenames ...string) error {
-
 	// Read input files.
 	type input struct {
 		data   []byte
@@ -71,7 +84,7 @@ func CreateMacOSUniversalBinary(outputFilename string, inputFilenames ...string)
 	if err != nil {
 		return err
 	}
-	err = out.Chmod(0755)
+	err = out.Chmod(0o755)
 	if err != nil {
 		return err
 	}
@@ -128,5 +141,4 @@ func CreateMacOSUniversalBinary(outputFilename string, inputFilenames ...string)
 		offset += int64(len(i.data))
 	}
 	return out.Close()
-
 }
