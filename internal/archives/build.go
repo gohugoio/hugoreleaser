@@ -76,7 +76,7 @@ func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.Archive
 }
 
 func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) error {
-	infoLogger = infoLogger.WithField("plugin", settings.Plugin.Name)
+	infoLogger = infoLogger.WithField("plugin", settings.Plugin.ID)
 
 	if c.Try {
 		req.Heartbeat = fmt.Sprintf("heartbeat-%s", time.Now())
@@ -84,9 +84,9 @@ func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config
 
 	pluginSettings := settings.Plugin
 
-	client, found := c.PluginsRegistryArchive[pluginSettings]
+	client, found := c.PluginsRegistryArchive[pluginSettings.ID]
 	if !found {
-		return fmt.Errorf("archive plugin %q not found in registry", pluginSettings.Name)
+		return fmt.Errorf("archive plugin %q not found in registry", pluginSettings.ID)
 	}
 
 	resp, err := client.Execute(req)

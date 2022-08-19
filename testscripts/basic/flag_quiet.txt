@@ -1,4 +1,4 @@
-env GOCACHE=$WORK/gocache
+
 
 hugoreleaser build -tag v1.2.0 -quiet
 ! stdout .

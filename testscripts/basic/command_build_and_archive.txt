@@ -1,4 +1,4 @@
-env GOCACHE=$WORK/gocache
+
 env READMEFILE=README.md
 
 # Build binaries.
@@ -35,8 +35,6 @@ exists  $WORK/dist/hugo/v1.2.0/archives/main/base/windows/amd64/hugo_1.2.0_Windo
 project = "hugo"
 [build_settings]
 binary = "hugo"
-go_proxy = "https://proxy.golang.org"
-go_exe = "go"
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]

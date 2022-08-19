@@ -58,8 +58,7 @@ type BuildSettings struct {
 
 	Goarm string `toml:"goarm"`
 
-	GoExe   string `toml:"go_exe"`
-	GoProxy string `toml:"go_proxy"`
+	GoSettings GoSettings `toml:"go_settings"`
 }
 
 func (b BuildSettings) Fields() logg.Fields {
@@ -67,6 +66,11 @@ func (b BuildSettings) Fields() logg.Fields {
 		logg.Field{Name: "flags", Value: b.Flags},
 		logg.Field{Name: "ldflags", Value: b.Ldflags},
 	}
+}
+
+type GoSettings struct {
+	GoExe   string `toml:"go_exe"`
+	GoProxy string `toml:"go_proxy"`
 }
 
 type Builds []Build

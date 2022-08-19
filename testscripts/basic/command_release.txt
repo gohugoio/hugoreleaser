@@ -1,8 +1,15 @@
-env GOCACHE=$WORK/gocache
+
 env READMEFILE=README.md
 env GITHUB_TOKEN=faketoken
 
-# Skip build, see fake binaries below.
+# Skip build, use these fake binaries.
+# Txtar produces \r\n on Windows, which does not work well with checksums, so normalize the expected file set here.
+dostounix dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe
+dostounix dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo
+dostounix dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo
+dostounix dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo
+dostounix dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
+dostounix expected/dist/myrelease/checksum.txt
 
 # Build archives
 hugoreleaser archive -tag v1.2.0
@@ -43,8 +50,6 @@ repository_owner = "bep"
 draft = true
 [build_settings]
 binary = "hugo"
-go_proxy = "https://proxy.golang.org"
-go_exe = "go"
 flags = ["-trimpath"]
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"

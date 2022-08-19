@@ -69,8 +69,8 @@ func TestDecodeFile(t *testing.T) {
 		c.Assert(b.Env, qt.IsNotNil)
 		c.Assert(b.Ldflags, qt.Not(qt.Equals), "")
 		c.Assert(b.Flags, qt.IsNotNil)
-		c.Assert(b.GoProxy, qt.Not(qt.Equals), "")
-		c.Assert(b.GoExe, qt.Not(qt.Equals), "")
+		c.Assert(b.GoSettings.GoProxy, qt.Not(qt.Equals), "")
+		c.Assert(b.GoSettings.GoExe, qt.Not(qt.Equals), "")
 	}
 
 	assertHasBuildSettings(cfg.BuildSettings)

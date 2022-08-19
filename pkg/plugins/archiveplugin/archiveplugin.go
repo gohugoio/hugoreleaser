@@ -17,6 +17,7 @@ package archiveplugin
 import (
 	"fmt"
 
+	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/pkg/model"
 )
 
@@ -31,9 +32,8 @@ type Request struct {
 	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
-	// Information about the build to archive.
-	// TODO(bep) needed?
-	model.BuildContext
+	// Settings for the archive.
+	Settings config.ArchiveSettings `toml:"settings"`
 
 	Files []ArchiveFile `toml:"files"`
 

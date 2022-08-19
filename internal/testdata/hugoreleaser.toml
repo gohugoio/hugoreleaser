@@ -1,11 +1,15 @@
 project = "hugo"
-[build_settings]
-    binary   = "hugo"
+
+[go_settings]
     go_proxy = "https://proxy.golang.org"
     go_exe   = "go"
-    flags    = ["-buildmode", "exe"]
-    env      = ["CGO_ENABLED=0"]
-    ldflags  = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+
+[build_settings]
+    binary  = "hugo"
+    flags   = ["-buildmode", "exe"]
+    env     = ["CGO_ENABLED=0"]
+    ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+
 [archive_settings]
     name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
     extra_files   = [{ source_path = "README.md", target_path = "meta/README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]

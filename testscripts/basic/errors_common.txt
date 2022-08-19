@@ -1,4 +1,4 @@
-env GOCACHE=$WORK/gocache
+
 
 ! hugoreleaser build
 stderr 'flag -tag is required'

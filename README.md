@@ -48,7 +48,7 @@ The other custom variables can be used in `hugoreleaser.toml`, e.g:
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
 
 
-## Segmentize builds, archivals and releases
+## Release Segments
 
 Both the configuration file and the directory structure inside `/dist` follows the same tree structure: 
 
@@ -110,3 +110,4 @@ But we don't want that setup in the production build, so the `go.work*` files ar
 ## Notes
 
 * Plugins: Vendoring (`go mod vendor`) or not.
+* GOMODCACHE

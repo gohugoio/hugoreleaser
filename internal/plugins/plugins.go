@@ -15,6 +15,7 @@
 package plugins
 
 import (
+	"strings"
 	"time"
 
 	"github.com/bep/execrpc"
@@ -26,15 +27,28 @@ import (
 )
 
 // StartArchivePlugin starts an archive plugin.
-func StartArchivePlugin(infoLogger logg.LevelLogger, options config.Plugin) (*execrpc.Client[archiveplugin.Request, archiveplugin.Response], error) {
+func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSettings, options config.Plugin) (*execrpc.Client[archiveplugin.Request, archiveplugin.Response], error) {
+	env := options.Env
+	var hasGoProxy bool
+	for _, e := range env {
+		if strings.HasPrefix(e, "GOPROXY=") {
+			hasGoProxy = true
+			break
+		}
+	}
+	if !hasGoProxy {
+		env = append(env, "GOPROXY="+goSettings.GoProxy)
+	}
+
 	return execrpc.StartClient(
 		execrpc.ClientOptions[archiveplugin.Request, archiveplugin.Response]{
 			ClientRawOptions: execrpc.ClientRawOptions{
 				Version: 1,
-				Cmd:     "go",
+				Cmd:     goSettings.GoExe,
 				Args:    []string{"run", options.Command},
 				Dir:     options.Dir,
-				Timeout: 40 * time.Second, // TODO(bep) make configurable
+				Env:     env,
+				Timeout: 220 * time.Second, // TODO(bep) make configurable + fix the GOMODCACHE on GitHub
 
 				OnMessage: func(msg execrpc.Message) {
 					statusCode := msg.Header.Status
