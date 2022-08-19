@@ -1,4 +1,4 @@
-env GOCACHE=$WORK/gocache
+
 
 skip 'TODO(bep) fix me'
 

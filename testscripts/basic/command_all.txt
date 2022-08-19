@@ -1,4 +1,4 @@
-env GOCACHE=$WORK/gocache
+
 env READMEFILE=README.md
 # faketoken is a magic string that will create a FakeClient.
 env GITHUB_TOKEN=faketoken
@@ -12,10 +12,11 @@ stdout 'Uploading'
 # Test files
 -- hugoreleaser.toml --
 project = "hugo"
+[go_settings]
+go_proxy = "https://proxy.golang.org"
+go_exe   = "go"
 [build_settings]
 binary = "hugo"
-go_proxy = "https://proxy.golang.org"
-go_exe = "go"
 [release_settings]
 type = "github"
 repository = "hugoreleaser"

@@ -1,7 +1,6 @@
-env GOCACHE=$WORK/gocache
+
 env GITHUB_TOKEN=faketoken
 env HUGORELEASER_TAG=v1.2.3
-
 env NAME3_FROM_ENV=name3os
 
 # This file tests the environemt handling, namely:

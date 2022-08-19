@@ -1,5 +1,8 @@
-env GOCACHE=$WORK/gocache
-env GOPATH=$WORK/gopath
+
+
+mkdir $WORK/plugins/archives/deb
+cpdir $SOURCE/plugins/archives $WORK/plugins/archives
+append $WORK/plugins/archives/deb/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
 
 hugoreleaser build -tag v1.2.0
 
@@ -12,13 +15,11 @@ checkfile $WORK/dist/hugo/v1.2.0/archives/linux/amd64/hugo_1.2.0_linux-amd64.deb
 project = "hugo"
 [build_settings]
 binary = "hugo"
-go_proxy = "https://proxy.golang.org"
-go_exe = "go"
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
 [archive_settings.type]
-format        = "deb"
+format        = "_plugin"
 extension = ".deb"
 [[builds]]
 [[builds.os]]
@@ -28,9 +29,12 @@ goarch = "amd64"
 [[archives]]
 paths = "/builds/**"
 [archives.archive_settings]
-# Nothing extra.
-# TODO(bep) deb needs a destionation folder.
 extra_files = []
+[archives.archive_settings.plugin]
+id = "deb"
+type = "gorun"
+command = "."
+dir = "./plugins/archives/deb"
 [archives.archive_settings.meta]
 vendor = "gohugo.io"
 homepage = "https://gohugo.io/"

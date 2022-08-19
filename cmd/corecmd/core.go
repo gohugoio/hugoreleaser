@@ -120,7 +120,7 @@ type Core struct {
 	Workforce *workers.Workforce
 
 	// Archive plugins started and ready to use.
-	PluginsRegistryArchive map[config.Plugin]*execrpc.Client[archiveplugin.Request, archiveplugin.Response]
+	PluginsRegistryArchive map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response]
 }
 
 // Exec function for this command.
@@ -261,31 +261,32 @@ func (c *Core) Init() error {
 	}
 
 	// Start and register the archive plugins.
-	c.PluginsRegistryArchive = make(map[config.Plugin]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
+	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
 
 	startAndRegister := func(p config.Plugin) error {
 		if p.IsZero() {
 			return nil
 		}
-		if _, found := c.PluginsRegistryArchive[p]; found {
+		if _, found := c.PluginsRegistryArchive[p.ID]; found {
 			// Already started.
 			return nil
 		}
-		client, err := plugins.StartArchivePlugin(c.InfoLog, p)
+		client, err := plugins.StartArchivePlugin(c.InfoLog, c.Config.GoSettings, p)
 		if err != nil {
-			return fmt.Errorf("error starting archive plugin %q: %w", p.Name, err)
+			// TODO(bep) |0: file already closed: when plugin could not be found.
+			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
 		}
 
 		// Send a heartbeat to the plugin to make sure it's alive.
 		heartbeat := fmt.Sprintf("heartbeat-%s", time.Now())
 		resp, err := client.Execute(archiveplugin.Request{Heartbeat: heartbeat})
 		if err != nil {
-			return fmt.Errorf("error testing archive plugin %q: %w", p.Name, err)
+			return fmt.Errorf("error testing archive plugin %q: %w", p.ID, err)
 		}
 		if resp.Heartbeat != heartbeat {
-			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.Name)
+			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.ID)
 		}
-		c.PluginsRegistryArchive[p] = client
+		c.PluginsRegistryArchive[p.ID] = client
 		return nil
 	}
 
@@ -304,7 +305,7 @@ func (c *Core) Init() error {
 func (c *Core) Close() error {
 	for k, v := range c.PluginsRegistryArchive {
 		if err := v.Close(); err != nil {
-			c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k.Name, err)))
+			c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k, err)))
 		}
 	}
 	return nil

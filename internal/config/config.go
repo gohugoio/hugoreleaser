@@ -22,7 +22,10 @@ import (
 )
 
 type Config struct {
-	Project  string   `toml:"project"`
+	Project string `toml:"project"`
+
+	GoSettings GoSettings `toml:"go_settings"`
+
 	Builds   Builds   `toml:"builds"`
 	Archives Archives `toml:"archives"`
 	Releases Releases `toml:"releases"`
@@ -82,16 +85,17 @@ func (c Config) FindArchs(filter matchers.Matcher) []BuildArchPath {
 }
 
 type Plugin struct {
-	Name    string `toml:"name"`
-	Type    string `toml:"type"`
-	Command string `toml:"command"`
-	Dir     string `toml:"dir"`
+	ID      string   `toml:"id"`
+	Type    string   `toml:"type"`
+	Command string   `toml:"command"`
+	Dir     string   `toml:"dir"`
+	Env     []string `toml:"env"`
 
 	TypeParsed plugintypes.Type `toml:"-"`
 }
 
 func (t *Plugin) Clear() {
-	t.Name = ""
+	t.ID = ""
 	t.Type = ""
 	t.Command = ""
 	t.Dir = ""
@@ -100,11 +104,11 @@ func (t *Plugin) Clear() {
 
 func (t *Plugin) Init() error {
 	what := "plugin"
-	if t.Name == "" {
-		return fmt.Errorf("%s: has no name", what)
+	if t.ID == "" {
+		return fmt.Errorf("%s: has no id", what)
 	}
 	if t.Command == "" {
-		return fmt.Errorf("%s: %q has no command", what, t.Name)
+		return fmt.Errorf("%s: %q has no command", what, t.ID)
 	}
 
 	var err error
@@ -116,7 +120,7 @@ func (t *Plugin) Init() error {
 }
 
 func (t Plugin) IsZero() bool {
-	return t.Name == ""
+	return t.ID == ""
 }
 
 type SourceTargetPath struct {

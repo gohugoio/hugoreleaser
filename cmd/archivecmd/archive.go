@@ -157,8 +157,8 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			}
 
 			buildRequest := archiveplugin.Request{
-				BuildContext: archiveTemplCtx.BuildContext,
-				OutFilename:  outFilename,
+				Settings:    archiveSettings,
+				OutFilename: outFilename,
 			}
 
 			buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{

@@ -133,7 +133,7 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 }
 
 func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) error {
-	goexe := b.core.Config.BuildSettings.GoExe
+	goexe := b.core.Config.BuildSettings.GoSettings.GoExe
 	arch := archPath.Arch
 	outDir := filepath.Join(
 		b.core.DistDir,
@@ -178,9 +178,8 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 				keyVals = append(keyVals, key, val)
 			}
 		}
-		if buildSettings.GoProxy != "" {
-			keyVals = append(keyVals, "GOPROXY", buildSettings.GoProxy)
-		}
+
+		keyVals = append(keyVals, "GOPROXY", buildSettings.GoSettings.GoProxy)
 
 		environ := os.Environ()
 		envhelpers.SetEnvVars(&environ, keyVals...)

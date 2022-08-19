@@ -56,24 +56,31 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 
 	// Apply defaults.
-	if cfg.BuildSettings.GoExe == "" {
-		cfg.BuildSettings.GoExe = "go"
+	if cfg.GoSettings.GoExe == "" {
+		cfg.GoSettings.GoExe = "go"
 	}
 
-	if cfg.BuildSettings.GoProxy == "" {
-		cfg.BuildSettings.GoProxy = "https://proxy.golang.org"
+	if cfg.GoSettings.GoProxy == "" {
+		cfg.GoSettings.GoProxy = "https://proxy.golang.org"
 	}
 
 	// Merge build settings.
 	// We may have build settings on all of project > build > os > arch.
 	// Note that this uses the replaces any zero value as defined by IsTruthfulValue (a Hugo construct)m
 	// meaning any value on the right will be used if the left is zero according to that definiton.
+	shallowMerge(&cfg.BuildSettings.GoSettings, cfg.GoSettings)
 	for i := range cfg.Builds {
 		shallowMerge(&cfg.Builds[i].BuildSettings, cfg.BuildSettings)
+		shallowMerge(&cfg.Builds[i].BuildSettings.GoSettings, cfg.BuildSettings.GoSettings)
+
 		for j := range cfg.Builds[i].Os {
 			shallowMerge(&cfg.Builds[i].Os[j].BuildSettings, cfg.Builds[i].BuildSettings)
+			shallowMerge(&cfg.Builds[i].Os[j].BuildSettings.GoSettings, cfg.Builds[i].BuildSettings.GoSettings)
+
 			for k := range cfg.Builds[i].Os[j].Archs {
 				shallowMerge(&cfg.Builds[i].Os[j].Archs[k].BuildSettings, cfg.Builds[i].Os[j].BuildSettings)
+				shallowMerge(&cfg.Builds[i].Os[j].Archs[k].BuildSettings.GoSettings, cfg.Builds[i].Os[j].BuildSettings.GoSettings)
+
 			}
 		}
 	}

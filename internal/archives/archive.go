@@ -19,7 +19,6 @@ import (
 	"io"
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
-	"github.com/bep/hugoreleaser/internal/archives/deb"
 	"github.com/bep/hugoreleaser/internal/archives/renamer"
 	"github.com/bep/hugoreleaser/internal/archives/targz"
 	"github.com/bep/hugoreleaser/internal/archives/zip"
@@ -33,8 +32,6 @@ func New(settings config.ArchiveSettings, out io.WriteCloser) (Archiver, error) 
 		return targz.New(out), nil
 	case archiveformats.Zip:
 		return zip.New(out), nil
-	case archiveformats.Deb:
-		return deb.New(settings, out)
 	case archiveformats.Rename:
 		return renamer.New(out), nil
 	default:

@@ -1,4 +1,0 @@
-! hugoreleaser -tag foo
-stderr 'USAGE'
-
--- hugoreleaser.toml --

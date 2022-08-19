@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -32,11 +33,13 @@ import (
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
+// Note: If tests are running slow for you, make sure you have GOMODCACHE set.
 func TestBasic(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
 		Dir:      "testscripts/basic",
 		TestWork: false,
+		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -49,12 +52,15 @@ func TestUnfinished(t *testing.T) {
 		t.Skip("skip unfinished tests on CI")
 	}
 
+	gomodcache := os.Getenv("GOMODCACHE")
+	fmt.Println("Orig: GOMODCACHE:", gomodcache)
+
 	setup := testSetupFunc()
 
 	testscript.Run(t, testscript.Params{
 		Dir:      "testscripts/unfinished",
 		TestWork: false,
-		// UpdateScripts: true,
+		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -64,6 +70,8 @@ func TestUnfinished(t *testing.T) {
 func testSetupFunc() func(env *testscript.Env) error {
 	sourceDir, _ := os.Getwd()
 	return func(env *testscript.Env) error {
+		var keyVals []string
+
 		// SOURCE is where the hugoreleaser source code lives.
 		// We do this so we can
 		// 1. Copy the example/test plugins into the WORK dir where the test script is running.
@@ -71,7 +79,21 @@ func testSetupFunc() func(env *testscript.Env) error {
 		//
 		// This is a hybrid setup neeed to get a quick development cycle going.
 		// In production, the plugin Go modules would be addressed on their full form, e.g. "github.com/bep/hugoreleaser/internal/plugins/archives/tar@v1.0.0".
-		envhelpers.SetEnvVars(&env.Vars, "SOURCE", sourceDir)
+		keyVals = append(keyVals, "SOURCE", sourceDir)
+		keyVals = append(keyVals, "GOCACHE", filepath.Join(env.WorkDir, "gocache"))
+		var gomodCache string
+		if c := os.Getenv("GOMODCACHE"); c != "" {
+			// Testscripts will set the GOMODCACHE to an empty dir,
+			// and this slows down some tests considerably.
+			// Use the OS env var if it is set.
+			gomodCache = c
+		} else {
+			gomodCache = filepath.Join(env.WorkDir, "gomodcache")
+		}
+		keyVals = append(keyVals, "GOMODCACHE", gomodCache)
+
+		envhelpers.SetEnvVars(&env.Vars, keyVals...)
+
 		return nil
 	}
 }
@@ -88,6 +110,20 @@ func TestMain(m *testing.M) {
 				return 0
 			},
 
+			// dostounix converts \r\n to \n.
+			"dostounix": func() int {
+				filename := os.Args[1]
+				b, err := os.ReadFile(filename)
+				if err != nil {
+					fatalf("%v", err)
+				}
+				b = bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
+				if err := os.WriteFile(filename, b, 0666); err != nil {
+					fatalf("%v", err)
+				}
+				return 0
+			},
+
 			// log prints to stderr.
 			"log": func() int {
 				log.Println(os.Args[1])
@@ -99,6 +135,33 @@ func TestMain(m *testing.M) {
 					i = 1
 				}
 				time.Sleep(time.Duration(i) * time.Second)
+				return 0
+			},
+
+			// cpdir copies a file.
+			"cpfile": func() int {
+				if len(os.Args) != 3 {
+					fmt.Fprintln(os.Stderr, "usage: cpdir SRC DST")
+					return 1
+				}
+
+				fromFile := os.Args[1]
+				toFile := os.Args[2]
+
+				if !filepath.IsAbs(fromFile) {
+					fromFile = filepath.Join(os.Getenv("SOURCE"), fromFile)
+				}
+
+				if err := os.MkdirAll(filepath.Dir(toFile), 0755); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					return 1
+				}
+
+				err := filehelpers.CopyFile(fromFile, toFile)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					return 1
+				}
 				return 0
 			},
 
