@@ -28,9 +28,9 @@ import (
 type Release struct {
 	Paths string `toml:"paths"`
 
-	// Dir is the directory below /dist/releases where the release artifacts gets stored.
+	// Path is the directory below /dist/releases where the release artifacts gets stored.
 	// This must be unique for each release within one configuration file.
-	Dir string `toml:"dir"`
+	Path string `toml:"path"`
 
 	ReleaseSettings ReleaseSettings `toml:"release_settings"`
 
@@ -40,11 +40,11 @@ type Release struct {
 func (a *Release) Init() error {
 	what := "releases"
 
-	if a.Dir == "" {
+	if a.Path == "" {
 		return fmt.Errorf("%s: dir is required", what)
 	}
 
-	a.Dir = path.Clean(filepath.ToSlash(a.Dir))
+	a.Path = path.Clean(filepath.ToSlash(a.Path))
 
 	const prefix = "/archives/"
 	if !strings.HasPrefix(a.Paths, prefix) {

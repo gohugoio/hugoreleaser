@@ -2,10 +2,13 @@ New build script(s) for Hugo. Very much a work in progress.
 
 ## Table of Contents
 
+* [Table of Contents](#table-of-contents)
 * [Configuration](#configuration)
     * [Configuration File](#configuration-file)
     * [Environment Variables](#environment-variables)
+* [Segmentize builds, archivals and releases](#segmentize-builds-archivals-and-releases)
 * [Development of this project](#development-of-this-project)
+* [Notes](#notes)
 
 ## Configuration
 
@@ -43,6 +46,60 @@ The other custom variables can be used in `hugoreleaser.toml`, e.g:
 ```
 
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
+
+
+## Segmentize builds, archivals and releases
+
+Both the configuration file and the directory structure inside `/dist` follows the same tree structure: 
+
+* For *builds* and *archives*: `/dist/<project>/<tag>/{builds,archives}/<user-defined-path>/<GOOS>/<GOARCH>`
+* For `releases`: `/dist/<project>/<tag>/releases/<user-defined-path>`
+
+Given the above, it's possible to split all the release steps (build, archive, release) into segments. A common setup would probably be to split the build step and let the rest run in one go. That was the prime reason behind why Hugoreleaser was initially created; Hugo needed a way to split the build of its extended builds (C/C++, CGO) across multiple Docker containers.
+
+On both `builds` (groups `builds` and `archives`) and `releases` there is a `path` attribute. Slashes are allowed for more fine grained control (e.g. `unix/bsd`).
+
+```toml
+[[builds]]
+    path = "unix"
+
+    [[builds.os]]
+        goos = "freebsd"
+        [[builds.os.archs]]
+            goarch = "amd64"
+        [[builds.os.archs]]
+            goarch = "arm64"
+        [[builds.os.archs]]
+            goarch = "386"
+     [[builds.os]]
+        goos = "openbsd"
+        [[builds.os.archs]]
+            goarch = "amd64"
+```
+
+In both the configuration file and in the CLI tool there are `paths`, which represents [Glob patterns](https://github.com/gobwas/glob) applied as filters (with double asterisk support):
+
+```toml
+[[builds]]
+    path = "unix"
+[[archives]]
+    paths = "/builds/unix/**"
+[[releases]]
+    paths = "/archives/**/freebsd/{amd64,386}"
+    path = "bsd"
+```
+
+The matching starts below `<tag>` in the tree structure described above.
+
+And then running each step in sequence:
+
+```bash
+hugoreleaser build -build-paths /builds/**/freebsd/amd64
+hugoreleaser build -build-paths /builds/**/freebsd/386
+hugoreleaser archive -build-paths /builds/**/freebsd/{amd64,386}
+hugoreleaser release -release-paths /releases/bsd
+```
+
 
 ## Development of this project
 

@@ -17,6 +17,7 @@ package ioh
 import (
 	"io"
 	"io/fs"
+	"os"
 )
 
 type File interface {
@@ -39,4 +40,10 @@ type ReadSeekCloser interface {
 type ReadSeeker interface {
 	io.Reader
 	io.Seeker
+}
+
+// RemoveAllMkdirAll is a wrapper for os.RemoveAll and os.MkdirAll.
+func RemoveAllMkdirAll(dirname string) error {
+	_ = os.RemoveAll(dirname)
+	return os.MkdirAll(dirname, 0o755)
 }

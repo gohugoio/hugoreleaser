@@ -48,7 +48,7 @@ goarch = "amd64"
 paths         = "/builds/**"
 [[releases]]
 paths = "/archives/**"
-dir = "myrelease"
+path = "myrelease"
 -- go.mod --
 module foo
 -- main.go --

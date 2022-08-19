@@ -33,10 +33,11 @@ const commandName = "all"
 func New(core *corecmd.Core) *ffcli.Command {
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
 
+	builder := buildcmd.NewBuilder(core, fs)
 	a := &all{
 		core:      core,
-		builder:   buildcmd.NewBuilder(core, fs),
-		archivist: archivecmd.NewArchivist(core, fs),
+		builder:   builder,
+		archivist: archivecmd.NewArchivist(core, builder.BuildPaths, fs),
 		releaser:  releasecmd.NewReleaser(core, fs),
 	}
 

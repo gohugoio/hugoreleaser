@@ -17,13 +17,16 @@ package archivecmd
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"sync"
 
+	"github.com/bep/hugoreleaser/cmd/buildcmd"
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/archives"
+	"github.com/bep/hugoreleaser/internal/common/ioh"
 	"github.com/bep/hugoreleaser/internal/common/templ"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
@@ -38,8 +41,10 @@ const commandName = "archive"
 // New returns a usable ffcli.Command for the archive subcommand.
 func New(core *corecmd.Core) *ffcli.Command {
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
+
+	archivist := NewArchivist(core, nil, fs)
+
 	core.RegisterFlags(fs)
-	archivist := NewArchivist(core, fs)
 
 	return &ffcli.Command{
 		Name:       "archive",
@@ -58,20 +63,33 @@ type Archivist struct {
 	infoLog logg.LevelLogger
 	core    *corecmd.Core
 
+	buildPaths *buildcmd.BuildPaths
+
 	initOnce sync.Once
 	initErr  error
 }
 
 // NewArchivist returns a new Archivist.
-func NewArchivist(core *corecmd.Core, fs *flag.FlagSet) *Archivist {
-	return &Archivist{
-		core: core,
+func NewArchivist(core *corecmd.Core, buildPaths *buildcmd.BuildPaths, fs *flag.FlagSet) *Archivist {
+
+	if buildPaths == nil {
+		buildPaths = &buildcmd.BuildPaths{}
+		fs.StringVar(&buildPaths.Paths, "build-paths", "/builds/**", "The builds to handle (defaults to all).")
 	}
+
+	a := &Archivist{
+		core:       core,
+		buildPaths: buildPaths,
+	}
+
+	return a
 }
 
 func (b *Archivist) Init() error {
 	b.initOnce.Do(func() {
 		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+		b.initErr = b.buildPaths.Init()
+
 	})
 	return b.initErr
 }
@@ -90,16 +108,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 		b.core.DistRootArchives,
 	)
 
-	// Remove and recreate the archive dist dir.
-	// We do it on this level to allow adding artifacts between the archive and release steps.
-	// TODO(bep) this and the similar construcst on builds needs to be refinded.
-	// This isn't great if you want to run multiple times with different --paths flag (not implemented).
-	_ = os.RemoveAll(archiveDistDir)
-	if err := os.MkdirAll(archiveDistDir, 0o755); err != nil {
-		return err
-	}
-
-	err := b.core.Config.ForEachArchiveArch(nil, func(archive config.Archive, archPath config.BuildArchPath) error {
+	err := b.core.Config.ForEachArchiveArch(b.buildPaths.PathsCompiled, func(archive config.Archive, archPath config.BuildArchPath) error {
 		archiveSettings := archive.ArchiveSettings
 		arch := archPath.Arch
 
@@ -116,9 +125,13 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, archiveTemplCtx)
 			name = archiveSettings.ReplacementsCompiled.Replace(name)
 
+			outDir := filepath.Join(archiveDistDir, filepath.FromSlash(archPath.Path))
+			if err := ioh.RemoveAllMkdirAll(outDir); err != nil {
+				return err
+			}
+
 			outFilename := filepath.Join(
-				archiveDistDir,
-				filepath.FromSlash(archPath.Path),
+				outDir,
 				name,
 			)
 
@@ -133,6 +146,11 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				b.core.DistRootBuilds,
 				arch.BinaryPath(),
 			)
+
+			if _, err := os.Stat(binaryFilename); err != nil {
+				// TODO(bep) add more context here.
+				return fmt.Errorf("%s: binary file not found: %q", commandName, binaryFilename)
+			}
 
 			if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
 				return err

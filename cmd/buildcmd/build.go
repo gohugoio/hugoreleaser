@@ -17,15 +17,19 @@ package buildcmd
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bep/helpers/envhelpers"
+	"github.com/gobwas/glob"
 
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/builds"
+	"github.com/bep/hugoreleaser/internal/common/ioh"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -52,22 +56,60 @@ func New(core *corecmd.Core) *ffcli.Command {
 
 // NewBuilder returns a new Builder.
 func NewBuilder(core *corecmd.Core, fs *flag.FlagSet) *Builder {
-	return &Builder{
-		core: core,
+	b := &Builder{
+		core:       core,
+		BuildPaths: &BuildPaths{},
 	}
+
+	fs.StringVar(&b.BuildPaths.Paths, "build-paths", "/builds/**", "The builds to handle (defaults to all).")
+
+	return b
 }
 
 type Builder struct {
 	core    *corecmd.Core
 	infoLog logg.LevelLogger
 
+	BuildPaths *BuildPaths
+
 	initOnce sync.Once
 	initErr  error
+}
+
+type BuildPaths struct {
+	Paths         string
+	PathsCompiled glob.Glob
+
+	initOnce sync.Once
+}
+
+func (b *BuildPaths) Init() error {
+	var err error
+	b.initOnce.Do(func() {
+		const prefix = "/builds/"
+
+		if !strings.HasPrefix(b.Paths, prefix) {
+			err = fmt.Errorf("%s: flag -build-paths must start with %s", commandName, prefix)
+			return
+		}
+
+		// Strip the /builds/ prefix. We currently don't use that,
+		// it's just there to make the config easier to understand.
+		paths := strings.TrimPrefix(b.Paths, prefix)
+
+		b.PathsCompiled, err = glob.Compile(paths)
+
+	})
+
+	return err
+
 }
 
 func (b *Builder) Init() error {
 	b.initOnce.Do(func() {
 		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+		b.initErr = b.BuildPaths.Init()
+
 	})
 	return b.initErr
 }
@@ -77,44 +119,34 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	buildsDistDir := filepath.Join(
-		b.core.DistDir,
-		b.core.Config.Project,
-		b.core.Tag,
-		b.core.DistRootBuilds,
-	)
-
-	// Remove and recreate the builds dist dir.
-	_ = os.RemoveAll(buildsDistDir)
-	if err := os.MkdirAll(buildsDistDir, 0o755); err != nil {
-		return err
-	}
-
 	r, ctx := b.core.Workforce.Start(ctx)
-	for _, build := range b.core.Config.Builds {
-		for _, os := range build.Os {
-			for _, arch := range os.Archs {
-				// Capture this for the Go routine below.
-				arch := arch
-				r.Run(func() error {
-					return b.buildArch(ctx, arch)
-				})
-			}
-		}
+
+	for _, archPath := range b.core.Config.FindArchs(b.BuildPaths.PathsCompiled) {
+		// Capture this for the Go routine below.
+		archPath := archPath
+		r.Run(func() error {
+			return b.buildArch(ctx, archPath)
+		})
 	}
+
 	return r.Wait()
 }
 
-func (b *Builder) buildArch(ctx context.Context, arch config.BuildArch) error {
+func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) error {
 	goexe := b.core.Config.BuildSettings.GoExe
-	outFilename := filepath.Join(
+	arch := archPath.Arch
+	outDir := filepath.Join(
 		b.core.DistDir,
 		b.core.Config.Project,
 		b.core.Tag,
 		b.core.DistRootBuilds,
-		arch.Build.Path,
-		arch.Os.Goos,
-		arch.Goarch,
+		filepath.FromSlash(archPath.Path),
+	)
+	if err := ioh.RemoveAllMkdirAll(outDir); err != nil {
+		return err
+	}
+	outFilename := filepath.Join(
+		outDir,
 		arch.BuildSettings.Binary,
 	)
 

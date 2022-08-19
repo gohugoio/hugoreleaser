@@ -19,7 +19,6 @@ import (
 
 	"github.com/bep/hugoreleaser/internal/common/matchers"
 	"github.com/bep/hugoreleaser/internal/plugins/plugintypes"
-	"github.com/gobwas/glob"
 )
 
 type Config struct {
@@ -36,7 +35,7 @@ type Config struct {
 func (c Config) FindReleases(filter matchers.Matcher) []Release {
 	var releases []Release
 	for _, release := range c.Releases {
-		if filter == nil || filter.Match(release.Dir) {
+		if filter == nil || filter.Match(release.Path) {
 			releases = append(releases, release)
 		}
 	}
@@ -49,7 +48,7 @@ func (c Config) ForEachArchiveArch(inFilter matchers.Matcher, fn func(archive Ar
 		if inFilter != nil {
 			filter = matchers.And(filter, inFilter)
 		}
-		archs := c.GlobArchs(filter)
+		archs := c.FindArchs(filter)
 		for _, arch := range archs {
 			if err := fn(archive, arch); err != nil {
 				return err
@@ -64,8 +63,8 @@ type BuildArchPath struct {
 	Path string    `toml:"path"`
 }
 
-// GlobArchs returns the archs that match the given path pattern.
-func (c Config) GlobArchs(pattern glob.Glob) []BuildArchPath {
+// FindArchs returns the archs that match the given filter
+func (c Config) FindArchs(filter matchers.Matcher) []BuildArchPath {
 	var archs []BuildArchPath
 	for _, build := range c.Builds {
 		buildPath := build.Path
@@ -73,7 +72,7 @@ func (c Config) GlobArchs(pattern glob.Glob) []BuildArchPath {
 			osPath := buildPath + "/" + os.Goos
 			for _, arch := range os.Archs {
 				archPath := osPath + "/" + arch.Goarch
-				if pattern.Match(archPath) {
+				if filter.Match(archPath) {
 					archs = append(archs, BuildArchPath{Arch: arch, Path: archPath})
 				}
 			}

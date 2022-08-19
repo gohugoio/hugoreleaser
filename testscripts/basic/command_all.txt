@@ -41,7 +41,7 @@ paths         = "/builds/mac/**"
 
 [[releases]]
 paths = "/archives/**"
-dir = "myrelease"
+path = "myrelease"
 
 -- go.mod --
 module foo

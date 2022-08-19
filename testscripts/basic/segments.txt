@@ -1,0 +1,96 @@
+env GOCACHE=$WORK/gocache
+env HUGORELEASER_TAG=1.2.0
+env HUGORELEASER_COMMITISH=main
+# faketoken is a magic string that will create a FakeClient.
+env GITHUB_TOKEN=faketoken
+
+# Build arm* and 386.
+hugoreleaser build -build-paths /builds/**/{arm,386}*
+! stdout amd64
+stdout arm64
+
+# Archive freebsd only.
+# Archive filter in config is "/builds/unix/**".
+hugoreleaser archive -build-paths /builds/**/freebsd/{arm,386}*
+! stdout linux
+! stdout amd64
+stdout freebsd
+
+# We have now only freebsd 3 archives.
+hugoreleaser release -try -release-paths /releases/bsd
+stdout 'Prepared 3 files' # 2 archives + checksum.txt.
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+go_proxy = "https://proxy.golang.org"
+go_exe = "go"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "bep"
+draft = true
+[archive_settings]
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+extra_files  = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+
+[[builds]]
+path = "unix"
+
+[[builds.os]]
+goos = "freebsd"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+[[builds.os.archs]]
+goarch = "arm"
+[[builds.os.archs]]
+goarch = "386"
+
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+[[builds.os.archs]]
+goarch = "arm"
+
+[[builds]]
+path = "win"
+
+[[builds.os]]
+goos = "windows"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+
+
+[[archives]]
+paths         = "/builds/unix/**"
+
+[[releases]]
+paths = "/archives/**/freebsd/arm*"
+path = "bsd"
+[[releases]]
+paths = "/archives/win/**"
+path = "win"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.

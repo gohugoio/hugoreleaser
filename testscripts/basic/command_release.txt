@@ -100,7 +100,7 @@ extension = ".zip"
 
 [[releases]]
 paths = "/archives/**"
-dir = "myrelease"
+path = "myrelease"
 
 -- go.mod --
 module foo

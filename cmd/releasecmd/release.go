@@ -59,7 +59,7 @@ func NewReleaser(core *corecmd.Core, fs *flag.FlagSet) *Releaser {
 	}
 
 	fs.StringVar(&r.commitish, "commitish", "", "The commitish value that determines where the Git tag is created from.")
-	fs.StringVar(&r.paths, "paths", "/archives/**", "The archives to release (defaults to all).")
+	fs.StringVar(&r.releasePaths, "release-paths", "/releases/**", "The releases to release (defaults to all).")
 
 	return r
 }
@@ -69,10 +69,10 @@ type Releaser struct {
 	infoLog logg.LevelLogger
 
 	// Flags
-	commitish string
-	paths     string
+	commitish    string
+	releasePaths string
 
-	pathsCompiled matchers.Matcher
+	releasePathsCompiled matchers.Matcher
 
 	initOnce sync.Once
 	initErr  error
@@ -85,19 +85,19 @@ func (b *Releaser) Init() error {
 			return
 		}
 
-		const prefix = "/archives/"
+		const prefix = "/releases/"
 
-		if !strings.HasPrefix(b.paths, prefix) {
-			b.initErr = fmt.Errorf("%s: flag -paths must start with %s", commandName, prefix)
+		if !strings.HasPrefix(b.releasePaths, prefix) {
+			b.initErr = fmt.Errorf("%s: flag -release-paths must start with %s", commandName, prefix)
 			return
 		}
 
 		// Strip the /archives/ prefix. We currently don't use that,
 		// it's just there to make the config easier to understand.
-		paths := strings.TrimPrefix(b.paths, prefix)
+		paths := strings.TrimPrefix(b.releasePaths, prefix)
 
 		var err error
-		b.pathsCompiled, err = glob.Compile(paths)
+		b.releasePathsCompiled, err = glob.Compile(paths)
 		if err != nil {
 			b.initErr = fmt.Errorf("%s: invalid -paths value: %s", commandName, err)
 			return
@@ -117,21 +117,20 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		return fmt.Errorf("%s: no releases defined in config", commandName)
 	}
 
-	logCtx := b.infoLog.WithField("matching", b.paths)
-
-	releaseMatches := b.core.Config.FindReleases(b.pathsCompiled)
+	logCtx := b.infoLog.WithField("matching", b.releasePaths)
+	logCtx.Log(logg.String("Finding archives"))
+	releaseMatches := b.core.Config.FindReleases(b.releasePathsCompiled)
 	if len(releaseMatches) == 0 {
-		return fmt.Errorf("%s: no releases found matching %s", commandName, b.paths)
+		return fmt.Errorf("%s: no releases found matching %s", commandName, b.releasePaths)
 	}
 
 	for _, release := range releaseMatches {
-
 		releaseDir := filepath.Join(
 			b.core.DistDir,
 			b.core.Config.Project,
 			b.core.Tag,
 			b.core.DistRootReleases,
-			filepath.FromSlash(release.Dir),
+			filepath.FromSlash(release.Path),
 		)
 
 		if _, err := os.Stat(releaseDir); err == nil || os.IsNotExist(err) {
@@ -151,7 +150,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		var archiveFilenames []string
 
 		err := b.core.Config.ForEachArchiveArch(
-			b.pathsCompiled,
+			release.PathsCompiled,
 			func(archive config.Archive, archPath config.BuildArchPath) error {
 				archiveDir := filepath.Join(
 					b.core.DistDir,
@@ -180,7 +179,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		}
 
 		if len(archiveFilenames) == 0 {
-			return fmt.Errorf("%s: no files found for release %q", commandName, release.Dir)
+			return fmt.Errorf("%s: no files found for release %q", commandName, release.Path)
 		}
 
 		// Create a checksum.txt file.
