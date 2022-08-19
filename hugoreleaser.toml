@@ -22,6 +22,7 @@ project = "hugoreleaser"
     repository_owner               = "bep"
     generate_release_notes_on_host = true
     draft                          = true
+    prerelease                     = true
 
 [[builds]]
     path = "unix"
@@ -58,4 +59,4 @@ project = "hugoreleaser"
 
 [[releases]]
     paths = "/archives/**"
-    dir   = "myrelease"
+    path  = "myrelease"
