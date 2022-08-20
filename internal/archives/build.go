@@ -23,7 +23,7 @@ import (
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
 	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 	"github.com/bep/logg"
 )
 

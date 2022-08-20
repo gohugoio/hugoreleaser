@@ -21,12 +21,12 @@ import (
 	"github.com/bep/execrpc"
 	"github.com/bep/execrpc/codecs"
 	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/plugins"
-	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins"
+	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 	"github.com/bep/logg"
 )
 
-// StartArchivePlugin starts an archive plugin.
+// StartArchivePlugin starts a archive plugin.
 func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSettings, options config.Plugin) (*execrpc.Client[archiveplugin.Request, archiveplugin.Response], error) {
 	env := options.Env
 	var hasGoProxy bool

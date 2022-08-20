@@ -19,7 +19,7 @@ import (
 	"path"
 
 	"github.com/bep/hugoreleaser/internal/builds"
-	"github.com/bep/hugoreleaser/pkg/model"
+	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/bep/logg"
 )
 

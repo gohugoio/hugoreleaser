@@ -16,6 +16,7 @@ package corecmd
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -29,7 +30,7 @@ import (
 	"github.com/bep/hugoreleaser/internal/common/logging"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/internal/plugins"
-	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 	"github.com/bep/logg"
 	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
@@ -305,7 +306,9 @@ func (c *Core) Init() error {
 func (c *Core) Close() error {
 	for k, v := range c.PluginsRegistryArchive {
 		if err := v.Close(); err != nil {
-			c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k, err)))
+			if !errors.Is(err, execrpc.ErrShutdown) {
+				c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k, err)))
+			}
 		}
 	}
 	return nil

@@ -20,10 +20,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/model"
-	"github.com/bep/hugoreleaser/pkg/plugins"
-	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+	// Hugoreleaser API
+	"github.com/bep/hugoreleaser/plugins"
+	"github.com/bep/hugoreleaser/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins/model"
+
+	// nfpm
 	"github.com/goreleaser/nfpm/v2"
 	_ "github.com/goreleaser/nfpm/v2/deb" // init format
 	"github.com/goreleaser/nfpm/v2/files"
@@ -35,8 +37,12 @@ func main() {
 	server, err := plugins.NewServer(
 		func(d plugins.Dispatcher, req archiveplugin.Request) archiveplugin.Response {
 			d.Infof("Creating archive %s", req.OutFilename)
-			if err := createArchive(req); err != nil {
 
+			if err := req.Init(); err != nil {
+				return errResponse(err)
+			}
+
+			if err := createArchive(req); err != nil {
 				return errResponse(err)
 			}
 			// Empty response is a success.
@@ -54,20 +60,29 @@ func main() {
 	_ = server.Wait()
 }
 
-// Meta is fetched from archive_settings.meta in the archive configuration.
-type Meta struct {
+// Settings is fetched from archive_settings.custom_settings in the archive configuration.
+type Settings struct {
 	Vendor      string
 	Homepage    string
 	Maintainer  string
 	Description string
 	License     string
+
+	PackageName     string
+	Section         string
+	Priority        string
+	Epoch           string
+	Release         string
+	Prerelease      string
+	VersionMetadata string
 }
 
 type debArchivist struct {
 	out   io.WriteCloser
 	files files.Contents
-	cfg   config.ArchiveSettings
-	meta  Meta
+
+	buildContext model.BuildContext
+	settings     Settings
 }
 
 func (a *debArchivist) Add(sourceFilename, targetPath string) error {
@@ -83,27 +98,29 @@ func (a *debArchivist) Add(sourceFilename, targetPath string) error {
 }
 
 func (a *debArchivist) Finalize() error {
-	meta := a.meta
+	s := a.settings
+	b := a.buildContext
+
+	if s.PackageName == "" {
+		s.PackageName = b.Project
+	}
 
 	info := &nfpm.Info{
-		Platform: "linux",
-		Name:     "TODO",
-		Version:  "TODO",
-		/*Arch:            "TODO",
-
-
-
-		Section:         "TODO",
-		Priority:        "TODO",
-		Epoch:           "TODO",
-		Release:         "TODO",
-		Prerelease:      "TODO",
-		VersionMetadata: "TODO",*/
-		Maintainer:  meta.Maintainer,
-		Description: meta.Description,
-		Vendor:      meta.Vendor,
-		Homepage:    meta.Homepage,
-		License:     meta.License,
+		Platform:        b.Goos,
+		Arch:            b.Goarch,
+		Name:            s.PackageName,
+		Version:         b.Tag,
+		Section:         s.Section,
+		Priority:        s.Priority,
+		Epoch:           s.Epoch,
+		Release:         s.Release,
+		Prerelease:      s.Prerelease,
+		VersionMetadata: s.VersionMetadata,
+		Maintainer:      s.Maintainer,
+		Description:     s.Description,
+		Vendor:          s.Vendor,
+		Homepage:        s.Homepage,
+		License:         s.License,
 		Overridables: nfpm.Overridables{
 			Contents: a.files,
 		},
@@ -130,16 +147,15 @@ func createArchive(req archiveplugin.Request) error {
 	}
 	defer f.Close()
 
-	settings := req.Settings
-
-	meta, err := model.FromMap[Meta](settings.Meta)
+	settings, err := plugins.FromMap[Settings](req.Settings)
 	if err != nil {
 		return err
 	}
 
 	archivist := &debArchivist{
-		out:  f,
-		meta: meta,
+		out:          f,
+		buildContext: req.BuildContext,
+		settings:     settings,
 	}
 
 	for _, file := range req.Files {
@@ -150,5 +166,5 @@ func createArchive(req archiveplugin.Request) error {
 }
 
 func errResponse(err error) archiveplugin.Response {
-	return archiveplugin.Response{Error: model.NewBasicError(name, err)}
+	return archiveplugin.Response{Error: plugins.NewError(name, err)}
 }

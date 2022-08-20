@@ -22,7 +22,7 @@ import (
 
 	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
 	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/pkg/model"
+	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/gobwas/glob"
 )
 
@@ -79,9 +79,9 @@ type ArchiveSettings struct {
 	Replacements map[string]string  `toml:"replacements"`
 	Plugin       Plugin             `toml:"plugin"`
 
-	// Meta is archive type specific metadata.
-	// See in the documentation for the archive type.
-	Meta map[string]any `toml:"meta"`
+	// CustomSettings is archive type specific metadata.
+	// See in the documentation for the configured archive type.
+	CustomSettings map[string]any `toml:"custom_settings"`
 
 	ReplacementsCompiled *strings.Replacer `toml:"-"`
 }

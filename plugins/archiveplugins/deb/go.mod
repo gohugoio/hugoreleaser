@@ -1,4 +1,4 @@
-module github.com/bep/hugoreleaser/plugins/archives/deb
+module github.com/bep/hugoreleaser/plugins/archiveplugins/deb
 
 go 1.19
 
