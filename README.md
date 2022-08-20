@@ -1,12 +1,10 @@
 New build script(s) for Hugo. Very much a work in progress.
 
-## Table of Contents
-
-* [Table of Contents](#table-of-contents)
 * [Configuration](#configuration)
     * [Configuration File](#configuration-file)
     * [Environment Variables](#environment-variables)
-* [Segmentize builds, archivals and releases](#segmentize-builds-archivals-and-releases)
+* [Segments](#segments)
+* [Plugins](#plugins)
 * [Development of this project](#development-of-this-project)
 * [Notes](#notes)
 
@@ -48,7 +46,7 @@ The other custom variables can be used in `hugoreleaser.toml`, e.g:
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
 
 
-## Release Segments
+## Segments
 
 Both the configuration file and the directory structure inside `/dist` follows the same tree structure: 
 
@@ -98,6 +96,41 @@ hugoreleaser build -build-paths /builds/**/freebsd/amd64
 hugoreleaser build -build-paths /builds/**/freebsd/386
 hugoreleaser archive -build-paths /builds/**/freebsd/{amd64,386}
 hugoreleaser release -release-paths /releases/bsd
+```
+
+## Plugins
+
+Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](./plugins/archiveplugins/deb) for an example.
+
+A plugin is a server (which will be started on Hugoreleaser startup) implemented as a Go `main` func with a structure like the one below:
+
+```go
+func main() {
+	server, err := plugins.NewServer(
+		func(d plugins.Dispatcher, req archiveplugin.Request) archiveplugin.Response {
+			d.Infof("Creating archive %s", req.OutFilename)
+
+			if err := req.Init(); err != nil {
+				// ...
+			}
+
+			if err := createArchive(req); err != nil {
+				// ...
+			}
+			// Empty response is a success.
+			return archiveplugin.Response{}
+		},
+	)
+	if err != nil {
+		log.Fatalf("Failed to create server: %s", err)
+	}
+
+	if err := server.Start(); err != nil {
+		log.Fatalf("Failed to start server: %s", err)
+	}
+
+	_ = server.Wait()
+}
 ```
 
 

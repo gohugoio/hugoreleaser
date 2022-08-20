@@ -3,5 +3,5 @@ go 1.19
 use (
 	.
 	./maintenance
-	./plugins/archives/deb
+	./plugins/archiveplugins/deb
 )

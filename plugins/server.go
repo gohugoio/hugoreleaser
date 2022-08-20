@@ -20,7 +20,7 @@ import (
 	"github.com/bep/execrpc"
 )
 
-// TODO(bep) move
+// StatusInfoLog is used to mark a INFO log message from the server.
 const StatusInfoLog = 101
 
 type Server[Q, R any] struct {

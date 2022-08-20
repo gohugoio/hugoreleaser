@@ -29,9 +29,9 @@ import (
 	"github.com/bep/hugoreleaser/internal/common/ioh"
 	"github.com/bep/hugoreleaser/internal/common/templ"
 	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 
-	"github.com/bep/hugoreleaser/pkg/model"
+	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -111,15 +111,16 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 	err := b.core.Config.ForEachArchiveArch(b.buildPaths.PathsCompiled, func(archive config.Archive, archPath config.BuildArchPath) error {
 		archiveSettings := archive.ArchiveSettings
 		arch := archPath.Arch
+		buildContext := model.BuildContext{
+			Project: b.core.Config.Project,
+			Tag:     b.core.Tag,
+			Goos:    arch.Os.Goos,
+			Goarch:  arch.Goarch,
+		}
 
 		r.Run(func() (err error) {
 			archiveTemplCtx := ArchiveTemplateContext{
-				model.BuildContext{
-					Project: b.core.Config.Project,
-					Tag:     b.core.Tag,
-					Goos:    arch.Os.Goos,
-					Goarch:  arch.Goarch,
-				},
+				buildContext,
 			}
 
 			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, archiveTemplCtx)
@@ -157,8 +158,9 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			}
 
 			buildRequest := archiveplugin.Request{
-				Settings:    archiveSettings,
-				OutFilename: outFilename,
+				BuildContext: buildContext,
+				Settings:     archiveSettings.CustomSettings,
+				OutFilename:  outFilename,
 			}
 
 			buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{

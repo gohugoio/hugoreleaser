@@ -1,8 +1,8 @@
 
 
-mkdir $WORK/plugins/archives/deb
-cpdir $SOURCE/plugins/archives $WORK/plugins/archives
-append $WORK/plugins/archives/deb/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
+mkdir $WORK/plugins/archiveplugins/deb
+cpdir $SOURCE/plugins/archiveplugins $WORK/plugins/archiveplugins
+append $WORK/plugins/archiveplugins/deb/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
 
 hugoreleaser build -tag v1.2.0
 
@@ -34,8 +34,8 @@ extra_files = []
 id = "deb"
 type = "gorun"
 command = "."
-dir = "./plugins/archives/deb"
-[archives.archive_settings.meta]
+dir = "./plugins/archiveplugins/deb"
+[archives.archive_settings.custom_settings]
 vendor = "gohugo.io"
 homepage = "https://gohugo.io/"
 maintainer = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"

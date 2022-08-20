@@ -52,9 +52,6 @@ func TestUnfinished(t *testing.T) {
 		t.Skip("skip unfinished tests on CI")
 	}
 
-	gomodcache := os.Getenv("GOMODCACHE")
-	fmt.Println("Orig: GOMODCACHE:", gomodcache)
-
 	setup := testSetupFunc()
 
 	testscript.Run(t, testscript.Params{

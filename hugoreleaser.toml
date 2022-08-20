@@ -51,7 +51,22 @@ project = "hugoreleaser"
 
 [[archives]]
     paths = "/builds/unix/**"
+[[archives]]
+    paths = "/builds/**/linux/amd64"
     [archives.archive_settings]
+        [archives.archive_settings.type]
+            format    = "_plugin"
+            extension = ".deb"
+        [archives.archive_settings.plugin]
+            id      = "deb"
+            type    = "gorun"
+            command = "github.com/bep/hugoreleaser/plugins/archiveplugins/deb@latest"
+        [archives.archive_settings.custom_settings]
+            vendor      = "bep"
+            homepage    = "https://github.com/bep/hugoreleaser"
+            maintainer  = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"
+            description = "Build, archive and release Go programs."
+            license     = "Apache-2.0"
 [[archives]]
     paths = "/builds/windows/**"
     [archives.archive_settings]

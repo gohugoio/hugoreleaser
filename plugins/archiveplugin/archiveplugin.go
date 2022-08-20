@@ -17,8 +17,17 @@ package archiveplugin
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/pkg/model"
+	"github.com/bep/hugoreleaser/plugins"
+	"github.com/bep/hugoreleaser/plugins/model"
+)
+
+const (
+	// Version gets incremented on incompatible changes to the archive plugin or its runtime,
+	// think of this as a major version increment in semver terms.
+	// This should almost never happen, but if it does, the old archive plugin will probably not work as expected.
+	// This will be detected on Hugoreleaser startup and the build will fail.
+	// The plugin server then needs to be updated and re-tested.
+	Version = 0
 )
 
 var (
@@ -28,12 +37,20 @@ var (
 
 // Request is what is sent to an external archive tool.
 type Request struct {
+	// Version is the archive plugin version.
+	// This is just used for validation on startup.
+	Version int `toml:"version"`
+
 	// Heartbeat is a string that is echoed back to the caller,
 	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
+	// BuildContext holds the basic build information about the current build.
+	BuildContext model.BuildContext `toml:"build_context"`
+
 	// Settings for the archive.
-	Settings config.ArchiveSettings `toml:"settings"`
+	// This is the content of archive_settings.custom_settings.
+	Settings map[string]any `toml:"settings"`
 
 	Files []ArchiveFile `toml:"files"`
 
@@ -47,7 +64,11 @@ func (r Request) HeartbeatResponse() (Response, bool) {
 	if r.Heartbeat == "" {
 		return Response{}, false
 	}
-	return Response{Heartbeat: r.Heartbeat}, true
+	var err *plugins.Error
+	if r.Version != Version {
+		err = &plugins.Error{Msg: fmt.Sprintf("archive plugin version mismatch: client sent %d, server is at %d", r.Version, Version)}
+	}
+	return Response{Heartbeat: r.Heartbeat, Error: err}, true
 }
 
 func (r *Request) Init() error {
@@ -70,7 +91,7 @@ type Response struct {
 	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
-	Error *model.BasicError `toml:"err"`
+	Error *plugins.Error `toml:"err"`
 }
 
 func (r Response) Err() error {
