@@ -38,6 +38,7 @@ type Archive struct {
 	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
 
 	PathsCompiled matchers.Matcher `toml:"-"`
+	ArchsCompiled []BuildArchPath  `toml:"-"`
 }
 
 func (a *Archive) Init() error {
@@ -68,6 +69,14 @@ func (a *Archive) Init() error {
 	}
 
 	return nil
+}
+
+type BuildArchPath struct {
+	Arch BuildArch `toml:"arch"`
+	Path string    `toml:"path"`
+
+	// Name is the name of the archive with the extension.
+	Name string `toml:"name"`
 }
 
 type ArchiveSettings struct {

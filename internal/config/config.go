@@ -45,27 +45,6 @@ func (c Config) FindReleases(filter matchers.Matcher) []Release {
 	return releases
 }
 
-func (c Config) ForEachArchiveArch(inFilter matchers.Matcher, fn func(archive Archive, arch BuildArchPath) error) error {
-	for _, archive := range c.Archives {
-		filter := archive.PathsCompiled
-		if inFilter != nil {
-			filter = matchers.And(filter, inFilter)
-		}
-		archs := c.FindArchs(filter)
-		for _, arch := range archs {
-			if err := fn(archive, arch); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-type BuildArchPath struct {
-	Arch BuildArch `toml:"arch"`
-	Path string    `toml:"path"`
-}
-
 // FindArchs returns the archs that match the given filter
 func (c Config) FindArchs(filter matchers.Matcher) []BuildArchPath {
 	var archs []BuildArchPath

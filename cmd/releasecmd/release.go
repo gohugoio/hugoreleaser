@@ -27,7 +27,6 @@ import (
 
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/internal/releases"
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -149,9 +148,12 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		// First collect all files to be released.
 		var archiveFilenames []string
 
-		err := b.core.Config.ForEachArchiveArch(
-			release.PathsCompiled,
-			func(archive config.Archive, archPath config.BuildArchPath) error {
+		filter := release.PathsCompiled
+		for _, archive := range b.core.Config.Archives {
+			for _, archPath := range archive.ArchsCompiled {
+				if !filter.Match(archPath.Path) {
+					continue
+				}
 				archiveDir := filepath.Join(
 					b.core.DistDir,
 					b.core.Config.Project,
@@ -159,23 +161,8 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 					b.core.DistRootArchives,
 					filepath.FromSlash(archPath.Path),
 				)
-
-				entries, err := os.ReadDir(archiveDir)
-				if err != nil {
-					return err
-				}
-
-				for _, entry := range entries {
-					if entry.IsDir() {
-						continue
-					}
-					archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, entry.Name()))
-				}
-
-				return nil
-			})
-		if err != nil {
-			return err
+				archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
+			}
 		}
 
 		if len(archiveFilenames) == 0 {
@@ -231,13 +218,12 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		for _, archiveFilename := range archiveFilenames {
 			archiveFilename := archiveFilename
 			r.Run(func() error {
-				f, err := os.Open(archiveFilename)
-				if err != nil {
-					return err
+				openFile := func() (*os.File, error) {
+					return os.Open(archiveFilename)
+
 				}
-				defer f.Close()
 				logCtx.Log(logg.String(fmt.Sprintf("Uploading release file %s", archiveFilename)))
-				if err := client.UploadAssetsFile(ctx, release.ReleaseSettings, f, releaseID); err != nil {
+				if err := releases.UploadAssetsFileWithRetries(ctx, client, release.ReleaseSettings, releaseID, openFile); err != nil {
 					return err
 				}
 				return nil

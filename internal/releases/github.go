@@ -16,6 +16,7 @@ package releases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -55,6 +56,23 @@ func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
 	return &GitHubClient{
 		client: github.NewClient(httpClient),
 	}, nil
+}
+
+// UploadAssetsFileWithRetries is a wrapper around UploadAssetsFile that retries on temporary errors.
+func UploadAssetsFileWithRetries(ctx context.Context, client Client, settings config.ReleaseSettings, releaseID int64, openFile func() (*os.File, error)) error {
+	return withRetries(func() (error, bool) {
+		f, err := openFile()
+		if err != nil {
+			return err, false
+		}
+		defer f.Close()
+		err = client.UploadAssetsFile(ctx, settings, f, releaseID)
+		if err != nil && errors.Is(err, TemporaryError{}) {
+			return err, true
+		}
+		return err, false
+	})
+
 }
 
 type Client interface {
@@ -107,7 +125,7 @@ func (c GitHubClient) Release(ctx context.Context, tagName, committish string, s
 }
 
 func (c GitHubClient) UploadAssetsFile(ctx context.Context, settings config.ReleaseSettings, f *os.File, releaseID int64) error {
-	// TODO(bep) retryable errors.
+
 	_, resp, err := c.client.Repositories.UploadReleaseAsset(
 		ctx,
 		settings.RepositoryOwner,
@@ -118,14 +136,31 @@ func (c GitHubClient) UploadAssetsFile(ctx context.Context, settings config.Rele
 		},
 		f,
 	)
-	if err != nil {
+	if err == nil {
+		return nil
+	}
+
+	if resp != nil && !isTemporaryHttpStatus(resp.StatusCode) {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("github: unexpected status code: %d", resp.StatusCode)
+	return TemporaryError{err}
+
+}
+
+type TemporaryError struct {
+	error
+}
+
+// isTemporaryHttpStatus returns true if the status code is considered temporary, returning
+// true if not sure.
+func isTemporaryHttpStatus(status int) bool {
+	switch status {
+	case http.StatusUnprocessableEntity, http.StatusBadRequest:
+		return false
+	default:
+		return true
 	}
-	return nil
 }
 
 // Fake client is only used in tests.
