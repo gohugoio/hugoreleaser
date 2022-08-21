@@ -79,9 +79,6 @@ type ReleaseSettings struct {
 	GenerateReleaseNotesOnHost bool   `toml:"generate_release_notes_on_host"`
 	ReleaseNotesFilename       string `toml:"release_notes_filename"`
 
-	// Meta is release type specific metadata.
-	Meta map[string]any `toml:"meta"`
-
 	TypeParsed releasetypes.Type `toml:"-"`
 }
 
