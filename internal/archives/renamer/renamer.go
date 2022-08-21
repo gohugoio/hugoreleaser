@@ -42,6 +42,7 @@ func (a *Renamer) AddAndClose(targetPath string, f ioh.File) error {
 	var err error
 	a.writeOnce.Do(func() {
 		_, err = io.Copy(a.out, f)
+		a.out.Close()
 	})
 	return err
 }
