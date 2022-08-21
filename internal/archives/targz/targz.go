@@ -76,5 +76,6 @@ func (a *Archive) Finalize() error {
 	if err := a.gw.Close(); err != nil {
 		return err
 	}
+
 	return a.out.Close()
 }

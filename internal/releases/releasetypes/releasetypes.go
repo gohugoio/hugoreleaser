@@ -16,6 +16,7 @@ package releasetypes
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
@@ -43,11 +44,20 @@ func (t Type) String() string {
 	return releaseTypeString[t]
 }
 
-// Parse parses a string into a ReleaseType.
+// Parse parses a string into a Type.
 func Parse(s string) (Type, error) {
-	t := stringReleaseType[s]
+	t := stringReleaseType[strings.ToLower(s)]
 	if t == InvalidType {
 		return t, fmt.Errorf("invalid release type %q, must be one of %s", s, mapsh.KeysSorted(releaseTypeString))
 	}
 	return t, nil
+}
+
+// MustParse is like Parse but panics if the string is not a valid release type.
+func MustParse(s string) Type {
+	t, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

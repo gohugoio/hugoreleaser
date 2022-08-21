@@ -16,6 +16,7 @@ package archiveformats
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
@@ -48,13 +49,22 @@ func init() {
 	}
 }
 
-// ParseFormat parses a string into a Format.
-func ParseFormat(s string) (Format, error) {
-	f := stringFormat[s]
+// Parse parses a string into a Format.
+func Parse(s string) (Format, error) {
+	f := stringFormat[strings.ToLower(s)]
 	if f == InvalidFormat {
 		return f, fmt.Errorf("invalid archive format %q, must be one of %s", s, mapsh.KeysSorted(formatString))
 	}
 	return f, nil
+}
+
+// MustParse parses a string into a Format and panics if it fails.
+func MustParse(s string) Format {
+	f, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 // Format represents the type of archive.

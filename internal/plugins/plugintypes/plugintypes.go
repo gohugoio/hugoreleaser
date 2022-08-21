@@ -16,6 +16,7 @@ package plugintypes
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
@@ -35,13 +36,22 @@ const (
 	GoRun
 )
 
-// ParseType parses a string into a Type.
-func ParseType(s string) (Type, error) {
-	f := stringType[s]
+// Parse parses a string into a Type.
+func Parse(s string) (Type, error) {
+	f := stringType[strings.ToLower(s)]
 	if f == Invalid {
 		return f, fmt.Errorf("invalid tool type %q, must be one of %s", s, mapsh.KeysSorted(typeString))
 	}
 	return f, nil
+}
+
+// MustParse is like Parse but panics if the string is not a valid type.
+func MustParse(s string) Type {
+	f, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 var typeString = map[Type]string{

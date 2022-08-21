@@ -91,7 +91,7 @@ func (t *Plugin) Init() error {
 	}
 
 	var err error
-	if t.TypeParsed, err = plugintypes.ParseType(t.Type); err != nil {
+	if t.TypeParsed, err = plugintypes.Parse(t.Type); err != nil {
 		return fmt.Errorf("%s: %v", what, err)
 	}
 

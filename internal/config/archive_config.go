@@ -141,7 +141,7 @@ func (a *ArchiveType) Init() error {
 		return fmt.Errorf("%s: has no extension", what)
 	}
 	var err error
-	if a.FormatParsed, err = archiveformats.ParseFormat(a.Format); err != nil {
+	if a.FormatParsed, err = archiveformats.Parse(a.Format); err != nil {
 		return err
 	}
 
