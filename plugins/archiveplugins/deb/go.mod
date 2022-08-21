@@ -3,7 +3,7 @@ module github.com/bep/hugoreleaser/plugins/archiveplugins/deb
 go 1.19
 
 require (
-	github.com/bep/hugoreleaser v0.2.0
+	github.com/bep/hugoreleaser/plugins v0.1.0
 	github.com/goreleaser/nfpm/v2 v2.18.1
 )
 
@@ -16,10 +16,8 @@ require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20220812175011-7fcef0dbe794 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
-	github.com/bep/clocks v0.5.0 // indirect
-	github.com/bep/execrpc v0.6.0 // indirect
+	github.com/bep/execrpc v0.7.0 // indirect
 	github.com/bep/helpers v0.2.0 // indirect
-	github.com/bep/logg v0.1.0 // indirect
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb // indirect
 	github.com/cloudflare/circl v1.2.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -41,13 +39,11 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.3 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
