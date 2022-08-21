@@ -26,9 +26,6 @@ import (
 	"github.com/bep/hugoreleaser/cmd/buildcmd"
 	"github.com/bep/hugoreleaser/cmd/corecmd"
 	"github.com/bep/hugoreleaser/internal/archives"
-	"github.com/bep/hugoreleaser/internal/common/ioh"
-	"github.com/bep/hugoreleaser/internal/common/templ"
-	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 
 	"github.com/bep/hugoreleaser/plugins/model"
@@ -53,10 +50,6 @@ func New(core *corecmd.Core) *ffcli.Command {
 		FlagSet:    fs,
 		Exec:       archivist.Exec,
 	}
-}
-
-type ArchiveTemplateContext struct {
-	model.BuildContext
 }
 
 type Archivist struct {
@@ -107,97 +100,93 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 		b.core.Tag,
 		b.core.DistRootArchives,
 	)
+	filter := b.buildPaths.PathsCompiled
 
-	err := b.core.Config.ForEachArchiveArch(b.buildPaths.PathsCompiled, func(archive config.Archive, archPath config.BuildArchPath) error {
-		archiveSettings := archive.ArchiveSettings
-		arch := archPath.Arch
-		buildContext := model.BuildContext{
-			Project: b.core.Config.Project,
-			Tag:     b.core.Tag,
-			Goos:    arch.Os.Goos,
-			Goarch:  arch.Goarch,
-		}
-
-		r.Run(func() (err error) {
-			archiveTemplCtx := ArchiveTemplateContext{
-				buildContext,
+	for _, archive := range b.core.Config.Archives {
+		archive := archive
+		for _, archPath := range archive.ArchsCompiled {
+			if !filter.Match(archPath.Path) {
+				continue
+			}
+			archPath := archPath
+			archiveSettings := archive.ArchiveSettings
+			arch := archPath.Arch
+			buildContext := model.BuildContext{
+				Project: b.core.Config.Project,
+				Tag:     b.core.Tag,
+				Goos:    arch.Os.Goos,
+				Goarch:  arch.Goarch,
 			}
 
-			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, archiveTemplCtx)
-			name = archiveSettings.ReplacementsCompiled.Replace(name)
+			r.Run(func() (err error) {
 
-			outDir := filepath.Join(archiveDistDir, filepath.FromSlash(archPath.Path))
-			if err := ioh.RemoveAllMkdirAll(outDir); err != nil {
-				return err
-			}
+				outDir := filepath.Join(archiveDistDir, filepath.FromSlash(archPath.Path))
 
-			outFilename := filepath.Join(
-				outDir,
-				name,
-			)
+				outFilename := filepath.Join(
+					outDir,
+					archPath.Name,
+				)
 
-			outFilename += archiveSettings.Type.Extension
+				b.infoLog.WithField("file", outFilename).Log(logg.String("Archive"))
 
-			b.infoLog.WithField("file", outFilename).Log(logg.String("Archive"))
+				if b.core.Try {
+					return nil
+				}
 
-			binaryFilename := filepath.Join(
-				b.core.DistDir,
-				b.core.Config.Project,
-				b.core.Tag,
-				b.core.DistRootBuilds,
-				arch.BinaryPath(),
-			)
+				binaryFilename := filepath.Join(
+					b.core.DistDir,
+					b.core.Config.Project,
+					b.core.Tag,
+					b.core.DistRootBuilds,
+					arch.BinaryPath(),
+				)
 
-			if _, err := os.Stat(binaryFilename); err != nil {
-				// TODO(bep) add more context here.
-				return fmt.Errorf("%s: binary file not found: %q", commandName, binaryFilename)
-			}
+				if _, err := os.Stat(binaryFilename); err != nil {
+					// TODO(bep) add more context here.
+					return fmt.Errorf("%s: binary file not found: %q", commandName, binaryFilename)
+				}
 
-			if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
-				return err
-			}
+				if err := os.MkdirAll(filepath.Dir(outFilename), 0o755); err != nil {
+					return err
+				}
 
-			buildRequest := archiveplugin.Request{
-				BuildContext: buildContext,
-				Settings:     archiveSettings.CustomSettings,
-				OutFilename:  outFilename,
-			}
+				buildRequest := archiveplugin.Request{
+					BuildContext: buildContext,
+					Settings:     archiveSettings.CustomSettings,
+					OutFilename:  outFilename,
+				}
 
-			buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
-				SourcePathAbs: binaryFilename,
-				TargetPath:    path.Join(archiveSettings.BinaryDir, arch.BuildSettings.Binary),
+				buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
+					SourcePathAbs: binaryFilename,
+					TargetPath:    path.Join(archiveSettings.BinaryDir, arch.BuildSettings.Binary),
+				})
+
+				for _, extraFile := range archiveSettings.ExtraFiles {
+					buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
+						// TODO(bep) unify slashes.
+						SourcePathAbs: filepath.Join(b.core.ProjectDir, extraFile.SourcePath),
+						TargetPath:    extraFile.TargetPath,
+					})
+				}
+
+				err = archives.Build(
+					b.core,
+					b.infoLog,
+					archiveSettings,
+					buildRequest,
+				)
+
+				if err != nil {
+					return err
+				}
+
+				return nil
+
 			})
 
-			for _, extraFile := range archiveSettings.ExtraFiles {
-				buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
-					// TODO(bep) unify slashes.
-					SourcePathAbs: filepath.Join(b.core.ProjectDir, extraFile.SourcePath),
-					TargetPath:    extraFile.TargetPath,
-				})
-			}
-
-			err = archives.Build(
-				b.core,
-				b.infoLog,
-				archiveSettings,
-				buildRequest,
-			)
-
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		return nil
-	})
-
-	errWait := r.Wait()
-
-	if err != nil {
-		return err
+		}
 	}
 
-	return errWait
+	return r.Wait()
+
 }

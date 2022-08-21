@@ -28,9 +28,11 @@ import (
 
 	"github.com/bep/execrpc"
 	"github.com/bep/hugoreleaser/internal/common/logging"
+	"github.com/bep/hugoreleaser/internal/common/templ"
 	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/hugoreleaser/internal/plugins"
 	"github.com/bep/hugoreleaser/plugins/archiveplugin"
+	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/bep/logg"
 	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
@@ -259,6 +261,25 @@ func (c *Core) Init() error {
 			return fmt.Errorf("%s %q: %w:\n%s", msg, c.ConfigFile, err, v.String())
 		}
 		return fmt.Errorf("%s %q: %w", msg, c.ConfigFile, err)
+	}
+
+	// Precompile the common navigation for all archives.
+	for i, archive := range c.Config.Archives {
+		archiveSettings := archive.ArchiveSettings
+		archs := c.Config.FindArchs(archive.PathsCompiled)
+		for _, archPath := range archs {
+			arch := archPath.Arch
+			buildContext := model.BuildContext{
+				Project: c.Config.Project,
+				Tag:     c.Tag,
+				Goos:    arch.Os.Goos,
+				Goarch:  arch.Goarch,
+			}
+			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, buildContext)
+			name = archiveSettings.ReplacementsCompiled.Replace(name) + archiveSettings.Type.Extension
+			archPath.Name = name
+			c.Config.Archives[i].ArchsCompiled = append(c.Config.Archives[i].ArchsCompiled, archPath)
+		}
 	}
 
 	// Start and register the archive plugins.
