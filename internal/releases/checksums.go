@@ -48,8 +48,9 @@ func CreateChecksumLines(w *workers.Workforce, filenames ...string) ([]string, e
 		return hex.EncodeToString(h.Sum(nil)), nil
 	}
 
-	r.Run(func() error {
-		for _, filename := range filenames {
+	for _, filename := range filenames {
+		filename := filename
+		r.Run(func() error {
 			checksum, err := createChecksum(filename)
 			if err != nil {
 				return err
@@ -57,10 +58,10 @@ func CreateChecksumLines(w *workers.Workforce, filenames ...string) ([]string, e
 			mu.Lock()
 			result = append(result, checksum+"  "+filepath.Base(filename))
 			mu.Unlock()
-		}
 
-		return nil
-	})
+			return nil
+		})
+	}
 
 	if err := r.Wait(); err != nil {
 		return nil, err
