@@ -17,8 +17,8 @@ package config
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/internal/plugins/plugintypes"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/plugins/plugintypes"
 )
 
 type Config struct {

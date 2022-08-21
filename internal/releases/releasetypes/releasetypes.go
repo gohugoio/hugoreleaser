@@ -17,7 +17,7 @@ package releasetypes
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/internal/common/mapsh"
+	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
 
 type Type int

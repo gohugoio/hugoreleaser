@@ -1,3 +1,8 @@
+[![Tests on Linux, MacOS and Windows](https://github.com/gohugoio/hugoreleaser/workflows/Test/badge.svg)](https://github.com/gohugoio/hugoreleaser/actions?query=workflow%3ATest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gohugoio/hugoreleaser)](https://goreportcard.com/report/github.com/gohugoio/hugoreleaser)
+[![codecov](https://codecov.io/gh/gohugoio/hugoreleaser/branch/main/graph/badge.svg?token=OWZ9RCAYWO)](https://codecov.io/gh/gohugoio/hugoreleaser)
+[![GoDoc](https://godoc.org/github.com/gohugoio/hugoreleaser?status.svg)](https://godoc.org/github.com/gohugoio/hugoreleaser)
+
 New build script(s) for Hugo. Very much a work in progress.
 
 * [Configuration](#configuration)

@@ -18,7 +18,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/bep/hugoreleaser/internal/common/ioh"
+	"github.com/gohugoio/hugoreleaser/internal/common/ioh"
 )
 
 // New returns a new Archiver for the given writer.

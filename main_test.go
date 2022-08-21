@@ -75,7 +75,7 @@ func testSetupFunc() func(env *testscript.Env) error {
 		// 2. Append a replace directive to the plugins' go.mod to get the up-to-date version of the plugin API.
 		//
 		// This is a hybrid setup neeed to get a quick development cycle going.
-		// In production, the plugin Go modules would be addressed on their full form, e.g. "github.com/bep/hugoreleaser/internal/plugins/archives/tar@v1.0.0".
+		// In production, the plugin Go modules would be addressed on their full form, e.g. "github.com/gohugoio/hugoreleaser/internal/plugins/archives/tar@v1.0.0".
 		keyVals = append(keyVals, "SOURCE", sourceDir)
 		keyVals = append(keyVals, "GOCACHE", filepath.Join(env.WorkDir, "gocache"))
 		var gomodCache string

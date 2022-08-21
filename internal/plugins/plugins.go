@@ -20,10 +20,10 @@ import (
 
 	"github.com/bep/execrpc"
 	"github.com/bep/execrpc/codecs"
-	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/plugins"
-	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/plugins"
+	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 )
 
 // StartArchivePlugin starts a archive plugin.

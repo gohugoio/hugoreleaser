@@ -17,8 +17,8 @@ package archiveplugin
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/plugins"
-	"github.com/bep/hugoreleaser/plugins/model"
+	"github.com/gohugoio/hugoreleaser/plugins"
+	"github.com/gohugoio/hugoreleaser/plugins/model"
 )
 
 const (

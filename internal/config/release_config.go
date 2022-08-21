@@ -20,9 +20,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/internal/releases/releasetypes"
 	"github.com/gobwas/glob"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/releases/releasetypes"
 )
 
 type Release struct {

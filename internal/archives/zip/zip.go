@@ -18,7 +18,7 @@ import (
 	"archive/zip"
 	"io"
 
-	"github.com/bep/hugoreleaser/internal/common/ioh"
+	"github.com/gohugoio/hugoreleaser/internal/common/ioh"
 )
 
 func New(out io.WriteCloser) *Archive {

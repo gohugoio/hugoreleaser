@@ -1,4 +1,4 @@
-module github.com/bep/hugoreleaser/maintenance
+module github.com/gohugoio/hugoreleaser/maintenance
 
 go 1.19
 

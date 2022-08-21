@@ -21,9 +21,9 @@ import (
 	"path/filepath"
 
 	// Hugoreleaser API
-	"github.com/bep/hugoreleaser/plugins"
-	"github.com/bep/hugoreleaser/plugins/archiveplugin"
-	"github.com/bep/hugoreleaser/plugins/model"
+	"github.com/gohugoio/hugoreleaser/plugins"
+	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
+	"github.com/gohugoio/hugoreleaser/plugins/model"
 
 	// nfpm
 	"github.com/goreleaser/nfpm/v2"

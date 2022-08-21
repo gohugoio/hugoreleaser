@@ -17,7 +17,7 @@ package archiveformats
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/internal/common/mapsh"
+	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
 
 // Goreleaser supports `tar.gz`, `tar.xz`, `tar`, `gz`, `zip` and `binary`.

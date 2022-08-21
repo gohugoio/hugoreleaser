@@ -17,7 +17,7 @@ package plugintypes
 import (
 	"fmt"
 
-	"github.com/bep/hugoreleaser/internal/common/mapsh"
+	"github.com/gohugoio/hugoreleaser/internal/common/mapsh"
 )
 
 // Type is the type of external tool.

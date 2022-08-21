@@ -1,9 +1,9 @@
-module github.com/bep/hugoreleaser/plugins/archiveplugins/deb
+module github.com/gohugoio/hugoreleaser/plugins/archiveplugins/deb
 
 go 1.19
 
 require (
-	github.com/bep/hugoreleaser/plugins v0.1.0
+	github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220821173719-78f3bbaaccdf
 	github.com/goreleaser/nfpm/v2 v2.18.1
 )
 

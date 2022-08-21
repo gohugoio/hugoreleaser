@@ -23,13 +23,13 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/bep/hugoreleaser/cmd/buildcmd"
-	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/internal/archives"
-	"github.com/bep/hugoreleaser/plugins/archiveplugin"
+	"github.com/gohugoio/hugoreleaser/cmd/buildcmd"
+	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/archives"
+	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 
-	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/plugins/model"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 

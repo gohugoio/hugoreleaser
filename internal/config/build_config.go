@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/bep/hugoreleaser/internal/builds"
-	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/internal/builds"
+	"github.com/gohugoio/hugoreleaser/plugins/model"
 )
 
 var _ model.Initializer = (*Build)(nil)

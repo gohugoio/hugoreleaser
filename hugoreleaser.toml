@@ -21,7 +21,7 @@ project = "hugoreleaser"
     name                           = "${HR_RELEASE_NAME}"
     type                           = "github"
     repository                     = "hugoreleaser"
-    repository_owner               = "bep"
+    repository_owner               = "gohugoio"
     generate_release_notes_on_host = true
     draft                          = true
     prerelease                     = true
@@ -60,10 +60,10 @@ project = "hugoreleaser"
         [archives.archive_settings.plugin]
             id      = "deb"
             type    = "gorun"
-            command = "github.com/bep/hugoreleaser/plugins/archiveplugins/deb@latest"
+            command = "github.com/gohugoio/hugoreleaser/plugins/archiveplugins/deb@latest"
         [archives.archive_settings.custom_settings]
-            vendor      = "bep"
-            homepage    = "https://github.com/bep/hugoreleaser"
+            vendor      = "gohugo.io"
+            homepage    = "https://github.com/gohugoio/hugoreleaser"
             maintainer  = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"
             description = "Build, archive and release Go programs."
             license     = "Apache-2.0"

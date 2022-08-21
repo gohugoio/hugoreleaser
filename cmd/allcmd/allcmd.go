@@ -18,10 +18,10 @@ import (
 	"context"
 	"flag"
 
-	"github.com/bep/hugoreleaser/cmd/archivecmd"
-	"github.com/bep/hugoreleaser/cmd/buildcmd"
-	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/cmd/releasecmd"
+	"github.com/gohugoio/hugoreleaser/cmd/archivecmd"
+	"github.com/gohugoio/hugoreleaser/cmd/buildcmd"
+	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/cmd/releasecmd"
 
 	"github.com/bep/logg"
 	"github.com/peterbourgon/ff/v3/ffcli"

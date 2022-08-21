@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
-	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/plugins/model"
 	"github.com/gobwas/glob"
+	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/plugins/model"
 )
 
 var (

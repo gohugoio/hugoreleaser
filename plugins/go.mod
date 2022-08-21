@@ -1,4 +1,4 @@
-module github.com/bep/hugoreleaser/plugins
+module github.com/gohugoio/hugoreleaser/plugins
 
 go 1.19
 

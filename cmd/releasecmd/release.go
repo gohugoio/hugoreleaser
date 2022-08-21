@@ -25,10 +25,10 @@ import (
 
 	"github.com/gobwas/glob"
 
-	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/internal/common/matchers"
-	"github.com/bep/hugoreleaser/internal/releases"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 

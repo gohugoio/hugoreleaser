@@ -23,8 +23,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/internal/releases/releasetypes"
+	"github.com/gohugoio/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/internal/releases/releasetypes"
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/oauth2"
 )

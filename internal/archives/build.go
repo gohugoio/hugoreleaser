@@ -20,11 +20,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
-	"github.com/bep/hugoreleaser/internal/config"
-	"github.com/bep/hugoreleaser/plugins/archiveplugin"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
+	"github.com/gohugoio/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 )
 
 // Build builds an archive from the given settings and writes it to req.OutFilename

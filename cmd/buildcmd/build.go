@@ -27,11 +27,11 @@ import (
 	"github.com/bep/helpers/envhelpers"
 	"github.com/gobwas/glob"
 
-	"github.com/bep/hugoreleaser/cmd/corecmd"
-	"github.com/bep/hugoreleaser/internal/builds"
-	"github.com/bep/hugoreleaser/internal/common/ioh"
-	"github.com/bep/hugoreleaser/internal/config"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/builds"
+	"github.com/gohugoio/hugoreleaser/internal/common/ioh"
+	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 

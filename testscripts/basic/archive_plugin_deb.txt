@@ -2,7 +2,7 @@
 
 mkdir $WORK/plugins/archiveplugins/deb
 cpdir $SOURCE/plugins/archiveplugins $WORK/plugins/archiveplugins
-append $WORK/plugins/archiveplugins/deb/go.mod "replace github.com/bep/hugoreleaser => $SOURCE"
+append $WORK/plugins/archiveplugins/deb/go.mod "replace github.com/gohugoio/hugoreleaser => $SOURCE"
 
 hugoreleaser build -tag v1.2.0
 

@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bep/hugoreleaser/internal/archives/archiveformats"
-	"github.com/bep/hugoreleaser/internal/archives/renamer"
-	"github.com/bep/hugoreleaser/internal/archives/targz"
-	"github.com/bep/hugoreleaser/internal/archives/zip"
-	"github.com/bep/hugoreleaser/internal/common/ioh"
-	"github.com/bep/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
+	"github.com/gohugoio/hugoreleaser/internal/archives/renamer"
+	"github.com/gohugoio/hugoreleaser/internal/archives/targz"
+	"github.com/gohugoio/hugoreleaser/internal/archives/zip"
+	"github.com/gohugoio/hugoreleaser/internal/common/ioh"
+	"github.com/gohugoio/hugoreleaser/internal/config"
 )
 
 func New(settings config.ArchiveSettings, out io.WriteCloser) (Archiver, error) {
