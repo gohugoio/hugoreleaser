@@ -137,38 +137,7 @@ hugoreleaser release -release-paths /releases/bsd
 
 Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/deb) for an example.
 
-See [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more detailed information.
-
-A plugin is a server (which will be started on Hugoreleaser startup) implemented as a Go `main` func with a structure like the one below:
-
-```go
-func main() {
-	server, err := plugins.NewServer(
-		func(d plugins.Dispatcher, req archiveplugin.Request) archiveplugin.Response {
-			d.Infof("Creating archive %s", req.OutFilename)
-
-			if err := req.Init(); err != nil {
-				// ...
-			}
-
-			if err := createArchive(req); err != nil {
-				// ...
-			}
-			// Empty response is a success.
-			return archiveplugin.Response{}
-		},
-	)
-	if err != nil {
-		log.Fatalf("Failed to create server: %s", err)
-	}
-
-	if err := server.Start(); err != nil {
-		log.Fatalf("Failed to start server: %s", err)
-	}
-
-	_ = server.Wait()
-}
-```
+See [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more information.
 
 
 ## Development of this project
