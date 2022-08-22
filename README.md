@@ -135,7 +135,9 @@ hugoreleaser release -release-paths /releases/bsd
 
 ## Plugins
 
-Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](./plugins/archiveplugins/deb) for an example.
+Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/deb) for an example.
+
+See [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more detailed information.
 
 A plugin is a server (which will be started on Hugoreleaser startup) implemented as a Go `main` func with a structure like the one below:
 
