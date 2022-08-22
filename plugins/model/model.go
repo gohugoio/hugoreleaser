@@ -20,11 +20,11 @@ type Initializer interface {
 	Init() error
 }
 
-// BuildContext hold the core information about a build.
+// BuildInfo hold the core information about a build.
 // This is used both by the plugins and the built-in archive implementation
 // as the template context for the name template.
 // It's kept here in this package because it's convenient.
-type BuildContext struct {
+type BuildInfo struct {
 	Project string `toml:"project"`
 	Tag     string `toml:"tag"`
 	Goos    string `toml:"goos"`

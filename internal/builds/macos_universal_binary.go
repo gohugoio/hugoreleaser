@@ -33,6 +33,12 @@ const (
 	// amd64 needs 12 bits, arm64 needs 14. We choose the max of all requirements here.
 	alignBits = 14
 	align     = 1 << alignBits
+
+	// fat64 doesn't seem to work:
+	//   - the resulting binary won't run.
+	//   - the resulting binary is parseable by lipo, but reports that the contained files are "hidden".
+	//   - the native OSX lipo can't make a fat64.
+	fat64Supported = false
 )
 
 // CreateMacOSUniversalBinary creates a universal binary for the given files.
@@ -69,13 +75,8 @@ func CreateMacOSUniversalBinary(outputFilename string, inputFilenames ...string)
 	}
 
 	// Decide on whether we're doing fat32 or fat64.
-	sixtyfour := false
-	if inputs[len(inputs)-1].offset >= 1<<32 || len(inputs[len(inputs)-1].data) >= 1<<32 {
-		sixtyfour = true
-		// fat64 doesn't seem to work:
-		//   - the resulting binary won't run.
-		//   - the resulting binary is parseable by lipo, but reports that the contained files are "hidden".
-		//   - the native OSX lipo can't make a fat64.
+	sixtyfour := inputs[len(inputs)-1].offset >= 1<<32 || len(inputs[len(inputs)-1].data) >= 1<<32
+	if sixtyfour && !fat64Supported {
 		return errors.New("files too large to fit into a fat binary")
 	}
 

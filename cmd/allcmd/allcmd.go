@@ -46,7 +46,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       commandName,
 		ShortUsage: corecmd.CommandName + " " + commandName + " [flags] <action>",
-		ShortHelp:  "Runs build, archive and release in sequence",
+		ShortHelp:  "Runs the commands build, archive and release in sequence.",
 		FlagSet:    fs,
 		Exec:       a.Exec,
 	}

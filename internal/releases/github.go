@@ -18,12 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/releases/releasetypes"
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/oauth2"
@@ -59,14 +57,14 @@ func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
 }
 
 // UploadAssetsFileWithRetries is a wrapper around UploadAssetsFile that retries on temporary errors.
-func UploadAssetsFileWithRetries(ctx context.Context, client Client, settings config.ReleaseSettings, releaseID int64, openFile func() (*os.File, error)) error {
+func UploadAssetsFileWithRetries(ctx context.Context, client Client, info ReleaseInfo, releaseID int64, openFile func() (*os.File, error)) error {
 	return withRetries(func() (error, bool) {
 		f, err := openFile()
 		if err != nil {
 			return err, false
 		}
 		defer f.Close()
-		err = client.UploadAssetsFile(ctx, settings, f, releaseID)
+		err = client.UploadAssetsFile(ctx, info, f, releaseID)
 		if err != nil && errors.Is(err, TemporaryError{}) {
 			return err, true
 		}
@@ -75,22 +73,19 @@ func UploadAssetsFileWithRetries(ctx context.Context, client Client, settings co
 
 }
 
-type Client interface {
-	Release(ctx context.Context, tagName, committish string, settings config.ReleaseSettings) (int64, error)
-	UploadAssetsFile(ctx context.Context, settings config.ReleaseSettings, f *os.File, releaseID int64) error
-}
-
 type GitHubClient struct {
 	client *github.Client
 }
 
-func (c GitHubClient) Release(ctx context.Context, tagName, committish string, settings config.ReleaseSettings) (int64, error) {
+func (c GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, error) {
 	s := func(s string) *string {
 		if s == "" {
 			return nil
 		}
 		return github.String(s)
 	}
+
+	settings := info.Settings
 
 	var body string
 
@@ -103,8 +98,8 @@ func (c GitHubClient) Release(ctx context.Context, tagName, committish string, s
 	}
 
 	r := &github.RepositoryRelease{
-		TagName:              s(tagName),
-		TargetCommitish:      s(committish),
+		TagName:              s(info.Tag),
+		TargetCommitish:      s(info.Commitish),
 		Name:                 s(settings.Name),
 		Body:                 s(body),
 		Draft:                github.Bool(settings.Draft),
@@ -124,7 +119,8 @@ func (c GitHubClient) Release(ctx context.Context, tagName, committish string, s
 	return *rel.ID, nil
 }
 
-func (c GitHubClient) UploadAssetsFile(ctx context.Context, settings config.ReleaseSettings, f *os.File, releaseID int64) error {
+func (c GitHubClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f *os.File, releaseID int64) error {
+	settings := info.Settings
 
 	_, resp, err := c.client.Repositories.UploadReleaseAsset(
 		ctx,
@@ -161,26 +157,4 @@ func isTemporaryHttpStatus(status int) bool {
 	default:
 		return true
 	}
-}
-
-// Fake client is only used in tests.
-type FakeClient struct {
-	releaseID int64
-}
-
-func (c *FakeClient) Release(ctx context.Context, tagName string, committish string, settings config.ReleaseSettings) (int64, error) {
-	// Tests depen on this string.
-	fmt.Printf("fake: release: tag:%s committish:%s %#v\n", tagName, committish, settings)
-	c.releaseID = rand.Int63()
-	return c.releaseID, nil
-}
-
-func (c *FakeClient) UploadAssetsFile(ctx context.Context, settings config.ReleaseSettings, f *os.File, releaseID int64) error {
-	if c.releaseID != releaseID {
-		return fmt.Errorf("fake: releaseID mismatch: %d != %d", c.releaseID, releaseID)
-	}
-	if f == nil {
-		return fmt.Errorf("fake: nil file")
-	}
-	return nil
 }

@@ -24,6 +24,10 @@ stdout 'checksum\.txt'
 cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/checksum.txt $WORK/expected/dist/myrelease/checksum.txt
 
 # Test files
+# Release notes
+-- temp/my-release-notes.md --
+## Release notes
+* Change 1
 # Fake binaries to get stable archive checksum.txt.
 -- dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe --
 win-amd64
@@ -48,6 +52,7 @@ type = "github"
 repository = "hugoreleaser"
 repository_owner = "bep"
 draft = true
+release_notes_filename = "${WORK}/temp/my-release-notes.md"
 [build_settings]
 binary = "hugo"
 flags = ["-trimpath"]
