@@ -26,11 +26,6 @@ type File interface {
 	Name() string
 }
 
-type FileInfo interface {
-	ReadSeekCloser
-	Name() string
-}
-
 type ReadSeekCloser interface {
 	ReadSeeker
 	io.Closer
