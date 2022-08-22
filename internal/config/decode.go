@@ -67,7 +67,7 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	// Merge build settings.
 	// We may have build settings on all of project > build > os > arch.
 	// Note that this uses the replaces any zero value as defined by IsTruthfulValue (a Hugo construct)m
-	// meaning any value on the right will be used if the left is zero according to that definiton.
+	// meaning any value on the right will be used if the left is zero according to that definition.
 	shallowMerge(&cfg.BuildSettings.GoSettings, cfg.GoSettings)
 	for i := range cfg.Builds {
 		shallowMerge(&cfg.Builds[i].BuildSettings, cfg.BuildSettings)

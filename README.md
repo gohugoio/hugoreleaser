@@ -7,6 +7,7 @@ New build script(s) for Hugo. Very much a work in progress.
 
 * [Configuration](#configuration)
     * [Configuration File](#configuration-file)
+    * [Template Expansion](#template-expansion)
     * [Environment Variables](#environment-variables)
 * [Segments](#segments)
 * [Plugins](#plugins)
@@ -16,6 +17,35 @@ New build script(s) for Hugo. Very much a work in progress.
 ## Configuration
 
 ### Configuration File
+
+
+### Template Expansion
+
+Hugoreleaser supports Go template syntax in all fields with suffix `_template` (e.g. `name_template` used to create archive names).
+
+The data received in the template (e.g. the ".") is:
+
+| Field  | Description |
+| ------------- | ------------- |
+| Project  | The project name as defined in config.  |
+| Tag      | The tag as defined by -flag.  |
+| Goos     | The current GOOS.  |
+| Goarch   | The current GOARCH.  |
+
+
+In addition to Go's [built-ins](https://pkg.go.dev/text/template#hdr-Functions), we have added a small number of convenient template funcs:
+
+* `upper`
+* `lower`
+* `replace` (uses `strings.ReplaceAll`)
+* `trimPrefix`
+* `trimSuffix`
+
+With that, a name template may look like this:
+
+```toml
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+```
 
 ### Environment Variables
 

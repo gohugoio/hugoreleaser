@@ -81,8 +81,8 @@ type debArchivist struct {
 	out   io.WriteCloser
 	files files.Contents
 
-	buildContext model.BuildContext
-	settings     Settings
+	buildInfo model.BuildInfo
+	settings  Settings
 }
 
 func (a *debArchivist) Add(sourceFilename, targetPath string) error {
@@ -99,7 +99,7 @@ func (a *debArchivist) Add(sourceFilename, targetPath string) error {
 
 func (a *debArchivist) Finalize() error {
 	s := a.settings
-	b := a.buildContext
+	b := a.buildInfo
 
 	if s.PackageName == "" {
 		s.PackageName = b.Project
@@ -153,9 +153,9 @@ func createArchive(req archiveplugin.Request) error {
 	}
 
 	archivist := &debArchivist{
-		out:          f,
-		buildContext: req.BuildContext,
-		settings:     settings,
+		out:       f,
+		buildInfo: req.BuildInfo,
+		settings:  settings,
 	}
 
 	for _, file := range req.Files {

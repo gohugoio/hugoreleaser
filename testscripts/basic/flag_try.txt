@@ -1,7 +1,4 @@
 
-
-skip 'TODO(bep) fix me'
-
 hugoreleaser build -tag v1.2.0 -try
 ! exists $WORK/dist/hugo/v1.2.0/builds/linux/amd64/hugo
 stdout 'Building binary.*hugo'

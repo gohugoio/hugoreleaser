@@ -45,7 +45,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       "release",
 		ShortUsage: corecmd.CommandName + " build [flags] <action>",
-		ShortHelp:  "TODO(bep)",
+		ShortHelp:  "Prepare and publish one or more releases.",
 		FlagSet:    fs,
 		Exec:       releaser.Exec,
 	}
@@ -209,7 +209,13 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 			client = &releases.FakeClient{}
 		}
 
-		releaseID, err := client.Release(ctx, b.core.Tag, b.commitish, release.ReleaseSettings)
+		info := releases.ReleaseInfo{
+			Tag:       b.core.Tag,
+			Commitish: b.commitish,
+			Settings:  release.ReleaseSettings,
+		}
+
+		releaseID, err := client.Release(ctx, info)
 		if err != nil {
 			return fmt.Errorf("%s: failed to create release: %v", commandName, err)
 		}
@@ -223,7 +229,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 
 				}
 				logCtx.Log(logg.String(fmt.Sprintf("Uploading release file %s", archiveFilename)))
-				if err := releases.UploadAssetsFileWithRetries(ctx, client, release.ReleaseSettings, releaseID, openFile); err != nil {
+				if err := releases.UploadAssetsFileWithRetries(ctx, client, info, releaseID, openFile); err != nil {
 					return err
 				}
 				return nil

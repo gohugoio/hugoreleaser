@@ -141,7 +141,7 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&c.Tag, "tag", "", "The name of the release tag (e.g. v1.2.0). Does not need to exist.")
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
 	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
-	fs.IntVar(&c.NumWorkers, "workers", 0, "Number of parallel builds.")
+	fs.IntVar(&c.NumWorkers, "workers", runtime.NumCPU(), "Number of parallel builds.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
 }
@@ -269,13 +269,13 @@ func (c *Core) Init() error {
 		archs := c.Config.FindArchs(archive.PathsCompiled)
 		for _, archPath := range archs {
 			arch := archPath.Arch
-			buildContext := model.BuildContext{
+			buildInfo := model.BuildInfo{
 				Project: c.Config.Project,
 				Tag:     c.Tag,
 				Goos:    arch.Os.Goos,
 				Goarch:  arch.Goarch,
 			}
-			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, buildContext)
+			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, buildInfo)
 			name = archiveSettings.ReplacementsCompiled.Replace(name) + archiveSettings.Type.Extension
 			archPath.Name = name
 			c.Config.Archives[i].ArchsCompiled = append(c.Config.Archives[i].ArchsCompiled, archPath)

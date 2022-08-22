@@ -48,7 +48,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       "build",
 		ShortUsage: corecmd.CommandName + " build [flags] <action>",
-		ShortHelp:  "TODO(bep)",
+		ShortHelp:  "Build Go binaries.",
 		FlagSet:    fs,
 		Exec:       builder.Exec,
 	}

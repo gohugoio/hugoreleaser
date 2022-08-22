@@ -46,7 +46,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       "archive",
 		ShortUsage: corecmd.CommandName + " archive [flags] <action>",
-		ShortHelp:  "TODO(bep)",
+		ShortHelp:  "Build archives from binaries and any extra files configured.",
 		FlagSet:    fs,
 		Exec:       archivist.Exec,
 	}
@@ -111,7 +111,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			archPath := archPath
 			archiveSettings := archive.ArchiveSettings
 			arch := archPath.Arch
-			buildContext := model.BuildContext{
+			buildContext := model.BuildInfo{
 				Project: b.core.Config.Project,
 				Tag:     b.core.Tag,
 				Goos:    arch.Os.Goos,
@@ -151,9 +151,9 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				}
 
 				buildRequest := archiveplugin.Request{
-					BuildContext: buildContext,
-					Settings:     archiveSettings.CustomSettings,
-					OutFilename:  outFilename,
+					BuildInfo:   buildContext,
+					Settings:    archiveSettings.CustomSettings,
+					OutFilename: outFilename,
 				}
 
 				buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{

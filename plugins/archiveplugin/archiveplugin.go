@@ -45,8 +45,8 @@ type Request struct {
 	// used to test that plugin servers are up and running.
 	Heartbeat string `toml:"heartbeat"`
 
-	// BuildContext holds the basic build information about the current build.
-	BuildContext model.BuildContext `toml:"build_context"`
+	// BuildInfo holds the basic build information about the current build.
+	BuildInfo model.BuildInfo `toml:"build_info"`
 
 	// Settings for the archive.
 	// This is the content of archive_settings.custom_settings.
