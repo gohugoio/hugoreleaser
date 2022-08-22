@@ -21,12 +21,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/bep/execrpc"
+	"github.com/bep/helpers/envhelpers"
 	"github.com/bep/logg"
 	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
@@ -336,4 +338,17 @@ func (c *Core) Close() error {
 		}
 	}
 	return nil
+}
+
+func (c *Core) RunGo(ctx context.Context, envKeyVals, args []string) error {
+	buildSettings := c.Config.BuildSettings
+	goexe := buildSettings.GoSettings.GoExe
+	envKeyVals = append(envKeyVals, "GOPROXY", buildSettings.GoSettings.GoProxy)
+	environ := os.Environ()
+	envhelpers.SetEnvVars(&environ, envKeyVals...)
+	cmd := exec.CommandContext(ctx, goexe, args...)
+	cmd.Env = environ
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
 }
