@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -119,6 +118,16 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 		return err
 	}
 
+	if !b.core.Try {
+		// Prevarm the GOMODCACHE if this is a Go module project.
+		if _, err := os.Stat(filepath.Join(b.core.ProjectDir, "go.mod")); err == nil {
+			b.infoLog.Log(logg.String("Running 'go mod download'."))
+			if err := b.core.RunGo(ctx, nil, []string{"mod", "download"}); err != nil {
+				return err
+			}
+		}
+	}
+
 	r, ctx := b.core.Workforce.Start(ctx)
 
 	for _, archPath := range b.core.Config.FindArchs(b.BuildPaths.PathsCompiled) {
@@ -133,7 +142,6 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 }
 
 func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) error {
-	goexe := b.core.Config.BuildSettings.GoSettings.GoExe
 	arch := archPath.Arch
 	outDir := filepath.Join(
 		b.core.DistDir,
@@ -179,11 +187,6 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 			}
 		}
 
-		keyVals = append(keyVals, "GOPROXY", buildSettings.GoSettings.GoProxy)
-
-		environ := os.Environ()
-		envhelpers.SetEnvVars(&environ, keyVals...)
-
 		if buildSettings.Ldflags != "" {
 			args = append(args, "-ldflags", buildSettings.Ldflags)
 		}
@@ -191,11 +194,7 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 			args = append(args, buildSettings.Flags...)
 		}
 
-		cmd := exec.CommandContext(ctx, goexe, args...)
-		cmd.Env = environ
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-		return cmd.Run()
+		return b.core.RunGo(ctx, keyVals, args)
 	}
 
 	if arch.Goarch == builds.UniversalGoarch {
