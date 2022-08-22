@@ -140,10 +140,14 @@ func (c *Core) Exec(context.Context, []string) error {
 // flagsets, creating "global" flags that can be passed after any subcommand at
 // the commandline.
 func (c *Core) RegisterFlags(fs *flag.FlagSet) {
+	numWorkers := runtime.NumCPU()
+	if numWorkers > 6 {
+		numWorkers = 6
+	}
 	fs.StringVar(&c.Tag, "tag", "", "The name of the release tag (e.g. v1.2.0). Does not need to exist.")
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
 	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
-	fs.IntVar(&c.NumWorkers, "workers", runtime.NumCPU(), "Number of parallel builds.")
+	fs.IntVar(&c.NumWorkers, "workers", numWorkers, "Number of parallel builds.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
 }
@@ -223,11 +227,6 @@ func (c *Core) Init() error {
 
 	if c.Tag == "" {
 		return fmt.Errorf("flag -tag is required")
-	}
-
-	// Set up the workers for parallel execution.
-	if c.NumWorkers == 0 {
-		c.NumWorkers = runtime.NumCPU()
 	}
 
 	c.Workforce = workers.New(c.NumWorkers)
@@ -340,7 +339,7 @@ func (c *Core) Close() error {
 	return nil
 }
 
-func (c *Core) RunGo(ctx context.Context, envKeyVals, args []string) error {
+func (c *Core) RunGo(ctx context.Context, envKeyVals, args []string, stderr io.Writer) error {
 	buildSettings := c.Config.BuildSettings
 	goexe := buildSettings.GoSettings.GoExe
 	envKeyVals = append(envKeyVals, "GOPROXY", buildSettings.GoSettings.GoProxy)
@@ -348,7 +347,7 @@ func (c *Core) RunGo(ctx context.Context, envKeyVals, args []string) error {
 	envhelpers.SetEnvVars(&environ, envKeyVals...)
 	cmd := exec.CommandContext(ctx, goexe, args...)
 	cmd.Env = environ
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
