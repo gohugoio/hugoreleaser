@@ -15,6 +15,7 @@
 package buildcmd
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -122,7 +123,9 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 		// Prevarm the GOMODCACHE if this is a Go module project.
 		if _, err := os.Stat(filepath.Join(b.core.ProjectDir, "go.mod")); err == nil {
 			b.infoLog.Log(logg.String("Running 'go mod download'."))
-			if err := b.core.RunGo(ctx, nil, []string{"mod", "download"}); err != nil {
+			var buff bytes.Buffer
+			if err := b.core.RunGo(ctx, nil, []string{"mod", "download"}, &buff); err != nil {
+				b.core.ErrorLog.Log(logg.String(buff.String()))
 				return err
 			}
 		}
@@ -194,7 +197,7 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 			args = append(args, buildSettings.Flags...)
 		}
 
-		return b.core.RunGo(ctx, keyVals, args)
+		return b.core.RunGo(ctx, keyVals, args, os.Stderr)
 	}
 
 	if arch.Goarch == builds.UniversalGoarch {
