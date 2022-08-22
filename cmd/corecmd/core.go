@@ -275,7 +275,10 @@ func (c *Core) Init() error {
 				Goos:    arch.Os.Goos,
 				Goarch:  arch.Goarch,
 			}
-			name := templ.Sprintt(archive.ArchiveSettings.NameTemplate, buildInfo)
+			name, err := templ.Sprintt(archive.ArchiveSettings.NameTemplate, buildInfo)
+			if err != nil {
+				return fmt.Errorf("error compiling archive name template: %w", err)
+			}
 			name = archiveSettings.ReplacementsCompiled.Replace(name) + archiveSettings.Type.Extension
 			archPath.Name = name
 			c.Config.Archives[i].ArchsCompiled = append(c.Config.Archives[i].ArchsCompiled, archPath)

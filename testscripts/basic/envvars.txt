@@ -12,9 +12,7 @@ env NAME3_FROM_ENV=name3os
 # * Do env var replacement in hugoreleaser.toml.
 # 
 
-hugoreleaser build
-hugoreleaser archive
-hugoreleaser release -try
+hugoreleaser all
 
 # Draft is set to false in env.
 stdout 'fake.*release.*Draft:false'

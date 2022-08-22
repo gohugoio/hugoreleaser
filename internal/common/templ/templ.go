@@ -16,6 +16,8 @@ package templ
 
 import (
 	"bytes"
+	"fmt"
+	"reflect"
 	"strings"
 	"text/template"
 )
@@ -38,8 +40,7 @@ var builtInFuncs = template.FuncMap{
 }
 
 // Sprintt renders the Go template t with the given data in ctx.
-// It (currently) panics on errors.
-func Sprintt(t string, ctx any) string {
+func Sprintt(t string, ctx any) (string, error) {
 	tmpl := template.New("").Funcs(builtInFuncs)
 	var err error
 	tmpl, err = tmpl.Parse(t)
@@ -49,7 +50,35 @@ func Sprintt(t string, ctx any) string {
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, ctx)
 	if err != nil {
+		return "", fmt.Errorf("error executing template: %v; available fields: %v", err, fieldsFromObject(ctx))
+	}
+	return buf.String(), nil
+}
+
+// MustSprintt is like Sprintt but panics on error.
+func MustSprintt(t string, ctx any) string {
+	s, err := Sprintt(t, ctx)
+	if err != nil {
 		panic(err)
 	}
-	return buf.String()
+	return s
+}
+
+func fieldsFromObject(in any) []string {
+	var fields []string
+
+	if in == nil {
+		return fields
+	}
+
+	v := reflect.ValueOf(in)
+	if v.Kind() != reflect.Struct {
+		return fields
+	}
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		fields = append(fields, "."+t.Field(i).Name)
+	}
+	return fields
+
 }
