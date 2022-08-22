@@ -111,7 +111,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			archPath := archPath
 			archiveSettings := archive.ArchiveSettings
 			arch := archPath.Arch
-			buildContext := model.BuildInfo{
+			buildInfo := model.BuildInfo{
 				Project: b.core.Config.Project,
 				Tag:     b.core.Tag,
 				Goos:    arch.Os.Goos,
@@ -151,7 +151,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				}
 
 				buildRequest := archiveplugin.Request{
-					BuildInfo:   buildContext,
+					BuildInfo:   buildInfo,
 					Settings:    archiveSettings.CustomSettings,
 					OutFilename: outFilename,
 				}

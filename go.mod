@@ -9,7 +9,7 @@ require (
 	github.com/bep/workers v1.1.0
 	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.14.3
-	github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220821173719-78f3bbaaccdf
+	github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220822083757-38d81884db04
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
