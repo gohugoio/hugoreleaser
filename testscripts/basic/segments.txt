@@ -17,7 +17,7 @@ hugoreleaser archive -build-paths /builds/**/freebsd/{arm,386}*
 stdout freebsd
 
 # We have now only freebsd 3 archives.
-hugoreleaser release -try -release-paths /releases/bsd
+hugoreleaser release --release-paths /releases/bsd
 stdout 'Prepared 3 files' # 2 archives + checksum.txt.
 
 # Test files

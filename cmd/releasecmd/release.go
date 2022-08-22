@@ -169,6 +169,10 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 			return fmt.Errorf("%s: no files found for release %q", commandName, release.Path)
 		}
 
+		if b.core.Try {
+			continue
+		}
+
 		// Create a checksum.txt file.
 		checksumLines, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
 		if err != nil {

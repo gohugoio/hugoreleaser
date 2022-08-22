@@ -16,8 +16,8 @@ hugoreleaser archive -tag v1.2.0
 ! stderr .
 exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-64bit.tar.gz
 
-# Run with the -try flag to avoid actually creating a remote release.
-hugoreleaser release -tag v1.2.0 -commitish main -try
+# Run with the a faketoken to avoid actually creating a remote release.
+hugoreleaser release -tag v1.2.0 -commitish main
 # 3 archives + checksum.txt
 stdout 'Prepared 4 files to archive'
 stdout 'checksum\.txt'
