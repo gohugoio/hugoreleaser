@@ -56,8 +56,6 @@ type BuildSettings struct {
 	Ldflags string   `toml:"ldflags"`
 	Flags   []string `toml:"flags"`
 
-	Goarm string `toml:"goarm"`
-
 	GoSettings GoSettings `toml:"go_settings"`
 }
 

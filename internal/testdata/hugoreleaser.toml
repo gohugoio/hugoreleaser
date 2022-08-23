@@ -26,9 +26,6 @@ project = "hugo"
 [[builds]]
     path = "main/base"
 
-    [builds.build_settings]
-        goarm = "7"
-
     [[builds.os]]
         goos = "darwin"
         [[builds.os.archs]]
