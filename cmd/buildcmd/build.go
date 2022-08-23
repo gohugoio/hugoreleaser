@@ -179,10 +179,6 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 			"GOARCH", goarch,
 		)
 
-		if arch.BuildSettings.Goarm != "" {
-			keyVals = append(keyVals, "GOARM", arch.BuildSettings.Goarm)
-		}
-
 		if buildSettings.Env != nil {
 			for _, env := range buildSettings.Env {
 				key, val := envhelpers.SplitEnvVar(env)

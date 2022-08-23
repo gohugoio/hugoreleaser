@@ -75,7 +75,6 @@ path = "main/base"
 env = ["CGO_ENABLED=0"]
 ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
 flags = ["-buildmode", "exe"]
-goarm = "7"
 
 [[builds.os]]
 goos = "darwin"
