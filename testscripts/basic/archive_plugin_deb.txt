@@ -24,7 +24,7 @@ goos = "linux"
 [[builds.os.archs]]
 goarch = "amd64"
 [[archives]]
-paths = "/builds/**"
+paths = ["builds/**"]
 [archives.archive_settings]
 extra_files = []
 [archives.archive_settings.plugin]

@@ -21,9 +21,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sync"
 
-	"github.com/gohugoio/hugoreleaser/cmd/buildcmd"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/archives"
 	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
@@ -39,7 +37,7 @@ const commandName = "archive"
 func New(core *corecmd.Core) *ffcli.Command {
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
 
-	archivist := NewArchivist(core, nil, fs)
+	archivist := NewArchivist(core)
 
 	core.RegisterFlags(fs)
 
@@ -55,36 +53,19 @@ func New(core *corecmd.Core) *ffcli.Command {
 type Archivist struct {
 	infoLog logg.LevelLogger
 	core    *corecmd.Core
-
-	buildPaths *buildcmd.BuildPaths
-
-	initOnce sync.Once
-	initErr  error
 }
 
 // NewArchivist returns a new Archivist.
-func NewArchivist(core *corecmd.Core, buildPaths *buildcmd.BuildPaths, fs *flag.FlagSet) *Archivist {
-
-	if buildPaths == nil {
-		buildPaths = &buildcmd.BuildPaths{}
-		fs.StringVar(&buildPaths.Paths, "build-paths", "/builds/**", "The builds to handle (defaults to all).")
+func NewArchivist(core *corecmd.Core) *Archivist {
+	return &Archivist{
+		core: core,
 	}
 
-	a := &Archivist{
-		core:       core,
-		buildPaths: buildPaths,
-	}
-
-	return a
 }
 
 func (b *Archivist) Init() error {
-	b.initOnce.Do(func() {
-		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-		b.initErr = b.buildPaths.Init()
-
-	})
-	return b.initErr
+	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+	return nil
 }
 
 func (b *Archivist) Exec(ctx context.Context, args []string) error {
@@ -100,7 +81,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 		b.core.Tag,
 		b.core.DistRootArchives,
 	)
-	filter := b.buildPaths.PathsCompiled
+	filter := b.core.PathsBuildsCompiled
 
 	for _, archive := range b.core.Config.Archives {
 		archive := archive

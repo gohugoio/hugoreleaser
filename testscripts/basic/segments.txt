@@ -5,19 +5,19 @@ env HUGORELEASER_COMMITISH=main
 env GITHUB_TOKEN=faketoken
 
 # Build arm* and 386.
-hugoreleaser build -build-paths /builds/**/{arm,386}*
+hugoreleaser build -paths builds/**/{arm,386}*
 ! stdout amd64
 stdout arm64
 
 # Archive freebsd only.
-# Archive filter in config is "/builds/unix/**".
-hugoreleaser archive -build-paths /builds/**/freebsd/{arm,386}*
+# Archive filter in config is "builds/unix/**".
+hugoreleaser archive -paths builds/**/freebsd/{arm,386}*
 ! stdout linux
 ! stdout amd64
 stdout freebsd
 
 # We have now only freebsd 3 archives.
-hugoreleaser release --release-paths /releases/bsd
+hugoreleaser release -paths releases/bsd
 stdout 'Prepared 3 files' # 2 archives + checksum.txt.
 
 # Test files
@@ -70,15 +70,14 @@ goarch = "amd64"
 [[builds.os.archs]]
 goarch = "arm64"
 
-
 [[archives]]
-paths         = "/builds/unix/**"
+paths         = ["builds/unix/**"]
 
 [[releases]]
-paths = "/archives/**/freebsd/arm*"
+paths = ["archives/**/freebsd/arm*"]
 path = "bsd"
 [[releases]]
-paths = "/archives/win/**"
+paths = ["archives/win/**"]
 path = "win"
 
 -- go.mod --

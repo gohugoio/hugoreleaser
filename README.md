@@ -9,6 +9,7 @@ New build script(s) for Hugo. Very much a work in progress.
     * [Configuration File](#configuration-file)
     * [Template Expansion](#template-expansion)
     * [Environment Variables](#environment-variables)
+* [Glob Matching](#glob-matching)
 * [Segments](#segments)
 * [Plugins](#plugins)
 * [Development of this project](#development-of-this-project)
@@ -81,6 +82,18 @@ The other custom variables can be used in `hugoreleaser.toml`, e.g:
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
 
 
+## Glob Matching
+
+Hugo releaser supports the Glob rules as defined in [Gobwas Glob](https://github.com/gobwas/glob) with one additional rule: Glob patterns can be negated with a `!` prefix.
+
+The CLI `-paths` flag is a slice an, if repeated for a given prefix, will be ANDed together, e.g.:
+
+```
+hugoreleaser build  -paths "builds/**" -paths "!builds/**/arm64"
+```
+
+The above will build everything, expect the ARM64 `GOARCH`.
+
 ## Segments
 
 Both the configuration file and the directory structure inside `/dist` follows the same tree structure: 
@@ -110,27 +123,27 @@ On both `builds` (groups `builds` and `archives`) and `releases` there is a `pat
             goarch = "amd64"
 ```
 
-In both the configuration file and in the CLI tool there are `paths`, which represents [Glob patterns](https://github.com/gobwas/glob) applied as filters (with double asterisk support):
+In both the configuration file and in the CLI tool there are `paths`, which represents [Glob patterns](#glob-matching) applied as filters:
 
 ```toml
 [[builds]]
     path = "unix"
 [[archives]]
-    paths = "/builds/unix/**"
+    paths = ["builds/unix/**"]
 [[releases]]
-    paths = "/archives/**/freebsd/{amd64,386}"
+    paths = ["archives/**/freebsd/{amd64,386}"]
     path = "bsd"
 ```
 
-The matching starts below `<tag>` in the tree structure described above.
+The matching starts below `<tag>/` in the tree structure described above.
 
 And then running each step in sequence:
 
 ```bash
-hugoreleaser build -build-paths /builds/**/freebsd/amd64
-hugoreleaser build -build-paths /builds/**/freebsd/386
-hugoreleaser archive -build-paths /builds/**/freebsd/{amd64,386}
-hugoreleaser release -release-paths /releases/bsd
+hugoreleaser build -paths builds/**/freebsd/amd64
+hugoreleaser build -paths builds/**/freebsd/386
+hugoreleaser archive -paths builds/**/freebsd/{amd64,386}
+hugoreleaser release -paths /releases/bsd
 ```
 
 ## Plugins

@@ -17,7 +17,7 @@ goos = "linux"
 [[builds.os.archs]]
 goarch = "amd64"
 [[archives]]
-paths = "/builds/**"
+paths = ["builds/**"]
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 [archive_settings.type]

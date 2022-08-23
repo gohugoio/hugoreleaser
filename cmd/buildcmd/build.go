@@ -18,14 +18,10 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"sync"
 
 	"github.com/bep/helpers/envhelpers"
-	"github.com/gobwas/glob"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
@@ -56,62 +52,19 @@ func New(core *corecmd.Core) *ffcli.Command {
 
 // NewBuilder returns a new Builder.
 func NewBuilder(core *corecmd.Core, fs *flag.FlagSet) *Builder {
-	b := &Builder{
-		core:       core,
-		BuildPaths: &BuildPaths{},
+	return &Builder{
+		core: core,
 	}
-
-	fs.StringVar(&b.BuildPaths.Paths, "build-paths", "/builds/**", "The builds to handle (defaults to all).")
-
-	return b
 }
 
 type Builder struct {
 	core    *corecmd.Core
 	infoLog logg.LevelLogger
-
-	BuildPaths *BuildPaths
-
-	initOnce sync.Once
-	initErr  error
-}
-
-type BuildPaths struct {
-	Paths         string
-	PathsCompiled glob.Glob
-
-	initOnce sync.Once
-}
-
-func (b *BuildPaths) Init() error {
-	var err error
-	b.initOnce.Do(func() {
-		const prefix = "/builds/"
-
-		if !strings.HasPrefix(b.Paths, prefix) {
-			err = fmt.Errorf("%s: flag -build-paths must start with %s", commandName, prefix)
-			return
-		}
-
-		// Strip the /builds/ prefix. We currently don't use that,
-		// it's just there to make the config easier to understand.
-		paths := strings.TrimPrefix(b.Paths, prefix)
-
-		b.PathsCompiled, err = glob.Compile(paths)
-
-	})
-
-	return err
-
 }
 
 func (b *Builder) Init() error {
-	b.initOnce.Do(func() {
-		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-		b.initErr = b.BuildPaths.Init()
-
-	})
-	return b.initErr
+	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+	return nil
 }
 
 func (b *Builder) Exec(ctx context.Context, args []string) error {
@@ -133,7 +86,7 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 
 	r, ctx := b.core.Workforce.Start(ctx)
 
-	for _, archPath := range b.core.Config.FindArchs(b.BuildPaths.PathsCompiled) {
+	for _, archPath := range b.core.Config.FindArchs(b.core.PathsBuildsCompiled) {
 		// Capture this for the Go routine below.
 		archPath := archPath
 		r.Run(func() error {

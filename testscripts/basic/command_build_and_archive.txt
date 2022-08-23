@@ -77,10 +77,10 @@ binary = "hugo.exe"
 goarch = "amd64"
 
 [[archives]]
-paths         = "/builds/**/{darwin,linux}/amd64"
+paths         = ["builds/**/{darwin,linux}/amd64"]
 [archives.archive_settings]
 [[archives]]
-paths         = "/builds/**/windows/*"
+paths         = ["builds/**/windows/*"]
 [archives.archive_settings]
 [archives.archive_settings.type]
 format = "zip"

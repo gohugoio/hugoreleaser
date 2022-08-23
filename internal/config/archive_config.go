@@ -16,11 +16,9 @@ package config
 
 import (
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
 	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/plugins/model"
@@ -33,8 +31,8 @@ var (
 )
 
 type Archive struct {
-	// Glob of Build paths to archive.
-	Paths           string          `toml:"paths"`
+	// Glob of Build paths to archive. Multiple paths will be ANDed.
+	Paths           []string        `toml:"paths"`
 	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
 
 	PathsCompiled matchers.Matcher `toml:"-"`
@@ -42,24 +40,18 @@ type Archive struct {
 }
 
 func (a *Archive) Init() error {
-	what := path.Join("archives", a.Paths)
+	what := fmt.Sprintf("archives: %v", a.Paths)
 
-	const prefix = "/builds/"
-
-	if !strings.HasPrefix(a.Paths, prefix) {
-		return fmt.Errorf("%s: archive paths must start with %s", what, prefix)
-	}
-
-	// Strip the /builds/ prefix. We currently don't use that,
-	// it's just there to make the config easier to understand.
-	paths := strings.TrimPrefix(a.Paths, prefix)
-
-	if paths == "" {
-		return fmt.Errorf("archive has no paths")
+	const prefix = "builds/"
+	for i, p := range a.Paths {
+		if !strings.HasPrefix(p, prefix) {
+			return fmt.Errorf("%s: archive paths must start with %s", what, prefix)
+		}
+		a.Paths[i] = p[len(prefix):]
 	}
 
 	var err error
-	a.PathsCompiled, err = glob.Compile(paths)
+	a.PathsCompiled, err = matchers.Glob(a.Paths...)
 	if err != nil {
 		return fmt.Errorf("failed to compile archive paths glob %q: %v", a.Paths, err)
 	}

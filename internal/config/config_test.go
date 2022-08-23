@@ -43,7 +43,7 @@ format = "foo"
 func TestDecodeFile(t *testing.T) {
 	c := qt.New(t)
 
-	f, err := os.Open("../testdata/hugoreleaser.toml")
+	f, err := os.Open("../../hugoreleaser.toml")
 	c.Assert(err, qt.IsNil)
 	defer f.Close()
 
@@ -62,12 +62,11 @@ func TestDecodeFile(t *testing.T) {
 	}
 
 	c.Assert(err, qt.IsNil)
-	c.Assert(cfg.Project, qt.Equals, "hugo")
+	c.Assert(cfg.Project, qt.Equals, "hugoreleaser")
 
 	assertHasBuildSettings := func(b BuildSettings) {
 		c.Helper()
 		c.Assert(b.Env, qt.IsNotNil)
-		c.Assert(b.Ldflags, qt.Not(qt.Equals), "")
 		c.Assert(b.Flags, qt.IsNotNil)
 		c.Assert(b.GoSettings.GoProxy, qt.Not(qt.Equals), "")
 		c.Assert(b.GoSettings.GoExe, qt.Not(qt.Equals), "")

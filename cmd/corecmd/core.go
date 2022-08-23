@@ -33,6 +33,7 @@ import (
 	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
 	"github.com/gohugoio/hugoreleaser/internal/common/logging"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/common/templ"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/plugins"
@@ -100,6 +101,12 @@ type Core struct {
 	// This tag will eventually be created at release time if it does not exist.
 	Tag string
 
+	// Paths to build/release.
+	Paths                 stringFlags
+	PathsBuildsCompiled   matchers.Matcher
+	PathsArchivesCompiled matchers.Matcher
+	PathsReleasesCompiled matchers.Matcher
+
 	// Abolute path to the project root.
 	ProjectDir string
 
@@ -145,11 +152,13 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 		numWorkers = 6
 	}
 	fs.StringVar(&c.Tag, "tag", "", "The name of the release tag (e.g. v1.2.0). Does not need to exist.")
+	fs.Var(&c.Paths, "paths", "Paths to include in the command.")
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
 	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
 	fs.IntVar(&c.NumWorkers, "workers", numWorkers, "Number of parallel builds.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
+
 }
 
 // PreInit is called before the flags are parsed.
@@ -169,6 +178,85 @@ func (c *Core) PreInit() error {
 				os.Setenv(k, v)
 			}
 		}
+	}
+
+	return nil
+}
+
+func (c *Core) compilePaths() error {
+	// First check if it should match everything (default).
+	shouldMatchEverything := true
+	for _, p := range c.Paths {
+		if strings.HasPrefix(p, "!") {
+			shouldMatchEverything = false
+			break
+		}
+		if strings.HasPrefix(p, "/") {
+			return fmt.Errorf("paths must not start with /: %s", p)
+		}
+		if p != "**" {
+			shouldMatchEverything = false
+			break
+		}
+	}
+	if shouldMatchEverything {
+		c.PathsBuildsCompiled = matchers.MatchEverything
+		c.PathsArchivesCompiled = matchers.MatchEverything
+		c.PathsReleasesCompiled = matchers.MatchEverything
+		return nil
+	}
+
+	const (
+		buildsPrefix   = "builds/"
+		archivesPrefix = "archives/"
+		releasesPrefix = "releases/"
+	)
+
+	compilePrefix := func(target *matchers.Matcher, p, prefix string) error {
+		if !strings.HasPrefix(p, prefix) {
+			return nil
+		}
+		// We remove the prefix from the pattern, which
+		// makes later matching easier.
+		// We may need the distinction at some point, but not now
+		p = p[len(prefix):]
+		pc, err := matchers.Glob(p)
+		if err != nil {
+			return fmt.Errorf("error compiling path %q: %w", p, err)
+		}
+		if *target == nil {
+			*target = pc
+		} else {
+			*target = matchers.And(*target, pc)
+		}
+		return nil
+	}
+
+	// Specific paths needs to start with either builds/ or releases/.
+	for _, p := range c.Paths {
+		if !strings.HasPrefix(p, buildsPrefix) && !strings.HasPrefix(p, archivesPrefix) && !strings.HasPrefix(p, releasesPrefix) {
+			return fmt.Errorf("path %q must start with builds/ or archives/ or releases/", p)
+		}
+
+		err := compilePrefix(&c.PathsBuildsCompiled, p, buildsPrefix)
+		if err != nil {
+			return err
+		}
+		err = compilePrefix(&c.PathsArchivesCompiled, p, archivesPrefix)
+		if err != nil {
+			return err
+		}
+		err = compilePrefix(&c.PathsReleasesCompiled, p, releasesPrefix)
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.PathsBuildsCompiled == nil {
+		c.PathsBuildsCompiled = matchers.MatchEverything
+	}
+	if c.PathsReleasesCompiled == nil {
+		c.PathsReleasesCompiled = matchers.MatchEverything
 	}
 
 	return nil
@@ -227,6 +315,10 @@ func (c *Core) Init() error {
 
 	if c.Tag == "" {
 		return fmt.Errorf("flag -tag is required")
+	}
+
+	if err := c.compilePaths(); err != nil {
+		return fmt.Errorf("error compiling -paths: %w", err)
 	}
 
 	c.Workforce = workers.New(c.NumWorkers)
@@ -350,4 +442,15 @@ func (c *Core) RunGo(ctx context.Context, envKeyVals, args []string, stderr io.W
 	cmd.Stderr = stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
+}
+
+type stringFlags []string
+
+func (s *stringFlags) String() string {
+	return strings.Join(*s, "  ")
+}
+
+func (s *stringFlags) Set(value string) error {
+	*s = append(*s, value)
+	return nil
 }
