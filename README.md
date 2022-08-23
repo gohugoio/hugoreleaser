@@ -111,6 +111,6 @@ See the [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plug
 
 ## Why another Go release tool?
 
-If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed to split the build across multiple containers[^1]. Hugo is using this tool for its next release, fingers crossed. 
+If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because[Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map for that project.  Hugo is using this tool for its next release, fingers crossed. 
 
-[^1]: The extended version of Hugo uses CGO and compiles some C/C++ libraries (libsass, webp). It turns out it's incredibly hard to do this cross platform in only one Docker container (building MacOS/Linux/Windows for both `AMD64` and `ARM64`).
+
