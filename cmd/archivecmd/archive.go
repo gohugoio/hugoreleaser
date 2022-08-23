@@ -21,9 +21,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/archives"
+	"github.com/gohugoio/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/internal/plugins"
 	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 
 	"github.com/bep/logg"
@@ -65,6 +68,47 @@ func NewArchivist(core *corecmd.Core) *Archivist {
 
 func (b *Archivist) Init() error {
 	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+
+	c := b.core
+
+	// Start any archive plugins.
+	startAndRegister := func(p config.Plugin) error {
+		if p.IsZero() {
+			return nil
+		}
+		if _, found := c.PluginsRegistryArchive[p.ID]; found {
+			// Already started.
+			return nil
+		}
+		infoCtx := b.infoLog.WithField("plugin", p.ID)
+		client, err := plugins.StartArchivePlugin(c.InfoLog, c.Config.GoSettings, p)
+		if err != nil {
+			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
+		}
+
+		// Send a heartbeat to the plugin to make sure it's alive.
+		heartbeat := fmt.Sprintf("heartbeat-%s", time.Now())
+		resp, err := client.Execute(archiveplugin.Request{Heartbeat: heartbeat})
+		if err != nil {
+			return fmt.Errorf("error testing archive plugin %q: %w", p.ID, err)
+		}
+		if resp.Heartbeat != heartbeat {
+			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.ID)
+		}
+		infoCtx.Log(logg.String("Archive plugin started and ready for use"))
+		c.PluginsRegistryArchive[p.ID] = client
+		return nil
+	}
+
+	if err := startAndRegister(c.Config.ArchiveSettings.Plugin); err != nil {
+		return err
+	}
+	for _, archive := range c.Config.Archives {
+		if err := startAndRegister(archive.ArchiveSettings.Plugin); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

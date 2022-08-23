@@ -16,7 +16,7 @@
 
 ### Configuration File
 
-Hugoreleaser reads its main configuration from a file named `hugoreleaser.toml` in the working directory. This [this project's configuration](./hugoreleaser.toml) for an annotated example.
+Hugoreleaser reads its main configuration from a file named `hugoreleaser.toml` in the working directory. See [this project's configuration](./hugoreleaser.toml) for an annotated example.
 
 ### Template Expansion
 
@@ -30,7 +30,6 @@ The data received in the template (e.g. the ".") is:
 | Tag      | The tag as defined by the -tag flag.  |
 | Goos     | The current GOOS.  |
 | Goarch   | The current GOARCH.  |
-
 
 In addition to Go's [built-ins](https://pkg.go.dev/text/template#hdr-Functions), we have added a small number of convenient template funcs:
 
@@ -54,7 +53,7 @@ The order of presedence for environment variables/flags:
 2. OS environment variables.
 3. Environment variables defined in `hugoreleaser.env`.
 
-A `hugoreleaser.env` file, if found in the current directory, will be parsed and loaded into the environment of the running process. The format is simple, a text files of key-value-pairs on the form `KEY=value`, empty lines and lines starting with `#` is ignored:
+A `hugoreleaser.env` file will, if found in the current directory, be parsed and loaded into the environment of the running process. The format is simple, a text files of key-value-pairs on the form `KEY=value`, empty lines and lines starting with `#` is ignored:
 
 Environment variable expressions in `hugoreleaser.toml` on the form `${VAR}` will be expanded before it's parsed.
 
@@ -110,9 +109,8 @@ Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins 
 
 See the [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more information.
 
-
 ## Why another Go release tool?
 
-If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because[Hugo](https://github.com/gohugoio/hugo) needed to split the build across multiple containers[^1]. Hugo is using this tool for its next release, fingers crossed. 
+If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because[Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map for that project.  Hugo is using this tool for its next release, fingers crossed. 
 
-[^1]: The extended version of Hugo uses CGO and compiles some C/C++ libraries (libsass, webp). It turns out it's incredibly hard to do this cross platform in only one Docker container (building MacOS/Linux/Windows for both `AMD64` and `ARM64`).
+
