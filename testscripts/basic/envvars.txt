@@ -42,9 +42,9 @@ goos = "darwin"
 [[builds.os.archs]]
 goarch = "amd64"
 [[archives]]
-paths         = "/builds/**"
+paths         = ["builds/**"]
 [[releases]]
-paths = "/archives/**"
+paths = ["archives/**"]
 path = "myrelease"
 -- go.mod --
 module foo

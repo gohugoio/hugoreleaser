@@ -50,9 +50,9 @@ project = "hugoreleaser"
             goarch = "amd64"
 
 [[archives]]
-    paths = "/builds/unix/**"
+    paths = ["builds/unix/**"]
 [[archives]]
-    paths = "/builds/**/linux/amd64"
+    paths = ["builds/**/linux/amd64"]
     [archives.archive_settings]
         [archives.archive_settings.type]
             format    = "_plugin"
@@ -68,12 +68,12 @@ project = "hugoreleaser"
             description = "Build, archive and release Go programs."
             license     = "Apache-2.0"
 [[archives]]
-    paths = "/builds/windows/**"
+    paths = ["builds/windows/**"]
     [archives.archive_settings]
         [archives.archive_settings.type]
             format    = "zip"
             extension = ".zip"
 
 [[releases]]
-    paths = "/archives/**"
+    paths = ["archives/**"]
     path  = "myrelease"

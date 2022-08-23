@@ -20,13 +20,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobwas/glob"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/releases/releasetypes"
 )
 
 type Release struct {
-	Paths string `toml:"paths"`
+	// Paths with Glob of releases paths to release. Multiple paths will be ANDed.
+	Paths []string `toml:"paths"`
 
 	// Path is the directory below /dist/releases where the release artifacts gets stored.
 	// This must be unique for each release within one configuration file.
@@ -46,19 +46,18 @@ func (a *Release) Init() error {
 
 	a.Path = path.Clean(filepath.ToSlash(a.Path))
 
-	const prefix = "/archives/"
-	if !strings.HasPrefix(a.Paths, prefix) {
-		return fmt.Errorf("%s: release paths must start with %s", what, prefix)
-	}
-	paths := strings.TrimPrefix(a.Paths, prefix)
-	if paths == "" {
-		return fmt.Errorf("%s: release has no paths", what)
+	const prefix = "archives/"
+	for i, p := range a.Paths {
+		if !strings.HasPrefix(p, prefix) {
+			return fmt.Errorf("%s: archive paths must start with %s", what, prefix)
+		}
+		a.Paths[i] = p[len(prefix):]
 	}
 
 	var err error
-	a.PathsCompiled, err = glob.Compile(paths)
+	a.PathsCompiled, err = matchers.Glob(a.Paths...)
 	if err != nil {
-		return fmt.Errorf("%s: failed to compile release paths glob %q: %v", what, a.Paths, err)
+		return fmt.Errorf("failed to compile archive paths glob %q: %v", a.Paths, err)
 	}
 
 	if err := a.ReleaseSettings.Init(); err != nil {

@@ -35,10 +35,10 @@ goos = "darwin"
 goarch = "universal"
 
 [[archives]]
-paths         = "/builds/mac/**"
+paths         = ["builds/mac/**"]
 
 [[releases]]
-paths = "/archives/**"
+paths = ["archives/**"]
 path = "myrelease"
 
 -- go.mod --

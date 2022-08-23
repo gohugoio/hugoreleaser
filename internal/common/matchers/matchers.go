@@ -32,3 +32,43 @@ func (m and) Match(s string) bool {
 	}
 	return true
 }
+
+type or []Matcher
+
+// Or returns a matcher that matches if any of the given matchers match.
+func Or(matchers ...Matcher) Matcher {
+	return or(matchers)
+}
+
+func (m or) Match(s string) bool {
+	for _, matcher := range m {
+		if matcher.Match(s) {
+			return true
+		}
+	}
+	return false
+}
+
+type not struct {
+	m Matcher
+}
+
+// Not returns a matcher that matches if the given matcher does not match.
+func Not(matcher Matcher) Matcher {
+	return not{m: matcher}
+}
+
+func (m not) Match(s string) bool {
+	return !m.m.Match(s)
+}
+
+type MatcherFunc func(string) bool
+
+func (m MatcherFunc) Match(s string) bool {
+	return m(s)
+}
+
+// MatchEverything returns a matcher that matches everything.
+var MatchEverything Matcher = MatcherFunc(func(s string) bool {
+	return true
+})

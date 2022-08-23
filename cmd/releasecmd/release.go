@@ -20,14 +20,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"sync"
-
-	"github.com/gobwas/glob"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
-	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -58,7 +53,6 @@ func NewReleaser(core *corecmd.Core, fs *flag.FlagSet) *Releaser {
 	}
 
 	fs.StringVar(&r.commitish, "commitish", "", "The commitish value that determines where the Git tag is created from.")
-	fs.StringVar(&r.releasePaths, "release-paths", "/releases/**", "The releases to release (defaults to all).")
 
 	return r
 }
@@ -68,43 +62,17 @@ type Releaser struct {
 	infoLog logg.LevelLogger
 
 	// Flags
-	commitish    string
-	releasePaths string
-
-	releasePathsCompiled matchers.Matcher
-
-	initOnce sync.Once
-	initErr  error
+	commitish string
 }
 
 func (b *Releaser) Init() error {
-	b.initOnce.Do(func() {
-		if b.commitish == "" {
-			b.initErr = fmt.Errorf("%s: flag -commitish is required", commandName)
-			return
-		}
+	if b.commitish == "" {
+		return fmt.Errorf("%s: flag -commitish is required", commandName)
+	}
 
-		const prefix = "/releases/"
+	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
 
-		if !strings.HasPrefix(b.releasePaths, prefix) {
-			b.initErr = fmt.Errorf("%s: flag -release-paths must start with %s", commandName, prefix)
-			return
-		}
-
-		// Strip the /archives/ prefix. We currently don't use that,
-		// it's just there to make the config easier to understand.
-		paths := strings.TrimPrefix(b.releasePaths, prefix)
-
-		var err error
-		b.releasePathsCompiled, err = glob.Compile(paths)
-		if err != nil {
-			b.initErr = fmt.Errorf("%s: invalid -paths value: %s", commandName, err)
-			return
-		}
-
-		b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-	})
-	return b.initErr
+	return nil
 }
 
 func (b *Releaser) Exec(ctx context.Context, args []string) error {
@@ -116,11 +84,11 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		return fmt.Errorf("%s: no releases defined in config", commandName)
 	}
 
-	logCtx := b.infoLog.WithField("matching", b.releasePaths)
+	logCtx := b.infoLog.WithField("paths", b.core.Paths)
 	logCtx.Log(logg.String("Finding archives"))
-	releaseMatches := b.core.Config.FindReleases(b.releasePathsCompiled)
+	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
 	if len(releaseMatches) == 0 {
-		return fmt.Errorf("%s: no releases found matching %s", commandName, b.releasePaths)
+		return fmt.Errorf("%s: no releases found matching -paths %v", commandName, b.core.Paths)
 	}
 
 	for _, release := range releaseMatches {

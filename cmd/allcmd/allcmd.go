@@ -37,7 +37,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	a := &all{
 		core:      core,
 		builder:   builder,
-		archivist: archivecmd.NewArchivist(core, builder.BuildPaths, fs),
+		archivist: archivecmd.NewArchivist(core),
 		releaser:  releasecmd.NewReleaser(core, fs),
 	}
 
