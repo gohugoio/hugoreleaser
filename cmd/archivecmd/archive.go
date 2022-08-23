@@ -123,7 +123,6 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				)
 
 				if _, err := os.Stat(binaryFilename); err != nil {
-					// TODO(bep) add more context here.
 					return fmt.Errorf("%s: binary file not found: %q", commandName, binaryFilename)
 				}
 
@@ -144,7 +143,6 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 
 				for _, extraFile := range archiveSettings.ExtraFiles {
 					buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
-						// TODO(bep) unify slashes.
 						SourcePathAbs: filepath.Join(b.core.ProjectDir, extraFile.SourcePath),
 						TargetPath:    extraFile.TargetPath,
 					})

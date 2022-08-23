@@ -26,17 +26,6 @@ type File interface {
 	Name() string
 }
 
-type ReadSeekCloser interface {
-	ReadSeeker
-	io.Closer
-}
-
-// ReadSeeker wraps io.Reader and io.Seeker.
-type ReadSeeker interface {
-	io.Reader
-	io.Seeker
-}
-
 // RemoveAllMkdirAll is a wrapper for os.RemoveAll and os.MkdirAll.
 func RemoveAllMkdirAll(dirname string) error {
 	_ = os.RemoveAll(dirname)

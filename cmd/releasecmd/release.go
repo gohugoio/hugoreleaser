@@ -72,6 +72,16 @@ func (b *Releaser) Init() error {
 
 	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
 
+	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
+	if len(releaseMatches) == 0 {
+		return fmt.Errorf("%s: no releases found matching -paths %v", commandName, b.core.Paths)
+	}
+	for _, r := range releaseMatches {
+		if err := releases.Validate(r.ReleaseSettings.TypeParsed); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -84,12 +94,12 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		return fmt.Errorf("%s: no releases defined in config", commandName)
 	}
 
-	logCtx := b.infoLog.WithField("paths", b.core.Paths)
+	logCtx := b.infoLog
+	if len(b.core.Paths) > 0 {
+		logCtx = b.infoLog.WithField("paths", b.core.Paths)
+	}
 	logCtx.Log(logg.String("Finding archives"))
 	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
-	if len(releaseMatches) == 0 {
-		return fmt.Errorf("%s: no releases found matching -paths %v", commandName, b.core.Paths)
-	}
 
 	for _, release := range releaseMatches {
 		releaseDir := filepath.Join(

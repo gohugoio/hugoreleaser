@@ -59,6 +59,7 @@ type BuildSettings struct {
 	GoSettings GoSettings `toml:"go_settings"`
 }
 
+// Fields is used by the logging framework.
 func (b BuildSettings) Fields() logg.Fields {
 	return logg.Fields{
 		logg.Field{Name: "flags", Value: b.Flags},

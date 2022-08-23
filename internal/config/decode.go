@@ -43,7 +43,6 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	s := buf.String()
 
 	s = envhelpers.Expand(s, func(k string) string {
-		// TODO(bep) additional env.
 		return os.Getenv(k)
 	})
 
@@ -65,7 +64,7 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 
 	// Merge build settings.
-	// We may have build settings on all of project > build > os > arch.
+	// We may have build settings on any of Project > Build > Goos > Goarch.
 	// Note that this uses the replaces any zero value as defined by IsTruthfulValue (a Hugo construct)m
 	// meaning any value on the right will be used if the left is zero according to that definition.
 	shallowMerge(&cfg.BuildSettings.GoSettings, cfg.GoSettings)
@@ -86,13 +85,13 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 
 	// Merge archive settings.
-	// We may have archive settings on all of project > archive.
+	// We may have archive settings on all of Project > Archive.
 	for i := range cfg.Archives {
 		shallowMerge(&cfg.Archives[i].ArchiveSettings, cfg.ArchiveSettings)
 	}
 
 	// Merge release settings.
-	// We may have release settings on all of project > release.
+	// We may have release settings on all of Project > Release.
 	for i := range cfg.Releases {
 		shallowMerge(&cfg.Releases[i].ReleaseSettings, cfg.ReleaseSettings)
 	}
@@ -160,17 +159,6 @@ func LoadEnvFile(filename string) (map[string]string, error) {
 		env[strings.TrimSpace(key)] = strings.TrimSpace(value)
 	}
 	return env, scanner.Err()
-}
-
-// IsTruthful returns whether in represents a truthful value.
-// See IsTruthfulValue
-func IsTruthful(in any) bool {
-	switch v := in.(type) {
-	case reflect.Value:
-		return isTruthfulValue(v)
-	default:
-		return isTruthfulValue(reflect.ValueOf(in))
-	}
 }
 
 type zeroer interface {

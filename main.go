@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -98,14 +99,23 @@ func parseAndRun(args []string) (err error) {
 		return fmt.Errorf("error parsing command line: %w", err)
 	}
 
+	if core.Try {
+		os.Setenv("GITHUB_TOKEN", "faketoken")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), core.Timeout)
+	defer cancel()
+
 	if err := core.Init(); err != nil {
 		return fmt.Errorf("error initializing config: %w", err)
 	}
 
-	// TODO(bep) add a global timeout.
-	if err := coreCommand.Run(context.Background()); err != nil {
+	if err := coreCommand.Run(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			return fmt.Errorf("command timed out after %s; increase -timeout if needed", core.Timeout)
+		}
 		return fmt.Errorf("error running command: %w", err)
 	}
 
-	return
+	return err
 }

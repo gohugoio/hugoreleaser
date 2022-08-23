@@ -17,7 +17,6 @@ package config
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
@@ -120,8 +119,7 @@ type ArchiveType struct {
 	Format    string `toml:"format"`
 	Extension string `toml:"extension"`
 
-	FormatParsed        archiveformats.Format `toml:"-"`
-	HeaderModTimeParsed time.Time             `toml:"-"`
+	FormatParsed archiveformats.Format `toml:"-"`
 }
 
 func (a *ArchiveType) Init() error {

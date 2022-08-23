@@ -34,12 +34,20 @@ import (
 )
 
 // Note: If tests are running slow for you, make sure you have GOMODCACHE set.
-func TestBasic(t *testing.T) {
+func TestCommands(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
-		Dir:      "testscripts/basic",
-		TestWork: false,
-		//UpdateScripts: true,
+		Dir: "testscripts/commands",
+		Setup: func(env *testscript.Env) error {
+			return setup(env)
+		},
+	})
+}
+
+func TestMisc(t *testing.T) {
+	setup := testSetupFunc()
+	testscript.Run(t, testscript.Params{
+		Dir: "testscripts/misc",
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -272,7 +280,6 @@ func TestMain(m *testing.M) {
 			},
 			"gobinary": func() int {
 				if runtime.GOOS == "windows" {
-					// TODO(bep) I assume this just doesn't work on Windows.
 					return 0
 				}
 				if len(os.Args) < 3 {

@@ -29,18 +29,27 @@ import (
 
 const tokenEnvVar = "GITHUB_TOKEN"
 
-func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
+// Validate validates the release type.
+func Validate(typ releasetypes.Type) error {
 	if typ != releasetypes.GitHub {
-		return nil, fmt.Errorf("github: only github is supported for now")
+		return fmt.Errorf("release: only github is supported for now")
 	}
 	token := os.Getenv(tokenEnvVar)
 	if token == "" {
-		return nil, fmt.Errorf("github: missing %q env var", tokenEnvVar)
+		return fmt.Errorf("release: missing %q env var", tokenEnvVar)
+	}
+	return nil
+}
+
+func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
+	if err := Validate(typ); err != nil {
+		return nil, err
 	}
 
+	token := os.Getenv(tokenEnvVar)
+
 	// Set in tests to test the all command.
-	// We cannot curently use the -try flag because
-	// that does not create any archives.
+	// and when running with the -try flag.
 	if token == "faketoken" {
 		return &FakeClient{}, nil
 	}
