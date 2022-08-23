@@ -128,6 +128,9 @@ type Core struct {
 	// Number of parallel tasks.
 	NumWorkers int
 
+	// Global timeout for all commands.
+	Timeout time.Duration
+
 	// The global workforce.
 	Workforce *workers.Workforce
 
@@ -156,6 +159,7 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
 	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
 	fs.IntVar(&c.NumWorkers, "workers", numWorkers, "Number of parallel builds.")
+	fs.DurationVar(&c.Timeout, "timeout", 55*time.Minute, "Global timeout.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
 
@@ -232,7 +236,7 @@ func (c *Core) compilePaths() error {
 		return nil
 	}
 
-	// Specific paths needs to start with either builds/ or releases/.
+	// Specific paths needs to start with either builds/, archives/ or releases/.
 	for _, p := range c.Paths {
 		if !strings.HasPrefix(p, buildsPrefix) && !strings.HasPrefix(p, archivesPrefix) && !strings.HasPrefix(p, releasesPrefix) {
 			return fmt.Errorf("path %q must start with builds/ or archives/ or releases/", p)
@@ -254,6 +258,9 @@ func (c *Core) compilePaths() error {
 
 	if c.PathsBuildsCompiled == nil {
 		c.PathsBuildsCompiled = matchers.MatchEverything
+	}
+	if c.PathsArchivesCompiled == nil {
+		c.PathsArchivesCompiled = matchers.MatchEverything
 	}
 	if c.PathsReleasesCompiled == nil {
 		c.PathsReleasesCompiled = matchers.MatchEverything
@@ -389,9 +396,9 @@ func (c *Core) Init() error {
 			// Already started.
 			return nil
 		}
+		infoCtx := c.InfoLog.WithField("plugin", p.ID)
 		client, err := plugins.StartArchivePlugin(c.InfoLog, c.Config.GoSettings, p)
 		if err != nil {
-			// TODO(bep) |0: file already closed: when plugin could not be found.
 			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
 		}
 
@@ -404,6 +411,7 @@ func (c *Core) Init() error {
 		if resp.Heartbeat != heartbeat {
 			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.ID)
 		}
+		infoCtx.Log(logg.String("Archive plugin started and ready for use"))
 		c.PluginsRegistryArchive[p.ID] = client
 		return nil
 	}

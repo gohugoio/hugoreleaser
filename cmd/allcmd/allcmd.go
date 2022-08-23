@@ -66,7 +66,6 @@ func (a *all) Init() error {
 	return nil
 }
 
-// TODO(bep) add some contextual startup checks for GITHUB_TOKEN etc. (fail early)
 func (a *all) Exec(ctx context.Context, args []string) error {
 	if err := a.Init(); err != nil {
 		return err

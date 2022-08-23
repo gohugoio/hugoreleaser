@@ -99,7 +99,6 @@ func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config
 	}
 
 	if req.Heartbeat != resp.Heartbeat {
-		// TODO(bep) make this into a typed error with a better error message further up.
 		return fmt.Errorf("heartbeat mismatch: expected %q, got %q", req.Heartbeat, resp.Heartbeat)
 	}
 

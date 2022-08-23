@@ -34,8 +34,6 @@ import (
 const commandName = "build"
 
 // New returns a usable ffcli.Command for the build subcommand.
-// TODO(bep): Add -paths (slice)
-// TODO(bep): Add a coverage command (JSON?)
 func New(core *corecmd.Core) *ffcli.Command {
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
 	core.RegisterFlags(fs)

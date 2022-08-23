@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-	// TODO(bep) this can be automated further ...
 	readmeFilename := "../README.md"
 	readmeContent, err := os.ReadFile(readmeFilename)
 	must(err)

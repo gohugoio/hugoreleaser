@@ -3,22 +3,20 @@
 [![codecov](https://codecov.io/gh/gohugoio/hugoreleaser/branch/main/graph/badge.svg?token=OWZ9RCAYWO)](https://codecov.io/gh/gohugoio/hugoreleaser)
 [![GoDoc](https://godoc.org/github.com/gohugoio/hugoreleaser?status.svg)](https://godoc.org/github.com/gohugoio/hugoreleaser)
 
-New build script(s) for Hugo. Very much a work in progress.
-
 * [Configuration](#configuration)
     * [Configuration File](#configuration-file)
     * [Template Expansion](#template-expansion)
     * [Environment Variables](#environment-variables)
 * [Glob Matching](#glob-matching)
-* [Segments](#segments)
+* [Partitions](#partitions)
 * [Plugins](#plugins)
-* [Development of this project](#development-of-this-project)
-* [Notes](#notes)
+* [Why another Go release tool?](#why-another-go-release-tool)
 
 ## Configuration
 
 ### Configuration File
 
+Hugoreleaser reads its main configuration from a file named `hugoreleaser.toml` in the working directory. This [this project's configuration](./hugoreleaser.toml) for an annotated example.
 
 ### Template Expansion
 
@@ -29,7 +27,7 @@ The data received in the template (e.g. the ".") is:
 | Field  | Description |
 | ------------- | ------------- |
 | Project  | The project name as defined in config.  |
-| Tag      | The tag as defined by -flag.  |
+| Tag      | The tag as defined by the -tag flag.  |
 | Goos     | The current GOOS.  |
 | Goarch   | The current GOARCH.  |
 
@@ -56,7 +54,7 @@ The order of presedence for environment variables/flags:
 2. OS environment variables.
 3. Environment variables defined in `hugoreleaser.env`.
 
-A `hugoreleaser.env`, if found in the current directory, will be parsed and loaded into the environment of the running process. The format is simple, a text files of key-value-pairs on the form `KEY=value`, empty lines and lines starting with `#` is ignored:
+A `hugoreleaser.env` file, if found in the current directory, will be parsed and loaded into the environment of the running process. The format is simple, a text files of key-value-pairs on the form `KEY=value`, empty lines and lines starting with `#` is ignored:
 
 Environment variable expressions in `hugoreleaser.toml` on the form `${VAR}` will be expanded before it's parsed.
 
@@ -81,7 +79,6 @@ The other custom variables can be used in `hugoreleaser.toml`, e.g:
 
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
 
-
 ## Glob Matching
 
 Hugo releaser supports the Glob rules as defined in [Gobwas Glob](https://github.com/gobwas/glob) with one additional rule: Glob patterns can be negated with a `!` prefix.
@@ -94,72 +91,28 @@ hugoreleaser build  -paths "builds/**" -paths "!builds/**/arm64"
 
 The above will build everything, expect the ARM64 `GOARCH`.
 
-## Segments
+## Partitions
 
-Both the configuration file and the directory structure inside `/dist` follows the same tree structure: 
+The configuration file and the (mimics the directory structure inside `/dist`) creates a simple tree structure that can be used to partition a build/release. All commands takes one or more `-paths` flag values. This is a [Glob Path](#glob-matching) matching builds to cover or releases to release (the latter is only relevant for the last step). Hugo has partitioned its builds using a container name as the first path element. With that, releasing may look something like this:
 
-* For *builds* and *archives*: `/dist/<project>/<tag>/{builds,archives}/<user-defined-path>/<GOOS>/<GOARCH>`
-* For `releases`: `/dist/<project>/<tag>/releases/<user-defined-path>`
-
-Given the above, it's possible to split all the release steps (build, archive, release) into segments. A common setup would probably be to split the build step and let the rest run in one go. That was the prime reason behind why Hugoreleaser was initially created; Hugo needed a way to split the build of its extended builds (C/C++, CGO) across multiple Docker containers.
-
-On both `builds` (groups `builds` and `archives`) and `releases` there is a `path` attribute. Slashes are allowed for more fine grained control (e.g. `unix/bsd`).
-
-```toml
-[[builds]]
-    path = "unix"
-
-    [[builds.os]]
-        goos = "freebsd"
-        [[builds.os.archs]]
-            goarch = "amd64"
-        [[builds.os.archs]]
-            goarch = "arm64"
-        [[builds.os.archs]]
-            goarch = "386"
-     [[builds.os]]
-        goos = "openbsd"
-        [[builds.os.archs]]
-            goarch = "amd64"
 ```
-
-In both the configuration file and in the CLI tool there are `paths`, which represents [Glob patterns](#glob-matching) applied as filters:
-
-```toml
-[[builds]]
-    path = "unix"
-[[archives]]
-    paths = ["builds/unix/**"]
-[[releases]]
-    paths = ["archives/**/freebsd/{amd64,386}"]
-    path = "bsd"
-```
-
-The matching starts below `<tag>/` in the tree structure described above.
-
-And then running each step in sequence:
-
-```bash
-hugoreleaser build -paths builds/**/freebsd/amd64
-hugoreleaser build -paths builds/**/freebsd/386
-hugoreleaser archive -paths builds/**/freebsd/{amd64,386}
-hugoreleaser release -paths /releases/bsd
+# Run this in container1
+hugoreleaser build --paths "builds/container1/**"
+# Run this in container2, using the same /dist as the first step.
+hugoreleaser build --paths "builds/container2/**"
+hugoreleaser archive
+hugoreleaser release
 ```
 
 ## Plugins
 
 Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/deb) for an example.
 
-See [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more information.
+See the [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more information.
 
 
-## Development of this project
+## Why another Go release tool?
 
-This project contains some example plugins as sub modules, which makes it convenient to have a `go.work` setup (at least in VS Code).
+If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because[Hugo](https://github.com/gohugoio/hugo) needed to split the build across multiple containers[^1]. Hugo is using this tool for its next release, fingers crossed. 
 
-But we don't want that setup in the production build, so the `go.work*` files are currently in `.gitignore`. Copy the `go.work.dev` file to `go.work` and you should be good. And I agree, this setup leaves something to be desired.
-
-## Notes
-
-* Plugins: Vendoring (`go mod vendor`) or not.
-* GOMODCACHE
+[^1]: The extended version of Hugo uses CGO and compiles some C/C++ libraries (libsass, webp). It turns out it's incredibly hard to do this cross platform in only one Docker container (building MacOS/Linux/Windows for both `AMD64` and `ARM64`).

@@ -1,32 +1,49 @@
 project = "hugoreleaser"
 
+# Go settings can be set on any of Project > Build.
+# See Build settings for merge rules.
 [go_settings]
+    #  go_proxy will be used to set GOPROXY when running Go.
+    # It will default to 'https://proxy.golang.org' if not set.
+    #
+    #  See https://proxy.golang.org/ for more information.
     go_proxy = "https://proxy.golang.org"
     go_exe   = "go"
 
+# Build settings can be set on any of Project > Build > Goos > Goarch.
+# Zero values (empty strings, 0 numbers) and nil slices/maps wil inherit values from the nearest non-zero value above for a key.
+# Empty slices and maps will stay empty (e.g. `env = []`)
 [build_settings]
     binary  = "hugoreleaser"
     flags   = ["-buildmode", "exe"]
     env     = ["CGO_ENABLED=0"]
     ldflags = ""
 
+# Archive settings can be set on any of Project > Archive.
+# Follows the same merge rules as Build settings.
 [archive_settings]
     name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-    extra_files   = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]
+    # Extra, as in: In addition to the binary.
+    extra_files = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "LICENSE", target_path = "LICENSE" }]
     [archive_settings.type]
         format    = "tar.gz"
         extension = ".tar.gz"
 
 [release_settings]
-    name                           = "${HR_RELEASE_NAME}"
+    name                           = "${HR_RELEASE_NAME}" # Env variable set in hugoreleaser.env.
     type                           = "github"
     repository                     = "hugoreleaser"
     repository_owner               = "gohugoio"
     generate_release_notes_on_host = true
     draft                          = true
-    prerelease                     = true
+    prerelease                     = false
 
 [[builds]]
+    # User-defined path. Can be used to partition the build/archive step, e.g.:
+    #
+    #     hugoreleaser build -paths "builds/unix/**"
+    #
+    # The above would only build binaries matching the given path ("Unix binaries").
     path = "unix"
 
     [[builds.os]]
@@ -55,13 +72,20 @@ project = "hugoreleaser"
     paths = ["builds/**/linux/amd64"]
     [archives.archive_settings]
         [archives.archive_settings.type]
+            # When format is _plugin,
+            # archive_settings.plugin must also be configured.
             format    = "_plugin"
             extension = ".deb"
         [archives.archive_settings.plugin]
-            id      = "deb"
-            type    = "gorun"
+            id = "deb"
+            # gorun is currently the only type.
+            type = "gorun"
+            # If the plugin source lives locally, this can also be a file path,
+            # e.g. './myplugin'. In those setups you may need to set dir to the directory path,
+            # and use "." for the command.
             command = "github.com/gohugoio/hugoreleaser-archive-plugins/deb@latest"
         [archives.archive_settings.custom_settings]
+            # Custom settings as defined by the Deb plugin.
             vendor      = "gohugo.io"
             homepage    = "https://github.com/gohugoio/hugoreleaser"
             maintainer  = "Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>"
@@ -76,4 +100,6 @@ project = "hugoreleaser"
 
 [[releases]]
     paths = ["archives/**"]
-    path  = "myrelease"
+    # In this file we have only one release, but path can be used to partition the release step, e.g.:
+    #    hugoreleaser release -paths "releases/myrelease"
+    path = "myrelease"

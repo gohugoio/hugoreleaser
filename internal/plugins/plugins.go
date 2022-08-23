@@ -48,7 +48,7 @@ func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSetting
 				Args:    []string{"run", options.Command},
 				Dir:     options.Dir,
 				Env:     env,
-				Timeout: 220 * time.Second, // TODO(bep) make configurable + fix the GOMODCACHE on GitHub
+				Timeout: 20 * time.Minute,
 
 				OnMessage: func(msg execrpc.Message) {
 					statusCode := msg.Header.Status
