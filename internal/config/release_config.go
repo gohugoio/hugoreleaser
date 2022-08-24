@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
@@ -70,15 +71,70 @@ func (a *Release) Init() error {
 type ReleaseSettings struct {
 	Type string `toml:"type"`
 
-	Name                       string `toml:"name"`
-	Repository                 string `toml:"repository"`
-	RepositoryOwner            string `toml:"repository_owner"`
-	Draft                      bool   `toml:"draft"`
-	Prerelease                 bool   `toml:"prerelease"`
-	GenerateReleaseNotesOnHost bool   `toml:"generate_release_notes_on_host"`
-	ReleaseNotesFilename       string `toml:"release_notes_filename"`
+	Name            string `toml:"name"`
+	Repository      string `toml:"repository"`
+	RepositoryOwner string `toml:"repository_owner"`
+	Draft           bool   `toml:"draft"`
+	Prerelease      bool   `toml:"prerelease"`
+
+	ReleaseNotesSettings ReleaseNotesSettings `toml:"release_notes_settings"`
 
 	TypeParsed releasetypes.Type `toml:"-"`
+}
+
+type ReleaseNotesSettings struct {
+	Generate       bool                `toml:"generate"`
+	GenerateOnHost bool                `toml:"generate_on_host"`
+	Filename       string              `toml:"filename"`
+	Groups         []ReleaseNotesGroup `toml:"groups"`
+}
+
+func (g *ReleaseNotesSettings) Init() error {
+	for i := range g.Groups {
+		if err := g.Groups[i].Init(); err != nil {
+			return fmt.Errorf("[%d]: %v", i, err)
+		}
+	}
+	return nil
+}
+
+type ReleaseNotesGroup struct {
+	Title   string
+	Ordinal int
+	Regexp  string
+
+	RegexpCompiled matchers.Matcher `toml:"-"`
+}
+
+func (g *ReleaseNotesGroup) Init() error {
+	what := "release.release_settings.group"
+	if g.Regexp == "" {
+		return fmt.Errorf("%s: regexp is not set", what)
+	}
+
+	if g.Ordinal == 0 {
+		return fmt.Errorf("%s: ordinal is not set", what)
+	}
+	if g.Ordinal < -1 {
+		return fmt.Errorf("%s: ordinal must be -1 (signals a drop of matches) or a positive number", what)
+	}
+
+	if !strings.HasPrefix(g.Regexp, "(?") {
+		g.Regexp = "(?i)" + g.Regexp
+	}
+
+	var err error
+	re, err := regexp.Compile(g.Regexp)
+	if err != nil {
+		return fmt.Errorf("%s: %v", what, err)
+	}
+
+	g.RegexpCompiled = matchers.MatcherFunc(func(s string) bool {
+		return re.MatchString(s)
+	})
+
+	return nil
+
 }
 
 func (r *ReleaseSettings) Init() error {
@@ -89,6 +145,21 @@ func (r *ReleaseSettings) Init() error {
 
 	var err error
 	if r.TypeParsed, err = releasetypes.Parse(r.Type); err != nil {
+		return fmt.Errorf("%s: %v", what, err)
+	}
+
+	if len(r.ReleaseNotesSettings.Groups) == 0 {
+		// Add a default group matching all.
+		r.ReleaseNotesSettings.Groups = []ReleaseNotesGroup{
+			{
+				Title:   "What's Changed",
+				Ordinal: 1,
+				Regexp:  ".*",
+			},
+		}
+	}
+
+	if err := r.ReleaseNotesSettings.Init(); err != nil {
 		return fmt.Errorf("%s: %v", what, err)
 	}
 

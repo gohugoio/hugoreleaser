@@ -1,0 +1,8 @@
+{{ range .ChangeGroups -}}
+## {{ .Title }}
+
+{{ range .Changes -}}
+* {{ .Subject }} {{ .Hash }}{{ with .Username }} @{{ . }}{{ end }} {{ range .Issues }}#{{ . }} {{ end }}
+{{ end -}}
+
+{{ end }}

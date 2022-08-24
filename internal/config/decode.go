@@ -94,6 +94,7 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	// We may have release settings on all of Project > Release.
 	for i := range cfg.Releases {
 		shallowMerge(&cfg.Releases[i].ReleaseSettings, cfg.ReleaseSettings)
+		shallowMerge(&cfg.Releases[i].ReleaseSettings.ReleaseNotesSettings, cfg.ReleaseSettings.ReleaseNotesSettings)
 	}
 
 	// Init and validate build settings.

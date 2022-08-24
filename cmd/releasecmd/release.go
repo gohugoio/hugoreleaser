@@ -16,6 +16,7 @@ package releasecmd
 
 import (
 	"context"
+	_ "embed"
 	"flag"
 	"fmt"
 	"os"
@@ -24,6 +25,8 @@ import (
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
+	"github.com/gohugoio/hugoreleaser/internal/releases/changelog"
+	"github.com/gohugoio/hugoreleaser/staticfiles"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -178,11 +181,12 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 			return fmt.Errorf("%s: failed to create checksum file %q: %s", commandName, checksumFilename, err)
 		}
 
+		logCtx.WithField("filename", checksumFilename).Log(logg.String("Created checksum file"))
+
 		archiveFilenames = append(archiveFilenames, checksumFilename)
 
 		logCtx.Log(logg.String(fmt.Sprintf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)))
 
-		// Now create the release archive and upload files.
 		client, err := releases.NewClient(ctx, release.ReleaseSettings.TypeParsed)
 		if err != nil {
 			return fmt.Errorf("%s: failed to create release client: %v", commandName, err)
@@ -196,6 +200,85 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 			Commitish: b.commitish,
 			Settings:  release.ReleaseSettings,
 		}
+
+		// Generate release notes if needed.
+		// Write them to the release dir in dist to make testing easier.
+		if info.Settings.ReleaseNotesSettings.Generate {
+			if info.Settings.ReleaseNotesSettings.Filename != "" {
+				return fmt.Errorf("%s: both GenerateReleaseNotes and ReleaseNotesFilename are set for release type %q", commandName, release.ReleaseSettings.Type)
+			}
+
+			var resolveUsername func(commit, author string) (string, error)
+			if unc, ok := client.(releases.UsernameResolver); ok {
+				resolveUsername = func(commit, author string) (string, error) {
+					return unc.ResolveUsername(ctx, commit, author, info)
+				}
+			}
+
+			infos, err := changelog.CollectChanges(
+				changelog.Options{
+					Tag:             b.core.Tag,
+					Commitish:       b.commitish,
+					RepoPath:        os.Getenv("HUGORELEASER_CHANGELOG_GITREPO"), // Set in tests.
+					ResolveUserName: resolveUsername,
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+			infosGrouped, err := changelog.GroupByFunc(infos, func(change changelog.Change) (changelog.TitleOrdinal, bool) {
+				for _, g := range info.Settings.ReleaseNotesSettings.Groups {
+					if g.RegexpCompiled.Match(change.Subject) {
+						if g.Ordinal == -1 {
+							return changelog.TitleOrdinal{}, false
+						}
+						return changelog.TitleOrdinal{
+							Title:   g.Title,
+							Ordinal: g.Ordinal,
+						}, true
+					}
+				}
+				return changelog.TitleOrdinal{}, false
+			})
+
+			if err != nil {
+				return err
+			}
+
+			type ReleaseNotesContext struct {
+				ChangeGroups []changelog.TitleChanges
+			}
+
+			rnc := ReleaseNotesContext{
+				ChangeGroups: infosGrouped,
+			}
+
+			releaseNotesFilename := filepath.Join(releaseDir, "release-notes.md")
+			info.Settings.ReleaseNotesSettings.Filename = releaseNotesFilename
+			err = func() error {
+				f, err := os.Create(releaseNotesFilename)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+
+				if err := staticfiles.ReleaseNotesTemplate.Execute(f, rnc); err != nil {
+					return err
+				}
+
+				return nil
+			}()
+
+			if err != nil {
+				return fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
+			}
+
+			logCtx.WithField("filename", releaseNotesFilename).Log(logg.String("Created release notes"))
+
+		}
+
+		// Now create the release archive and upload files.
 
 		releaseID, err := client.Release(ctx, info)
 		if err != nil {

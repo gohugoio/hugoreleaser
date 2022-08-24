@@ -10,6 +10,7 @@
 * [Glob Matching](#glob-matching)
 * [Partitions](#partitions)
 * [Plugins](#plugins)
+* [Release Notes](#release-notes)
 * [Why another Go release tool?](#why-another-go-release-tool)
 
 ## Configuration
@@ -108,6 +109,16 @@ hugoreleaser release
 Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/deb) for an example.
 
 See the [Hugoreleaser Plugins API](https://github.com/gohugoio/hugoreleaser-plugins-api) for API and more information.
+
+## Release Notes
+
+The config map `release_notes_settings` has 3 options for how to handle release notes:
+
+1. Set a `filename`
+2. Set `generate_on_host=true` and let GitHub do it.
+3. Set `generate=true` and let Hugoreleaser do it.
+
+There are more details about change grouping etc. in this [this project's configuration](./hugoreleaser.toml).
 
 ## Why another Go release tool?
 
