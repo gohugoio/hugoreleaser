@@ -99,9 +99,9 @@ func (g *ReleaseNotesSettings) Init() error {
 }
 
 type ReleaseNotesGroup struct {
-	Title   string
-	Ordinal int
-	Regexp  string
+	Title  string `toml:"title"`
+	Regexp string `toml:"regexp"`
+	Ignore bool   `toml:"ignore"`
 
 	RegexpCompiled matchers.Matcher `toml:"-"`
 }
@@ -110,13 +110,6 @@ func (g *ReleaseNotesGroup) Init() error {
 	what := "release.release_settings.group"
 	if g.Regexp == "" {
 		return fmt.Errorf("%s: regexp is not set", what)
-	}
-
-	if g.Ordinal == 0 {
-		return fmt.Errorf("%s: ordinal is not set", what)
-	}
-	if g.Ordinal < -1 {
-		return fmt.Errorf("%s: ordinal must be -1 (signals a drop of matches) or a positive number", what)
 	}
 
 	if !strings.HasPrefix(g.Regexp, "(?") {
@@ -152,9 +145,8 @@ func (r *ReleaseSettings) Init() error {
 		// Add a default group matching all.
 		r.ReleaseNotesSettings.Groups = []ReleaseNotesGroup{
 			{
-				Title:   "What's Changed",
-				Ordinal: 1,
-				Regexp:  ".*",
+				Title:  "What's Changed",
+				Regexp: ".*",
 			},
 		}
 	}

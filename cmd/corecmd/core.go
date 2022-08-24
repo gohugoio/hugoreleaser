@@ -432,7 +432,7 @@ func (c *Core) Close() error {
 	for k, v := range c.PluginsRegistryArchive {
 		if err := v.Close(); err != nil {
 			if !errors.Is(err, execrpc.ErrShutdown) {
-				c.WarnLog.Log(logg.String(fmt.Sprintf("error closing plugin %q: %s", k, err)))
+				c.WarnLog.Logf("error closing plugin %q: %s", k, err)
 			}
 		}
 	}
