@@ -23,7 +23,7 @@ import (
 )
 
 // We add a limited set of useful funcs, mostly string handling, to the Go built-ins.
-var builtInFuncs = template.FuncMap{
+var BuiltInFuncs = template.FuncMap{
 	"upper": func(s string) string {
 		return strings.ToUpper(s)
 	},
@@ -41,7 +41,7 @@ var builtInFuncs = template.FuncMap{
 
 // Sprintt renders the Go template t with the given data in ctx.
 func Sprintt(t string, ctx any) (string, error) {
-	tmpl := template.New("").Funcs(builtInFuncs)
+	tmpl := template.New("").Funcs(BuiltInFuncs)
 	var err error
 	tmpl, err = tmpl.Parse(t)
 	if err != nil {

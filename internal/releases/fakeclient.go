@@ -15,8 +15,8 @@ type FakeClient struct {
 func (c *FakeClient) Release(ctx context.Context, info ReleaseInfo) (int64, error) {
 	// Tests depend on this string.
 	fmt.Printf("fake: release: %#v\n", info)
-	if info.Settings.ReleaseNotesFilename != "" {
-		_, err := os.Stat(info.Settings.ReleaseNotesFilename)
+	if info.Settings.ReleaseNotesSettings.Filename != "" {
+		_, err := os.Stat(info.Settings.ReleaseNotesSettings.Filename)
 		if err != nil {
 			return 0, err
 		}

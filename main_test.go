@@ -48,6 +48,7 @@ func TestMisc(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/misc",
+		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},

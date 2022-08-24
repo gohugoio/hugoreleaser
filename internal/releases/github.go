@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/gohugoio/hugoreleaser/internal/releases/releasetypes"
 	"github.com/google/go-github/v45/github"
@@ -61,7 +62,8 @@ func NewClient(ctx context.Context, typ releasetypes.Type) (Client, error) {
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 
 	return &GitHubClient{
-		client: github.NewClient(httpClient),
+		client:        github.NewClient(httpClient),
+		usernameCache: make(map[string]string),
 	}, nil
 }
 
@@ -82,11 +84,46 @@ func UploadAssetsFileWithRetries(ctx context.Context, client Client, info Releas
 
 }
 
-type GitHubClient struct {
-	client *github.Client
+// UsernameResolver is an interface that allows to resolve the username of a commit.
+type UsernameResolver interface {
+	ResolveUsername(ctx context.Context, sha, author string, info ReleaseInfo) (string, error)
 }
 
-func (c GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, error) {
+var _ UsernameResolver = &GitHubClient{}
+
+type GitHubClient struct {
+	client *github.Client
+
+	usernameCacheMu sync.Mutex
+	usernameCache   map[string]string
+}
+
+func (c *GitHubClient) ResolveUsername(ctx context.Context, sha, author string, info ReleaseInfo) (string, error) {
+	c.usernameCacheMu.Lock()
+	defer c.usernameCacheMu.Unlock()
+	if username, ok := c.usernameCache[author]; ok {
+		return username, nil
+	}
+	r, resp, err := c.client.Repositories.GetCommit(ctx, info.Settings.RepositoryOwner, info.Settings.Repository, sha, nil)
+	if err != nil {
+		if resp != nil && (resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusUnprocessableEntity) {
+			return "", nil
+		}
+		return "", err
+	}
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		return "", nil
+	}
+
+	if r.Author.Login == nil {
+		return "", nil
+	}
+
+	c.usernameCache[author] = *r.Author.Login
+	return c.usernameCache[author], nil
+}
+
+func (c *GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, error) {
 	s := func(s string) *string {
 		if s == "" {
 			return nil
@@ -97,9 +134,10 @@ func (c GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, err
 	settings := info.Settings
 
 	var body string
+	releaseNotesSettings := settings.ReleaseNotesSettings
 
-	if settings.ReleaseNotesFilename != "" {
-		b, err := os.ReadFile(settings.ReleaseNotesFilename)
+	if releaseNotesSettings.Filename != "" {
+		b, err := os.ReadFile(releaseNotesSettings.Filename)
 		if err != nil {
 			return 0, err
 		}
@@ -113,7 +151,7 @@ func (c GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, err
 		Body:                 s(body),
 		Draft:                github.Bool(settings.Draft),
 		Prerelease:           github.Bool(settings.Prerelease),
-		GenerateReleaseNotes: github.Bool(settings.GenerateReleaseNotesOnHost),
+		GenerateReleaseNotes: github.Bool(releaseNotesSettings.GenerateOnHost),
 	}
 
 	rel, resp, err := c.client.Repositories.CreateRelease(ctx, settings.RepositoryOwner, settings.Repository, r)
@@ -128,7 +166,7 @@ func (c GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, err
 	return *rel.ID, nil
 }
 
-func (c GitHubClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f *os.File, releaseID int64) error {
+func (c *GitHubClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f *os.File, releaseID int64) error {
 	settings := info.Settings
 
 	_, resp, err := c.client.Repositories.UploadReleaseAsset(
