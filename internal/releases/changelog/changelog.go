@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -18,25 +17,26 @@ func CollectChanges(opts Options) (Changes, error) {
 
 // GroupByFunc groups g according to the grouping function f.
 // If f returns false, that change item is not included in the result.
-func GroupByFunc(g Changes, f func(Change) (TitleOrdinal, bool)) ([]TitleChanges, error) {
-	m := make(map[TitleOrdinal]Changes)
-	for _, gi := range g {
-		key, ok := f(gi)
-		if ok {
-			m[key] = append(m[key], gi)
-		}
-	}
+func GroupByFunc(g Changes, f func(Change) (string, bool)) ([]TitleChanges, error) {
 	var ngi []TitleChanges
-	for k, v := range m {
-		ngi = append(ngi, TitleChanges{TitleOrdinal: k, Changes: v})
-	}
-	sort.Slice(ngi, func(i, j int) bool {
-		iv, jv := ngi[i], ngi[j]
-		if iv.Ordinal == jv.Ordinal {
-			return iv.Title < jv.Title
+	for _, gi := range g {
+		title, ok := f(gi)
+		if !ok {
+			continue
 		}
-		return iv.Ordinal < jv.Ordinal
-	})
+		idx := -1
+		for i, ngi := range ngi {
+			if ngi.Title == title {
+				idx = i
+				break
+			}
+		}
+		if idx == -1 {
+			ngi = append(ngi, TitleChanges{Title: title})
+			idx = len(ngi) - 1
+		}
+		ngi[idx].Changes = append(ngi[idx].Changes, gi)
+	}
 	return ngi, nil
 
 }
@@ -72,18 +72,10 @@ type Options struct {
 	RepoPath  string
 }
 
-// TitleChanges represents a list of changes grouped by title and an ordinal.
+// TitleChanges represents a list of changes grouped by title.
 type TitleChanges struct {
-	TitleOrdinal
-	Changes Changes
-}
-
-// TitleOrdinal holds an ordinal and a title.
-// The ordinal is used for sorting, 1 based.
-// Lower is higher up, -1 gets dropped.
-type TitleOrdinal struct {
 	Title   string
-	Ordinal int
+	Changes Changes
 }
 
 type collector struct {

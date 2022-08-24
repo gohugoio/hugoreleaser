@@ -185,7 +185,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 
 		archiveFilenames = append(archiveFilenames, checksumFilename)
 
-		logCtx.Log(logg.String(fmt.Sprintf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)))
+		logCtx.Logf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)
 
 		client, err := releases.NewClient(ctx, release.ReleaseSettings.TypeParsed)
 		if err != nil {
@@ -227,19 +227,16 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 				return err
 			}
 
-			infosGrouped, err := changelog.GroupByFunc(infos, func(change changelog.Change) (changelog.TitleOrdinal, bool) {
+			infosGrouped, err := changelog.GroupByFunc(infos, func(change changelog.Change) (string, bool) {
 				for _, g := range info.Settings.ReleaseNotesSettings.Groups {
 					if g.RegexpCompiled.Match(change.Subject) {
-						if g.Ordinal == -1 {
-							return changelog.TitleOrdinal{}, false
+						if g.Ignore {
+							return "", false
 						}
-						return changelog.TitleOrdinal{
-							Title:   g.Title,
-							Ordinal: g.Ordinal,
-						}, true
+						return g.Title, true
 					}
 				}
-				return changelog.TitleOrdinal{}, false
+				return "", false
 			})
 
 			if err != nil {
@@ -293,7 +290,7 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 					return os.Open(archiveFilename)
 
 				}
-				logCtx.Log(logg.String(fmt.Sprintf("Uploading release file %s", archiveFilename)))
+				logCtx.Logf("Uploading release file %s", archiveFilename)
 				if err := releases.UploadAssetsFileWithRetries(ctx, client, info, releaseID, openFile); err != nil {
 					return err
 				}
