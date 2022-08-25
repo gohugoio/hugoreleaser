@@ -50,6 +50,10 @@ project = "hugoreleaser"
         # Set this if you have release notes file ready to use.
         filename = ""
 
+        # Collapse relases with < 10 changes below one title.
+        short_threshold = 10
+        short_title     = "What's Changed"
+
         groups = [
             # Group the changes in the release notes by title.
             # You need at least one.

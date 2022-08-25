@@ -15,9 +15,9 @@ func CollectChanges(opts Options) (Changes, error) {
 	return c.collect()
 }
 
-// GroupByFunc groups g according to the grouping function f.
+// GroupByTitleFunc groups g by title according to the grouping function f.
 // If f returns false, that change item is not included in the result.
-func GroupByFunc(g Changes, f func(Change) (string, bool)) ([]TitleChanges, error) {
+func GroupByTitleFunc(g Changes, f func(Change) (string, bool)) ([]TitleChanges, error) {
 	var ngi []TitleChanges
 	for _, gi := range g {
 		title, ok := f(gi)
