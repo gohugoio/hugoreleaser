@@ -1,0 +1,47 @@
+hugoreleaser build -tag v0.9.0
+! stderr .
+
+hugoreleaser archive -tag v0.9.0
+! stderr .
+
+
+checkfile $WORK/dist/hugoreleaser/v0.9.0/archives/main/darwin/amd64/hugoreleaser_0.9.0_darwin-amd64.tar.gz
+
+
+# Check that the flags (e.g. -tag) can be used as environment variables in config.
+# The example below isn't the most relalistic, though :-)
+
+-- hugoreleaser.toml --
+project = "hugoreleaser"
+[build_settings]
+binary = "hugoreleaser"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "gohugoio"
+draft = true
+[release_settings.release_notes_settings]
+generate = true
+[archive_settings]
+name_template = "{{ .Project }}_{{ `${HUGORELEASER_TAG}` | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+[[builds]]
+path = "main"
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths = ["builds/**"]
+[[releases]]
+paths = ["archives/**"]
+path = "myrelease"
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}

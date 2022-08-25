@@ -64,8 +64,8 @@ func TestUnfinished(t *testing.T) {
 	setup := testSetupFunc()
 
 	testscript.Run(t, testscript.Params{
-		Dir:      "testscripts/unfinished",
-		TestWork: false,
+		Dir: "testscripts/unfinished",
+		//TestWork: true,
 		//UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
