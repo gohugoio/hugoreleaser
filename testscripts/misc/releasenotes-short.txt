@@ -1,0 +1,54 @@
+env GITHUB_TOKEN=faketoken
+env HUGORELEASER_CHANGELOG_GITREPO=$SOURCE
+
+# Build binaries.
+hugoreleaser all -tag v0.7.0 -commitish main
+! stderr .
+
+cmp $WORK/dist/hugoreleaser/v0.7.0/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
+
+# Test files
+# Expected release notes
+-- expected/release-notes.md --
+## Short release
+
+* Consolidate the -paths flags/handling 48c9340 
+* Remvoe Goarm from config 3b21e4d 
+* Run go get -u all 4405ed3 
+
+-- hugoreleaser.toml --
+project = "hugoreleaser"
+[build_settings]
+binary = "hugoreleaser"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "gohugoio"
+draft = true
+[release_settings.release_notes_settings]
+generate = true
+short_threshold = 10
+short_title = "Short release"
+[archive_settings]
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+[[builds]]
+path = "main"
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[archives]]
+paths = ["builds/**"]
+[[releases]]
+paths = ["archives/**"]
+path = "myrelease"
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}

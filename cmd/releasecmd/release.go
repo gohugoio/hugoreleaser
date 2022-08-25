@@ -24,6 +24,8 @@ import (
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/gohugoio/hugoreleaser/internal/releases/changelog"
 	"github.com/gohugoio/hugoreleaser/staticfiles"
@@ -227,8 +229,23 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 				return err
 			}
 
-			infosGrouped, err := changelog.GroupByFunc(infos, func(change changelog.Change) (string, bool) {
-				for _, g := range info.Settings.ReleaseNotesSettings.Groups {
+			changeGroups := info.Settings.ReleaseNotesSettings.Groups
+			shortThreshold := info.Settings.ReleaseNotesSettings.ShortThreshold
+			if shortThreshold > 0 && len(infos) < shortThreshold {
+				shortTitle := info.Settings.ReleaseNotesSettings.ShortTitle
+				if shortTitle == "" {
+					shortTitle = "What's Changed"
+				}
+				changeGroups = []config.ReleaseNotesGroup{
+					{
+						Title:          shortTitle,
+						RegexpCompiled: matchers.MatchEverything,
+					},
+				}
+			}
+
+			infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, bool) {
+				for _, g := range changeGroups {
 					if g.RegexpCompiled.Match(change.Subject) {
 						if g.Ignore {
 							return "", false
