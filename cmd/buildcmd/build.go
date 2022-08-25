@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 
 	"github.com/bep/helpers/envhelpers"
+	"github.com/bep/helpers/slicehelpers"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
@@ -100,25 +101,15 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 
 	archs := b.core.Config.FindArchs(b.core.PathsBuildsCompiled)
 
-	if b.chunks > 0 && len(archs) > 1 {
-		var partitions [][]config.BuildArchPath
-		defaultSize := len(archs) / b.chunks
-		numb := len(archs) - defaultSize*b.chunks
-
-		size := defaultSize + 1
-		for i, idx := 0, 0; i < b.chunks; i++ {
-			if i == numb {
-				size--
-				if size == 0 {
-					break
-				}
-			}
-			partitions = append(partitions, archs[idx:idx+size])
-			idx += size
+	if b.chunks > 0 {
+		partitions := slicehelpers.Chunk(archs, b.chunks)
+		if len(partitions) <= b.chunkIndex {
+			archs = nil
+			b.infoLog.Logf("No GOOS/GOARCHs available for chunk %d of %d.", b.chunkIndex+1, b.chunks)
+		} else {
+			archs = partitions[b.chunkIndex]
+			b.infoLog.Logf("Building %d GOOS/GOARCHs in chunk %d of %d.", len(archs), b.chunkIndex+1, b.chunks)
 		}
-		archs = partitions[b.chunkIndex]
-
-		b.infoLog.Logf("Building %d  GOOS/GOARCHs in chunk %d of %d.", len(archs), b.chunkIndex, b.chunks)
 	} else {
 		b.infoLog.Logf("Building %d GOOS/GOARCHs.", len(archs))
 	}
@@ -201,6 +192,7 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 				return err
 			}
 		}
+		b.infoLog.Logf("Combining %v into a universal binary.", goarchs)
 		if err := builds.CreateMacOSUniversalBinary(outFilename, outFilenames...); err != nil {
 			return err
 		}

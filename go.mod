@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bep/execrpc v0.7.0
-	github.com/bep/helpers v0.2.0
+	github.com/bep/helpers v0.3.0
 	github.com/bep/logg v0.2.0
 	github.com/bep/workers v1.1.0
 	github.com/fatih/color v1.13.0
