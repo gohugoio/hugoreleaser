@@ -83,10 +83,11 @@ type ReleaseSettings struct {
 }
 
 type ReleaseNotesSettings struct {
-	Generate       bool                `toml:"generate"`
-	GenerateOnHost bool                `toml:"generate_on_host"`
-	Filename       string              `toml:"filename"`
-	Groups         []ReleaseNotesGroup `toml:"groups"`
+	Generate         bool                `toml:"generate"`
+	GenerateOnHost   bool                `toml:"generate_on_host"`
+	Filename         string              `toml:"filename"`
+	TemplateFilename string              `toml:"template_filename"`
+	Groups           []ReleaseNotesGroup `toml:"groups"`
 
 	// Can be used to collapse releases with a few number (less than threshold) of changes into one title.
 	ShortThreshold int    `toml:"short_threshold"`

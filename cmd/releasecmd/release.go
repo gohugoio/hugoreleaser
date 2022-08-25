@@ -21,10 +21,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/common/templ"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/gohugoio/hugoreleaser/internal/releases/changelog"
@@ -211,9 +213,14 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 	// Generate release notes if needed.
 	// Write them to the release dir in dist to make testing easier.
 	if info.Settings.ReleaseNotesSettings.Generate {
-		if err := b.generateReleaseNotes(rctx); err != nil {
+		releaseNotesFilename, err := b.generateReleaseNotes(rctx)
+		if err != nil {
 			return err
 		}
+		if releaseNotesFilename == "" {
+			panic("releaseNotesFilename is empty")
+		}
+		info.Settings.ReleaseNotesSettings.Filename = releaseNotesFilename
 	}
 
 	// Now create the release archive and upload files.
@@ -244,9 +251,9 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 	return nil
 }
 
-func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
+func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 	if rctx.Info.Settings.ReleaseNotesSettings.Filename != "" {
-		return fmt.Errorf("%s: both GenerateReleaseNotes and ReleaseNotesFilename are set for release type %q", commandName, rctx.Info.Settings.Type)
+		return "", fmt.Errorf("%s: both GenerateReleaseNotes and ReleaseNotesFilename are set for release type %q", commandName, rctx.Info.Settings.Type)
 	}
 
 	var resolveUsername func(commit, author string) (string, error)
@@ -265,7 +272,7 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
 		},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	changeGroups := rctx.Info.Settings.ReleaseNotesSettings.Groups
@@ -296,7 +303,7 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	type ReleaseNotesContext struct {
@@ -316,7 +323,26 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
 		}
 		defer f.Close()
 
-		if err := staticfiles.ReleaseNotesTemplate.Execute(f, rnc); err != nil {
+		var t *template.Template
+
+		if customTemplateFilename := rctx.Info.Settings.ReleaseNotesSettings.TemplateFilename; customTemplateFilename != "" {
+			if !filepath.IsAbs(customTemplateFilename) {
+				customTemplateFilename = filepath.Join(b.core.ProjectDir, customTemplateFilename)
+			}
+			b, err := os.ReadFile(customTemplateFilename)
+			if err != nil {
+				return err
+			}
+			t, err = templ.Parse(string(b))
+			if err != nil {
+				return err
+			}
+		} else {
+			t = staticfiles.ReleaseNotesTemplate
+
+		}
+
+		if err := t.Execute(f, rnc); err != nil {
 			return err
 		}
 
@@ -324,12 +350,12 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
 	}()
 
 	if err != nil {
-		return fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
+		return "", fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
 	}
 
 	rctx.Log.WithField("filename", releaseNotesFilename).Log(logg.String("Created release notes"))
 
-	return nil
+	return releaseNotesFilename, nil
 }
 
 func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...string) (string, error) {

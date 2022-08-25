@@ -120,6 +120,8 @@ The config map `release_notes_settings` has 3 options for how to handle release 
 
 There are more details about change grouping etc. in this [this project's configuration](./hugoreleaser.toml).
 
+For the third option, you can set a custom release notes template to use in `template_filename`. See the default template in [staticfiles/templates/release-notes.gotmpl](./staticfiles/templates/release-notes.gotmpl) for an example.
+
 ## Why another Go release tool?
 
 If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map of that project. Hugo is using this tool for its next release, fingers crossed. 
