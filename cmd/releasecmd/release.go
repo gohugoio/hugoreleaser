@@ -21,10 +21,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/common/templ"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/gohugoio/hugoreleaser/internal/releases/changelog"
@@ -316,7 +318,26 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
 		}
 		defer f.Close()
 
-		if err := staticfiles.ReleaseNotesTemplate.Execute(f, rnc); err != nil {
+		var t *template.Template
+
+		if customTemplateFilename := rctx.Info.Settings.ReleaseNotesSettings.TemplateFilename; customTemplateFilename != "" {
+			if !filepath.IsAbs(customTemplateFilename) {
+				customTemplateFilename = filepath.Join(b.core.ProjectDir, customTemplateFilename)
+			}
+			b, err := os.ReadFile(customTemplateFilename)
+			if err != nil {
+				return err
+			}
+			t, err = templ.Parse(string(b))
+			if err != nil {
+				return err
+			}
+		} else {
+			t = staticfiles.ReleaseNotesTemplate
+
+		}
+
+		if err := t.Execute(f, rnc); err != nil {
 			return err
 		}
 

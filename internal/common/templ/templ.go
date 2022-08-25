@@ -55,6 +55,17 @@ func Sprintt(t string, ctx any) (string, error) {
 	return buf.String(), nil
 }
 
+// Parse parses the Go template in s.
+func Parse(s string) (*template.Template, error) {
+	tmpl := template.New("").Funcs(BuiltInFuncs)
+	var err error
+	tmpl, err = tmpl.Parse(s)
+	if err != nil {
+		return nil, err
+	}
+	return tmpl, nil
+}
+
 // MustSprintt is like Sprintt but panics on error.
 func MustSprintt(t string, ctx any) string {
 	s, err := Sprintt(t, ctx)
