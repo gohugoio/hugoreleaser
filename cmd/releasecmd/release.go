@@ -103,223 +103,264 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 	if len(b.core.Paths) > 0 {
 		logCtx = b.infoLog.WithField("paths", b.core.Paths)
 	}
-	logCtx.Log(logg.String("Finding archives"))
+	logCtx.Log(logg.String("Finding releases"))
 	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
 
 	for _, release := range releaseMatches {
-		releaseDir := filepath.Join(
-			b.core.DistDir,
-			b.core.Config.Project,
-			b.core.Tag,
-			b.core.DistRootReleases,
-			filepath.FromSlash(release.Path),
-		)
-
-		if _, err := os.Stat(releaseDir); err == nil || os.IsNotExist(err) {
-			if !os.IsNotExist(err) {
-				// Start fresh.
-				if err := os.RemoveAll(releaseDir); err != nil {
-					return fmt.Errorf("%s: failed to remove release directory %q: %s", commandName, releaseDir, err)
-				}
-			}
-			if err := os.MkdirAll(releaseDir, 0o755); err != nil {
-				return fmt.Errorf("%s: failed to create release directory %q: %s", commandName, releaseDir, err)
-			}
-
-		}
-
-		// First collect all files to be released.
-		var archiveFilenames []string
-
-		filter := release.PathsCompiled
-		for _, archive := range b.core.Config.Archives {
-			for _, archPath := range archive.ArchsCompiled {
-				if !filter.Match(archPath.Path) {
-					continue
-				}
-				archiveDir := filepath.Join(
-					b.core.DistDir,
-					b.core.Config.Project,
-					b.core.Tag,
-					b.core.DistRootArchives,
-					filepath.FromSlash(archPath.Path),
-				)
-				archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
-			}
-		}
-
-		if len(archiveFilenames) == 0 {
-			return fmt.Errorf("%s: no files found for release %q", commandName, release.Path)
-		}
-
-		if b.core.Try {
-			continue
-		}
-
-		// Create a checksum.txt file.
-		checksumLines, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
-		if err != nil {
+		if err := b.handleRelease(ctx, logCtx, release); err != nil {
 			return err
-		}
-		checksumFilename := filepath.Join(releaseDir, "checksum.txt")
-		err = func() error {
-			f, err := os.Create(checksumFilename)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			for _, line := range checksumLines {
-				_, err := f.WriteString(line + "\n")
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
-		}()
-
-		if err != nil {
-			return fmt.Errorf("%s: failed to create checksum file %q: %s", commandName, checksumFilename, err)
-		}
-
-		logCtx.WithField("filename", checksumFilename).Log(logg.String("Created checksum file"))
-
-		archiveFilenames = append(archiveFilenames, checksumFilename)
-
-		logCtx.Logf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)
-
-		client, err := releases.NewClient(ctx, release.ReleaseSettings.TypeParsed)
-		if err != nil {
-			return fmt.Errorf("%s: failed to create release client: %v", commandName, err)
-		}
-		if b.core.Try {
-			client = &releases.FakeClient{}
-		}
-
-		info := releases.ReleaseInfo{
-			Tag:       b.core.Tag,
-			Commitish: b.commitish,
-			Settings:  release.ReleaseSettings,
-		}
-
-		// Generate release notes if needed.
-		// Write them to the release dir in dist to make testing easier.
-		if info.Settings.ReleaseNotesSettings.Generate {
-			if info.Settings.ReleaseNotesSettings.Filename != "" {
-				return fmt.Errorf("%s: both GenerateReleaseNotes and ReleaseNotesFilename are set for release type %q", commandName, release.ReleaseSettings.Type)
-			}
-
-			var resolveUsername func(commit, author string) (string, error)
-			if unc, ok := client.(releases.UsernameResolver); ok {
-				resolveUsername = func(commit, author string) (string, error) {
-					return unc.ResolveUsername(ctx, commit, author, info)
-				}
-			}
-
-			infos, err := changelog.CollectChanges(
-				changelog.Options{
-					Tag:             b.core.Tag,
-					Commitish:       b.commitish,
-					RepoPath:        os.Getenv("HUGORELEASER_CHANGELOG_GITREPO"), // Set in tests.
-					ResolveUserName: resolveUsername,
-				},
-			)
-			if err != nil {
-				return err
-			}
-
-			changeGroups := info.Settings.ReleaseNotesSettings.Groups
-			shortThreshold := info.Settings.ReleaseNotesSettings.ShortThreshold
-			if shortThreshold > 0 && len(infos) < shortThreshold {
-				shortTitle := info.Settings.ReleaseNotesSettings.ShortTitle
-				if shortTitle == "" {
-					shortTitle = "What's Changed"
-				}
-				changeGroups = []config.ReleaseNotesGroup{
-					{
-						Title:          shortTitle,
-						RegexpCompiled: matchers.MatchEverything,
-					},
-				}
-			}
-
-			infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, bool) {
-				for _, g := range changeGroups {
-					if g.RegexpCompiled.Match(change.Subject) {
-						if g.Ignore {
-							return "", false
-						}
-						return g.Title, true
-					}
-				}
-				return "", false
-			})
-
-			if err != nil {
-				return err
-			}
-
-			type ReleaseNotesContext struct {
-				ChangeGroups []changelog.TitleChanges
-			}
-
-			rnc := ReleaseNotesContext{
-				ChangeGroups: infosGrouped,
-			}
-
-			releaseNotesFilename := filepath.Join(releaseDir, "release-notes.md")
-			info.Settings.ReleaseNotesSettings.Filename = releaseNotesFilename
-			err = func() error {
-				f, err := os.Create(releaseNotesFilename)
-				if err != nil {
-					return err
-				}
-				defer f.Close()
-
-				if err := staticfiles.ReleaseNotesTemplate.Execute(f, rnc); err != nil {
-					return err
-				}
-
-				return nil
-			}()
-
-			if err != nil {
-				return fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
-			}
-
-			logCtx.WithField("filename", releaseNotesFilename).Log(logg.String("Created release notes"))
-
-		}
-
-		// Now create the release archive and upload files.
-
-		releaseID, err := client.Release(ctx, info)
-		if err != nil {
-			return fmt.Errorf("%s: failed to create release: %v", commandName, err)
-		}
-		r, ctx := b.core.Workforce.Start(ctx)
-
-		for _, archiveFilename := range archiveFilenames {
-			archiveFilename := archiveFilename
-			r.Run(func() error {
-				openFile := func() (*os.File, error) {
-					return os.Open(archiveFilename)
-
-				}
-				logCtx.Logf("Uploading release file %s", archiveFilename)
-				if err := releases.UploadAssetsFileWithRetries(ctx, client, info, releaseID, openFile); err != nil {
-					return err
-				}
-				return nil
-			})
-		}
-
-		if err := r.Wait(); err != nil {
-			return fmt.Errorf("%s: failed to upload files: %v", commandName, err)
 		}
 
 	}
 
 	return nil
+}
+
+type releaseContext struct {
+	Ctx        context.Context
+	Log        logg.LevelLogger
+	ReleaseDir string
+	Client     releases.Client
+	Info       releases.ReleaseInfo
+}
+
+func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, release config.Release) error {
+	releaseDir := filepath.Join(
+		b.core.DistDir,
+		b.core.Config.Project,
+		b.core.Tag,
+		b.core.DistRootReleases,
+		filepath.FromSlash(release.Path),
+	)
+
+	info := releases.ReleaseInfo{
+		Tag:       b.core.Tag,
+		Commitish: b.commitish,
+		Settings:  release.ReleaseSettings,
+	}
+
+	var client releases.Client
+	if b.core.Try {
+		client = &releases.FakeClient{}
+	} else {
+		var err error
+		client, err = releases.NewClient(ctx, release.ReleaseSettings.TypeParsed)
+		if err != nil {
+			return fmt.Errorf("%s: failed to create release client: %v", commandName, err)
+		}
+	}
+
+	rctx := releaseContext{
+		Ctx:        ctx,
+		Log:        logCtx,
+		ReleaseDir: releaseDir,
+		Info:       info,
+		Client:     client,
+	}
+
+	if _, err := os.Stat(rctx.ReleaseDir); err == nil || os.IsNotExist(err) {
+		if !os.IsNotExist(err) {
+			// Start fresh.
+			if err := os.RemoveAll(rctx.ReleaseDir); err != nil {
+				return fmt.Errorf("%s: failed to remove release directory %q: %s", commandName, rctx.ReleaseDir, err)
+			}
+		}
+		if err := os.MkdirAll(releaseDir, 0o755); err != nil {
+			return fmt.Errorf("%s: failed to create release directory %q: %s", commandName, rctx.ReleaseDir, err)
+		}
+
+	}
+
+	// First collect all files to be released.
+	var archiveFilenames []string
+
+	filter := release.PathsCompiled
+	for _, archive := range b.core.Config.Archives {
+		for _, archPath := range archive.ArchsCompiled {
+			if !filter.Match(archPath.Path) {
+				continue
+			}
+			archiveDir := filepath.Join(
+				b.core.DistDir,
+				b.core.Config.Project,
+				b.core.Tag,
+				b.core.DistRootArchives,
+				filepath.FromSlash(archPath.Path),
+			)
+			archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
+		}
+	}
+
+	if len(archiveFilenames) == 0 {
+		return fmt.Errorf("%s: no files found for release %q", commandName, release.Path)
+	}
+
+	if b.core.Try {
+		return nil
+	}
+
+	checksumFilename, err := b.generateChecksumTxt(rctx, archiveFilenames...)
+	if err != nil {
+		return err
+	}
+
+	archiveFilenames = append(archiveFilenames, checksumFilename)
+
+	logCtx.Logf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)
+
+	// Generate release notes if needed.
+	// Write them to the release dir in dist to make testing easier.
+	if info.Settings.ReleaseNotesSettings.Generate {
+		if err := b.generateReleaseNotes(rctx); err != nil {
+			return err
+		}
+	}
+
+	// Now create the release archive and upload files.
+	releaseID, err := client.Release(ctx, info)
+	if err != nil {
+		return fmt.Errorf("%s: failed to create release: %v", commandName, err)
+	}
+	r, ctx := b.core.Workforce.Start(ctx)
+
+	for _, archiveFilename := range archiveFilenames {
+		archiveFilename := archiveFilename
+		r.Run(func() error {
+			openFile := func() (*os.File, error) {
+				return os.Open(archiveFilename)
+			}
+			logCtx.Logf("Uploading release file %s", archiveFilename)
+			if err := releases.UploadAssetsFileWithRetries(ctx, client, info, releaseID, openFile); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+
+	if err := r.Wait(); err != nil {
+		return fmt.Errorf("%s: failed to upload files: %v", commandName, err)
+	}
+
+	return nil
+}
+
+func (b *Releaser) generateReleaseNotes(rctx releaseContext) error {
+	if rctx.Info.Settings.ReleaseNotesSettings.Filename != "" {
+		return fmt.Errorf("%s: both GenerateReleaseNotes and ReleaseNotesFilename are set for release type %q", commandName, rctx.Info.Settings.Type)
+	}
+
+	var resolveUsername func(commit, author string) (string, error)
+	if unc, ok := rctx.Client.(releases.UsernameResolver); ok {
+		resolveUsername = func(commit, author string) (string, error) {
+			return unc.ResolveUsername(rctx.Ctx, commit, author, rctx.Info)
+		}
+	}
+
+	infos, err := changelog.CollectChanges(
+		changelog.Options{
+			Tag:             b.core.Tag,
+			Commitish:       b.commitish,
+			RepoPath:        os.Getenv("HUGORELEASER_CHANGELOG_GITREPO"), // Set in tests.
+			ResolveUserName: resolveUsername,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	changeGroups := rctx.Info.Settings.ReleaseNotesSettings.Groups
+	shortThreshold := rctx.Info.Settings.ReleaseNotesSettings.ShortThreshold
+	if shortThreshold > 0 && len(infos) < shortThreshold {
+		shortTitle := rctx.Info.Settings.ReleaseNotesSettings.ShortTitle
+		if shortTitle == "" {
+			shortTitle = "What's Changed"
+		}
+		changeGroups = []config.ReleaseNotesGroup{
+			{
+				Title:          shortTitle,
+				RegexpCompiled: matchers.MatchEverything,
+			},
+		}
+	}
+
+	infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, bool) {
+		for _, g := range changeGroups {
+			if g.RegexpCompiled.Match(change.Subject) {
+				if g.Ignore {
+					return "", false
+				}
+				return g.Title, true
+			}
+		}
+		return "", false
+	})
+
+	if err != nil {
+		return err
+	}
+
+	type ReleaseNotesContext struct {
+		ChangeGroups []changelog.TitleChanges
+	}
+
+	rnc := ReleaseNotesContext{
+		ChangeGroups: infosGrouped,
+	}
+
+	releaseNotesFilename := filepath.Join(rctx.ReleaseDir, "release-notes.md")
+	rctx.Info.Settings.ReleaseNotesSettings.Filename = releaseNotesFilename
+	err = func() error {
+		f, err := os.Create(releaseNotesFilename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if err := staticfiles.ReleaseNotesTemplate.Execute(f, rnc); err != nil {
+			return err
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
+	}
+
+	rctx.Log.WithField("filename", releaseNotesFilename).Log(logg.String("Created release notes"))
+
+	return nil
+}
+
+func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...string) (string, error) {
+	// Create a checksum.txt file.
+	checksumLines, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
+	if err != nil {
+		return "", err
+	}
+	checksumFilename := filepath.Join(rctx.ReleaseDir, "checksum.txt")
+	err = func() error {
+		f, err := os.Create(checksumFilename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		for _, line := range checksumLines {
+			_, err := f.WriteString(line + "\n")
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return "", fmt.Errorf("%s: failed to create checksum file %q: %s", commandName, checksumFilename, err)
+	}
+
+	rctx.Log.WithField("filename", checksumFilename).Log(logg.String("Created checksum file"))
+
+	return checksumFilename, nil
 }
