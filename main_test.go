@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -275,6 +276,40 @@ func TestMain(m *testing.M) {
 						fmt.Fprintf(os.Stderr, "%s is not executable\n", filename)
 						return -1
 					}
+				}
+
+				return 0
+			},
+			"checkfilecount": func() int {
+				if len(os.Args) != 3 {
+					fatalf("usage: checkfilecount count dir")
+				}
+
+				count, err := strconv.Atoi(os.Args[1])
+				if err != nil {
+					fatalf("invalid count: %v", err)
+				}
+				if count < 0 {
+					fatalf("count must be non-negative")
+				}
+				dir := os.Args[2]
+
+				found := 0
+
+				filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+					if err != nil {
+						return err
+					}
+					if d.IsDir() {
+						return nil
+					}
+					found++
+					return nil
+				})
+
+				if found != count {
+					fmt.Fprintf(os.Stderr, "found %d files, want %d\n", found, count)
+					return -1
 				}
 
 				return 0

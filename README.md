@@ -104,6 +104,8 @@ hugoreleaser archive
 hugoreleaser release
 ```
 
+The build command also takes the optional `-chunks` and `-chunk-index` which could be used to automatically split the builds to speed up pipelines., e.g. using [Circle CI's Job Splitting](https://circleci.com/docs/parallelism-faster-jobs#using-environment-variables-to-split-tests). **Note** that Hugo is in the process of setting this up, so it's a little early to tell how well this works in practice. 
+
 ## Plugins
 
 Hugoreleaser supports [Go Module](https://go.dev/blog/using-go-modules) plugins to create archives. See the [Deb Plugin](https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/deb) for an example.

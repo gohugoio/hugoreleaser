@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/builds"
-	"github.com/gohugoio/hugoreleaser/internal/common/ioh"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -50,18 +50,34 @@ func New(core *corecmd.Core) *ffcli.Command {
 
 // NewBuilder returns a new Builder.
 func NewBuilder(core *corecmd.Core, fs *flag.FlagSet) *Builder {
-	return &Builder{
+	b := &Builder{
 		core: core,
 	}
+
+	fs.IntVar(&b.chunks, "chunks", -1, "Number of chunks to split the build into (optional).")
+	fs.IntVar(&b.chunkIndex, "chunk-index", -1, "Index of the chunk to build (optional).")
+
+	return b
 }
 
 type Builder struct {
 	core    *corecmd.Core
 	infoLog logg.LevelLogger
+
+	chunks     int
+	chunkIndex int
 }
 
 func (b *Builder) Init() error {
 	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
+
+	if b.chunks > 0 && b.chunkIndex >= b.chunks {
+		return fmt.Errorf("chunk-index (%d) must be less than chunks (%d)", b.chunkIndex, b.chunks)
+	}
+	if b.chunks > 0 && b.chunkIndex < 0 {
+		return fmt.Errorf("chunks (%d) requires chunk-index to be set", b.chunks)
+	}
+
 	return nil
 }
 
@@ -82,9 +98,38 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 		}
 	}
 
+	archs := b.core.Config.FindArchs(b.core.PathsBuildsCompiled)
+
+	if b.chunks > 0 && len(archs) > 1 {
+		var partitions [][]config.BuildArchPath
+		defaultSize := len(archs) / b.chunks
+		numb := len(archs) - defaultSize*b.chunks
+
+		size := defaultSize + 1
+		for i, idx := 0, 0; i < b.chunks; i++ {
+			if i == numb {
+				size--
+				if size == 0 {
+					break
+				}
+			}
+			partitions = append(partitions, archs[idx:idx+size])
+			idx += size
+		}
+		archs = partitions[b.chunkIndex]
+
+		b.infoLog.Logf("Building %d  GOOS/GOARCHs in chunk %d of %d.", len(archs), b.chunkIndex, b.chunks)
+	} else {
+		b.infoLog.Logf("Building %d GOOS/GOARCHs.", len(archs))
+	}
+
+	if len(archs) == 0 {
+		return nil
+	}
+
 	r, ctx := b.core.Workforce.Start(ctx)
 
-	for _, archPath := range b.core.Config.FindArchs(b.core.PathsBuildsCompiled) {
+	for _, archPath := range archs {
 		// Capture this for the Go routine below.
 		archPath := archPath
 		r.Run(func() error {
@@ -104,9 +149,7 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 		b.core.DistRootBuilds,
 		filepath.FromSlash(archPath.Path),
 	)
-	if err := ioh.RemoveAllMkdirAll(outDir); err != nil {
-		return err
-	}
+
 	outFilename := filepath.Join(
 		outDir,
 		arch.BuildSettings.Binary,

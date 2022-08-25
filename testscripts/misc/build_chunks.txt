@@ -1,0 +1,96 @@
+
+# There are 9 binaries in total.
+# These gets chunked into 4 chunks a 3,2,2,2.
+hugoreleaser build -tag v1.2.0 -chunk-index 0 -chunks 4
+! stderr .
+! stdout linus|windows
+checkfilecount 3 $WORK/dist/hugo/v1.2.0/builds
+
+hugoreleaser build -tag v1.2.0 -chunk-index 1 -chunks 4
+checkfilecount 5 $WORK/dist/hugo/v1.2.0/builds
+! stderr .
+
+hugoreleaser build -tag v1.2.0 -chunk-index 2 -chunks 4
+checkfilecount 7 $WORK/dist/hugo/v1.2.0/builds
+
+hugoreleaser build -tag v1.2.0 -chunk-index 3 -chunks 4
+checkfilecount 9 $WORK/dist/hugo/v1.2.0/builds
+
+! stderr .
+
+
+# Test files
+-- hugoreleaser.toml --
+project = "hugo"
+[build_settings]
+binary = "hugo"
+[archive_settings]
+name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+[archive_settings.replacements]
+amd64 ="64bit"
+386 = "32bit"
+arm64 = "ARM64"
+darwin = "macOS"
+windows = "Windows"
+[[builds]]
+path = "main/base"
+[builds.build_settings]
+env = ["CGO_ENABLED=0"]
+ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
+flags = ["-buildmode", "exe"]
+
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+
+[[builds.os]]
+goos = "freebsd"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+
+[[builds.os]]
+goos = "linux"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+[[builds.os.archs]]
+goarch = "arm"
+
+[[builds.os]]
+goos = "windows"
+[builds.os.build_settings]
+binary = "hugo.exe"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+[[archives]]
+paths         = ["builds/**/{darwin,linux}/amd64"]
+[archives.archive_settings]
+[[archives]]
+paths         = ["builds/**/windows/*"]
+[archives.archive_settings]
+[archives.archive_settings.type]
+format = "zip"
+extension = ".zip"
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
+-- README.md --
+This is readme.
+-- license.txt --
+This is license.
