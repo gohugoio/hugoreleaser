@@ -45,7 +45,7 @@ func Sprintt(t string, ctx any) (string, error) {
 	var err error
 	tmpl, err = tmpl.Parse(t)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, ctx)

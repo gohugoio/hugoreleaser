@@ -17,10 +17,12 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/bep/logg"
@@ -102,6 +104,17 @@ func parseAndRun(args []string) (err error) {
 	if core.Try {
 		os.Setenv("GITHUB_TOKEN", "faketoken")
 	}
+
+	// Pass any non-empty flag value into the HUGORELEASER_ prefix in OS environment if not already set.
+	coreCommand.FlagSet.VisitAll(func(f *flag.Flag) {
+		envName := fmt.Sprintf("%s_%s", corecmd.EnvPrefix, strings.ToUpper(f.Name))
+		if os.Getenv(envName) == "" {
+			if s := f.Value.String(); s != "" {
+				os.Setenv(envName, f.Value.String())
+			}
+		}
+
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), core.Timeout)
 	defer cancel()
