@@ -36,7 +36,6 @@ import (
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/common/templ"
 	"github.com/gohugoio/hugoreleaser/internal/config"
-	"github.com/gohugoio/hugoreleaser/internal/plugins"
 	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 	"github.com/gohugoio/hugoreleaser/plugins/model"
 	"github.com/pelletier/go-toml/v2"
@@ -302,7 +301,11 @@ func (c *Core) Init() error {
 		}
 	}
 
-	c.InfoLog.WithField("directory", c.DistDir).Log(logg.String("Writing files to"))
+	fields := logg.Fields{
+		{Name: "tag", Value: c.Tag},
+		{Name: "dist", Value: c.DistDir},
+	}
+	c.InfoLog.WithFields(fields).Log(logg.String("Prepare using"))
 
 	logHandler = multi.New(
 		// Replace the Dist dir (usually long path) in the log messages with a shorter version.
@@ -385,45 +388,8 @@ func (c *Core) Init() error {
 		}
 	}
 
-	// Start and register the archive plugins.
+	// Registry for archive plugins.
 	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
-
-	startAndRegister := func(p config.Plugin) error {
-		if p.IsZero() {
-			return nil
-		}
-		if _, found := c.PluginsRegistryArchive[p.ID]; found {
-			// Already started.
-			return nil
-		}
-		infoCtx := c.InfoLog.WithField("plugin", p.ID)
-		client, err := plugins.StartArchivePlugin(c.InfoLog, c.Config.GoSettings, p)
-		if err != nil {
-			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
-		}
-
-		// Send a heartbeat to the plugin to make sure it's alive.
-		heartbeat := fmt.Sprintf("heartbeat-%s", time.Now())
-		resp, err := client.Execute(archiveplugin.Request{Heartbeat: heartbeat})
-		if err != nil {
-			return fmt.Errorf("error testing archive plugin %q: %w", p.ID, err)
-		}
-		if resp.Heartbeat != heartbeat {
-			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.ID)
-		}
-		infoCtx.Log(logg.String("Archive plugin started and ready for use"))
-		c.PluginsRegistryArchive[p.ID] = client
-		return nil
-	}
-
-	if err := startAndRegister(c.Config.ArchiveSettings.Plugin); err != nil {
-		return err
-	}
-	for _, archive := range c.Config.Archives {
-		if err := startAndRegister(archive.ArchiveSettings.Plugin); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }

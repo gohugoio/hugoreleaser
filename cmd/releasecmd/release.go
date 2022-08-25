@@ -101,10 +101,21 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 		return fmt.Errorf("%s: no releases defined in config", commandName)
 	}
 
-	logCtx := b.infoLog
-	if len(b.core.Paths) > 0 {
-		logCtx = b.infoLog.WithField("paths", b.core.Paths)
+	logFields := logg.Fields{
+		logg.Field{
+			Name: "tag", Value: b.core.Tag,
+		},
+		logg.Field{
+			Name: "commitish", Value: b.commitish,
+		},
 	}
+
+	if len(b.core.Paths) > 0 {
+		logFields = append(logFields, logg.Field{Name: "paths", Value: b.core.Paths})
+	}
+
+	logCtx := b.infoLog.WithFields(logFields)
+
 	logCtx.Log(logg.String("Finding releases"))
 	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
 
