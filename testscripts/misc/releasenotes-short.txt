@@ -2,19 +2,17 @@ env GITHUB_TOKEN=faketoken
 env HUGORELEASER_CHANGELOG_GITREPO=$SOURCE
 
 # Build binaries.
-hugoreleaser all -tag v0.7.0 -commitish main
+hugoreleaser all -tag v0.50.0 -commitish main
 ! stderr .
 
-cmp $WORK/dist/hugoreleaser/v0.7.0/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
+cmp $WORK/dist/hugoreleaser/v0.50.0/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
 
 # Test files
 # Expected release notes
 -- expected/release-notes.md --
 ## Short release
 
-* Consolidate the -paths flags/handling 48c9340 
-* Remvoe Goarm from config 3b21e4d 
-* Run go get -u all 4405ed3 
+* Pull Chunk out into helpers a37d4dd 
 
 -- hugoreleaser.toml --
 project = "hugoreleaser"
