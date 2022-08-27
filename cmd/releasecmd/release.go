@@ -187,21 +187,16 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 	// First collect all files to be released.
 	var archiveFilenames []string
 
-	filter := release.PathsCompiled
-	for _, archive := range b.core.Config.Archives {
-		for _, archPath := range archive.ArchsCompiled {
-			if !filter.Match(archPath.Path) {
-				continue
-			}
-			archiveDir := filepath.Join(
-				b.core.DistDir,
-				b.core.Config.Project,
-				b.core.Tag,
-				b.core.DistRootArchives,
-				filepath.FromSlash(archPath.Path),
-			)
-			archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
-		}
+	for _, archPath := range release.ArchsCompiled {
+		archiveDir := filepath.Join(
+			b.core.DistDir,
+			b.core.Config.Project,
+			b.core.Tag,
+			b.core.DistRootArchives,
+			filepath.FromSlash(archPath.Path),
+		)
+		archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
+
 	}
 
 	if len(archiveFilenames) == 0 {

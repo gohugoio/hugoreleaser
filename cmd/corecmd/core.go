@@ -388,6 +388,24 @@ func (c *Core) Init() error {
 		}
 	}
 
+	for i, release := range c.Config.Releases {
+		// Precompile the build/archive selection for the release step.
+		// Filter out the archive/paths that belong to this release.
+		// Check that there are no duplicate archive names.
+		seen := make(map[string]config.BuildArchPath)
+		for _, archive := range c.Config.Archives {
+			for _, archPath := range archive.ArchsCompiled {
+				if release.PathsCompiled.Match(archPath.Path) {
+					if _, found := seen[archPath.Name]; found {
+						return fmt.Errorf("path %q and %q end up with the same archive name %q within the same release", seen[archPath.Name].Path, archPath.Path, archPath.Name)
+					}
+					seen[archPath.Name] = archPath
+					c.Config.Releases[i].ArchsCompiled = append(c.Config.Releases[i].ArchsCompiled, archPath)
+				}
+			}
+		}
+	}
+
 	// Registry for archive plugins.
 	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
 
