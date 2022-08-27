@@ -36,6 +36,9 @@ type Release struct {
 	ReleaseSettings ReleaseSettings `toml:"release_settings"`
 
 	PathsCompiled matchers.Matcher `toml:"-"`
+
+	// Builds matching Paths.
+	ArchsCompiled []BuildArchPath `toml:"-"`
 }
 
 func (a *Release) Init() error {

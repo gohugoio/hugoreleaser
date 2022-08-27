@@ -1,0 +1,47 @@
+
+# It's possible (and easy) to create configurations which will produce two archives with the same name.
+# That may be relevant with multiple releases, but not within the same.
+# We need to detect that and throw an error.
+
+# Build binaries.
+! hugoreleaser all -tag v1.2.0 -commitish main -try
+stderr 'main/darwin/amd64.*main/darwin/arm64.*same archive name "hugoreleaser.tar.gz"'
+
+
+-- hugoreleaser.toml --
+project = "hugoreleaser"
+[build_settings]
+binary = "hugoreleaser"
+[release_settings]
+type = "github"
+repository = "hugoreleaser"
+repository_owner = "gohugoio"
+draft = true
+[release_settings.release_notes_settings]
+generate = true
+[archive_settings]
+# Deliberately simple to force duplicates.
+name_template = "{{ .Project }}"
+[archive_settings.type]
+format        = "tar.gz"
+extension = ".tar.gz"
+[[builds]]
+path = "main"
+[[builds.os]]
+goos = "darwin"
+[[builds.os.archs]]
+goarch = "amd64"
+[[builds.os.archs]]
+goarch = "arm64"
+[[archives]]
+paths = ["builds/**"]
+[[releases]]
+paths = ["archives/**"]
+path = "myrelease"
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}
