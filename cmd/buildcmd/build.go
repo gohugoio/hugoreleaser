@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 
@@ -102,6 +103,12 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 	archs := b.core.Config.FindArchs(b.core.PathsBuildsCompiled)
 
 	if b.chunks > 0 {
+		// Resource-heavy builds tend to be configured in proximity to eachother,
+		// so this shuffle may help avoid clustering these slow builds in the same partition.
+		rand.Shuffle(len(archs), func(i, j int) {
+			archs[i], archs[j] = archs[j], archs[i]
+		})
+
 		partitions := slicehelpers.Chunk(archs, b.chunks)
 		if len(partitions) <= b.chunkIndex {
 			archs = nil
