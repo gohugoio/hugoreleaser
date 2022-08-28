@@ -2,18 +2,26 @@ env GITHUB_TOKEN=faketoken
 env HUGORELEASER_CHANGELOG_GITREPO=$SOURCE
 
 # Build binaries.
-hugoreleaser all -tag v0.50.0 -commitish main
+hugoreleaser all -tag v0.51.0 -commitish main
 ! stderr .
 
-cmp $WORK/dist/hugoreleaser/v0.50.0/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
+cmp $WORK/dist/hugoreleaser/v0.51.0/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
 
 # Test files
 # Expected release notes
-# TODO(bep) adjust this when a new release with more lines arrives.
 -- expected/release-notes.md --
-## What's Changed
+## First
 
-* Pull Chunk out into helpers a37d4dd 
+* Throw an error on duplicate archive names in a release 8b4ede0 
+
+## Second
+
+* Fix failing tests 130ca16 
+
+## Third
+
+* Shuffle chunked builds 515615e 
+
 
 -- hugoreleaser.toml --
 project = "hugoreleaser"
@@ -26,6 +34,11 @@ repository_owner = "gohugoio"
 draft = true
 [release_settings.release_notes_settings]
 generate = true
+groups = [
+            { title = "First", regexp = "error" },
+            { title = "Second", regexp = "failing" },
+            { title = "Third", regexp = "chunked" },
+]
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 [archive_settings.type]

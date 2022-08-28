@@ -296,16 +296,16 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 		}
 	}
 
-	infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, bool) {
-		for _, g := range changeGroups {
+	infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, int, bool) {
+		for i, g := range changeGroups {
 			if g.RegexpCompiled.Match(change.Subject) {
 				if g.Ignore {
-					return "", false
+					return "", 0, false
 				}
-				return g.Title, true
+				return g.Title, i, true
 			}
 		}
-		return "", false
+		return "", 0, false
 	})
 
 	if err != nil {
