@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bep/execrpc v0.7.0
-	github.com/bep/helpers v0.3.0
+	github.com/bep/helpers v0.3.1
 	github.com/bep/logg v0.2.0
 	github.com/bep/workers v1.1.0
 	github.com/fatih/color v1.13.0
@@ -13,7 +13,7 @@ require (
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.3
+	github.com/pelletier/go-toml/v2 v2.0.5
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/rogpeppe/go-internal v1.9.0
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
@@ -30,6 +30,7 @@ require (
 )
 
 require (
+	github.com/gohugoio/hugoreleaser-plugins-api v0.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
