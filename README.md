@@ -9,6 +9,8 @@
     * [Environment Variables](#environment-variables)
 * [Glob Matching](#glob-matching)
 * [Partitions](#partitions)
+    * [Manual Partitioning](#manual-partitioning)
+    * [Parallelism](#parallelism)
 * [Plugins](#plugins)
 * [Release Notes](#release-notes)
 * [Why another Go release tool?](#why-another-go-release-tool)
@@ -93,6 +95,8 @@ The above will build everything, expect the ARM64 `GOARCH`.
 
 ## Partitions
 
+### Manual Partitioning
+
 The configuration file and the (mimics the directory structure inside `/dist`) creates a simple tree structure that can be used to partition a build/release. All commands takes one or more `-paths` flag values. This is a [Glob Path](#glob-matching) matching builds to cover or releases to release (the latter is only relevant for the last step). Hugo has partitioned its builds using a container name as the first path element. With that, releasing may look something like this:
 
 ```
@@ -104,7 +108,11 @@ hugoreleaser archive
 hugoreleaser release
 ```
 
-The build command also takes the optional `-chunks` and `-chunk-index` which could be used to automatically split the builds to speed up pipelines., e.g. using [Circle CI's Job Splitting](https://circleci.com/docs/parallelism-faster-jobs#using-environment-variables-to-split-tests). **Note** that Hugo is in the process of setting this up, so it's a little early to tell how well this works in practice. 
+### Parallelism
+
+The build command takes the optional `-chunks` and `-chunk-index` which could be used to automatically split the builds to speed up pipelines., e.g. using [Circle CI's Job Splitting](https://circleci.com/docs/parallelism-faster-jobs#using-environment-variables-to-split-tests).
+
+See [Hugo v0.102.0 Release Notes](https://github.com/gohugoio/hugo/releases/tag/v0.102.0) for more information.
 
 ## Plugins
 
@@ -126,5 +134,6 @@ For the third option, you can set a custom release notes template to use in `tem
 
 ## Why another Go release tool?
 
-If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map of that project. Hugo is using this tool for its next release, fingers crossed. 
+If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map of that project. 
 
+Hugo used this tool for its [v0.102.0 Release](https://github.com/gohugoio/hugo/releases/tag/v0.102.0). If you also want to use this tool and have a complex setup, you may want to wait for a conclusion to [Issue #27](https://github.com/gohugoio/hugoreleaser/issues/27) first.
