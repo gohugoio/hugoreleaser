@@ -20,8 +20,8 @@ exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-6
 hugoreleaser release -tag v1.2.0 -commitish main
 # 3 archives + checksums.txt
 stdout 'Prepared 4 files to archive'
-stdout 'hugo_v1.2.0_checksums\.txt'
-cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/hugo_v1.2.0_checksums.txt $WORK/expected/dist/myrelease/checksums.txt
+stdout 'hugo_1.2.0_checksums\.txt'
+cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt $WORK/expected/dist/myrelease/checksums.txt
 
 # Test files
 # Release notes
