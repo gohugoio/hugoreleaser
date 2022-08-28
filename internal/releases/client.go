@@ -8,6 +8,7 @@ import (
 )
 
 type ReleaseInfo struct {
+	Project   string
 	Tag       string
 	Commitish string
 	Settings  config.ReleaseSettings

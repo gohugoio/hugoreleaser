@@ -18,7 +18,7 @@ stdout freebsd
 
 # We have now only freebsd 3 archives.
 hugoreleaser release -paths releases/bsd
-stdout 'Prepared 3 files' # 2 archives + checksum.txt.
+stdout 'Prepared 3 files' # 2 archives + checksums.txt.
 
 # Test files
 -- hugoreleaser.toml --

@@ -9,7 +9,7 @@ dostounix dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo
 dostounix dist/hugo/v1.2.0/builds/main/base/darwin/amd64/hugo
 dostounix dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo
 dostounix dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
-dostounix expected/dist/myrelease/checksum.txt
+dostounix expected/dist/myrelease/checksums.txt
 
 # Build archives
 hugoreleaser archive -tag v1.2.0
@@ -18,17 +18,17 @@ exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-6
 
 # Run with the a faketoken to avoid actually creating a remote release.
 hugoreleaser release -tag v1.2.0 -commitish main
-# 3 archives + checksum.txt
+# 3 archives + checksums.txt
 stdout 'Prepared 4 files to archive'
-stdout 'checksum\.txt'
-cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/checksum.txt $WORK/expected/dist/myrelease/checksum.txt
+stdout 'hugo_v1.2.0_checksums\.txt'
+cmp $WORK/dist/hugo/v1.2.0/releases/myrelease/hugo_v1.2.0_checksums.txt $WORK/expected/dist/myrelease/checksums.txt
 
 # Test files
 # Release notes
 -- temp/my-release-notes.md --
 ## Release notes
 * Change 1
-# Fake binaries to get stable archive checksum.txt.
+# Fake binaries to get stable archive checksums.txt.
 -- dist/hugo/v1.2.0/builds/main/base/windows/amd64/hugo.exe --
 win-amd64
 -- dist/hugo/v1.2.0/builds/main/base/darwin/arm64/hugo --
@@ -41,7 +41,7 @@ linux-amd64
 linux-amd
 
 # Expected output
--- expected/dist/myrelease/checksum.txt --
+-- expected/dist/myrelease/checksums.txt --
 19c2308936cdc630dfb1c3620d54fc22dc072dd6d04f8aa0872963c3fb547572  hugo_1.2.0_Windows-64bit.zip
 8a49e492c1b787821fe81695617dcaf211ca3c0428094f3a4a4c1401678993a0  hugo_1.2.0_macOS-64bit.tar.gz
 df51345af47d4122b133055aa8bb6109cc47504026c29634b0a6e77f6aa7ebcf  hugo_1.2.0_linux-64bit.tar.gz
