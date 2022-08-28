@@ -147,6 +147,7 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 	)
 
 	info := releases.ReleaseInfo{
+		Project:   b.core.Config.Project,
 		Tag:       b.core.Tag,
 		Commitish: b.commitish,
 		Settings:  release.ReleaseSettings,
@@ -365,12 +366,15 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 }
 
 func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...string) (string, error) {
-	// Create a checksum.txt file.
+	// Create a checksums.txt file.
 	checksumLines, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
 	if err != nil {
 		return "", err
 	}
-	checksumFilename := filepath.Join(rctx.ReleaseDir, "checksum.txt")
+	// This is what Hugo got out of the box from Goreleaser. No settings for now.
+	name := fmt.Sprintf("%s_%s_checksums.txt", rctx.Info.Project, rctx.Info.Tag)
+
+	checksumFilename := filepath.Join(rctx.ReleaseDir, name)
 	err = func() error {
 		f, err := os.Create(checksumFilename)
 		if err != nil {
