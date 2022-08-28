@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/bep/logg"
@@ -376,7 +377,7 @@ func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...
 		return "", err
 	}
 	// This is what Hugo got out of the box from Goreleaser. No settings for now.
-	name := fmt.Sprintf("%s_%s_checksums.txt", rctx.Info.Project, rctx.Info.Tag)
+	name := fmt.Sprintf("%s_%s_checksums.txt", rctx.Info.Project, strings.TrimPrefix(rctx.Info.Tag, "v"))
 
 	checksumFilename := filepath.Join(rctx.ReleaseDir, name)
 	err = func() error {
