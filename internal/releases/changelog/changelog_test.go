@@ -1,26 +1,26 @@
 package changelog
 
 import (
+	"os"
 	"testing"
 
 	qt "github.com/frankban/quicktest"
 )
 
-//var isCI = os.Getenv("CI") != ""
+var isCI = os.Getenv("CI") != ""
 
 func TestGetOps(t *testing.T) {
-	t.Skip("TODO(bep) fix these once a new tag arrives.")
-	/*if isCI {
+	if isCI {
 		// GitHub Actions clones shallowly, so we can't test this there.
 		t.Skip("skip on CI")
-	}*/
+	}
 	c := qt.New(t)
 
-	tag, err := gitVersionTagBefore("", "v0.8.0")
+	tag, err := gitVersionTagBefore("", "v0.51.0")
 	c.Assert(err, qt.IsNil)
-	c.Assert(tag, qt.Equals, "v0.7.0")
+	c.Assert(tag, qt.Equals, "v0.50.0")
 
-	exists, err := gitTagExists("", "v0.8.0")
+	exists, err := gitTagExists("", "v0.50.0")
 	c.Assert(err, qt.IsNil)
 	c.Assert(exists, qt.Equals, true)
 
@@ -28,9 +28,9 @@ func TestGetOps(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Assert(exists, qt.Equals, false)
 
-	log, err := gitLog("", "v0.6.0", "v0.7.0", "main")
+	log, err := gitLog("", "v0.50.0", "v0.51.0", "main")
 	c.Assert(err, qt.IsNil)
-	c.Assert(log, qt.Contains, "Consolidate the -paths flags")
+	c.Assert(log, qt.Contains, "Shuffle chunked builds")
 
 	infos, err := gitLogToGitInfos(log)
 	c.Assert(err, qt.IsNil)

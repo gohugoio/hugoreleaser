@@ -1,8 +1,6 @@
 env GITHUB_TOKEN=faketoken
 env HUGORELEASER_CHANGELOG_GITREPO=$SOURCE
 
-skip # TODO(bep) fix me after next tag 
-
 # Build binaries.
 hugoreleaser all -tag v0.51.0 -commitish main
 ! stderr .
@@ -14,7 +12,7 @@ cmp $WORK/dist/hugoreleaser/v0.51.0/releases/myrelease/release-notes.md $WORK/ex
 -- mytemplates/custom.txt --
 {{ range .ChangeGroups }}{{ range .Changes }}Subject: {{ .Subject }}, Hash: {{ .Hash }}|{{ end }}{{ end }}
 -- expected/release-notes.md --
-Subject: Fix failing tests, Hash: a5c5562|
+Subject: Shuffle chunked builds, Hash: 515615e|Subject: Throw an error on duplicate archive names in a release, Hash: 8b4ede0|Subject: Fix failing tests, Hash: 130ca16|
 -- hugoreleaser.toml --
 project = "hugoreleaser"
 [build_settings]

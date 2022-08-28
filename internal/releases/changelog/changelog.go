@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -17,26 +18,31 @@ func CollectChanges(opts Options) (Changes, error) {
 
 // GroupByTitleFunc groups g by title according to the grouping function f.
 // If f returns false, that change item is not included in the result.
-func GroupByTitleFunc(g Changes, f func(Change) (string, bool)) ([]TitleChanges, error) {
+func GroupByTitleFunc(g Changes, f func(Change) (string, int, bool)) ([]TitleChanges, error) {
 	var ngi []TitleChanges
 	for _, gi := range g {
-		title, ok := f(gi)
+		title, i, ok := f(gi)
 		if !ok {
 			continue
 		}
 		idx := -1
-		for i, ngi := range ngi {
+		for j, ngi := range ngi {
 			if ngi.Title == title {
-				idx = i
+				idx = j
 				break
 			}
 		}
 		if idx == -1 {
-			ngi = append(ngi, TitleChanges{Title: title})
+			ngi = append(ngi, TitleChanges{Title: title, ordinal: i + 1})
 			idx = len(ngi) - 1
 		}
 		ngi[idx].Changes = append(ngi[idx].Changes, gi)
 	}
+
+	sort.Slice(ngi, func(i, j int) bool {
+		return ngi[i].ordinal < ngi[j].ordinal
+	})
+
 	return ngi, nil
 
 }
@@ -76,6 +82,8 @@ type Options struct {
 type TitleChanges struct {
 	Title   string
 	Changes Changes
+
+	ordinal int
 }
 
 type collector struct {
