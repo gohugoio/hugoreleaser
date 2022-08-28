@@ -303,7 +303,11 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 				if g.Ignore {
 					return "", 0, false
 				}
-				return g.Title, i, true
+				ordinal := g.Ordinal
+				if ordinal == 0 {
+					ordinal = i + 1
+				}
+				return g.Title, ordinal, true
 			}
 		}
 		return "", 0, false

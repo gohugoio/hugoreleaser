@@ -107,9 +107,10 @@ func (g *ReleaseNotesSettings) Init() error {
 }
 
 type ReleaseNotesGroup struct {
-	Title  string `toml:"title"`
-	Regexp string `toml:"regexp"`
-	Ignore bool   `toml:"ignore"`
+	Title   string `toml:"title"`
+	Regexp  string `toml:"regexp"`
+	Ignore  bool   `toml:"ignore"`
+	Ordinal int    `toml:"ordinal"`
 
 	RegexpCompiled matchers.Matcher `toml:"-"`
 }
