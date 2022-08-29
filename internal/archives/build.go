@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/archives/archiveformats"
 	"github.com/gohugoio/hugoreleaser/internal/config"
-	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 )
 
 // Build builds an archive from the given settings and writes it to req.OutFilename
@@ -62,10 +62,17 @@ func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.Archive
 	}()
 
 	for _, file := range req.Files {
+		if file.Mode != 0 {
+			if err := os.Chmod(file.SourcePathAbs, file.Mode); err != nil {
+				return err
+			}
+		}
+
 		f, err := os.Open(file.SourcePathAbs)
 		if err != nil {
 			return err
 		}
+
 		err = archiver.AddAndClose(file.TargetPath, f)
 		if err != nil {
 			return err

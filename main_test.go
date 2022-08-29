@@ -15,8 +15,11 @@
 package main
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -143,6 +146,60 @@ func TestMain(m *testing.M) {
 				}
 				time.Sleep(time.Duration(i) * time.Second)
 				return 0
+			},
+
+			// ls lists a directory to stdout.
+			"ls": func() int {
+				dirname := os.Args[1]
+				dir, err := os.Open(dirname)
+				if err != nil {
+					fatalf("%v", err)
+				}
+				fis, err := dir.Readdir(-1)
+				if err != nil {
+					fatalf("%v", err)
+				}
+				for _, fi := range fis {
+					fmt.Printf("%s %04o %s\n", fi.Mode(), fi.Mode().Perm(), fi.Name())
+				}
+				return 0
+			},
+
+			// printarchive prints the contents of an archive to stdout.
+			"printarchive": func() int {
+				archiveFilename := os.Args[1]
+
+				if !strings.HasSuffix(archiveFilename, ".tar.gz") {
+					fatalf("only .tar.gz supported for now, got: %q", archiveFilename)
+				}
+
+				f, err := os.Open(archiveFilename)
+				if err != nil {
+					fatalf("%v", err)
+				}
+				defer f.Close()
+
+				gr, err := gzip.NewReader(f)
+				if err != nil {
+					fatalf("%v", err)
+				}
+				defer gr.Close()
+				tr := tar.NewReader(gr)
+
+				for {
+					hdr, err := tr.Next()
+					if err == io.EOF {
+						break
+					}
+					if err != nil {
+						fatalf("%v", err)
+					}
+					mode := fs.FileMode(hdr.Mode)
+					fmt.Printf("%s %04o %s\n", mode, mode.Perm(), hdr.Name)
+				}
+
+				return 0
+
 			},
 
 			// cpdir copies a file.

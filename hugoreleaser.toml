@@ -33,7 +33,7 @@ project = "hugoreleaser"
         extension = ".tar.gz"
 
 [release_settings]
-    name             = "${HR_RELEASE_NAME}" # Env variable set in hugoreleaser.env.
+    name             = "${HUGORELEASER_TAG}"
     type             = "github"
     repository       = "hugoreleaser"
     repository_owner = "gohugoio"

@@ -16,6 +16,7 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/plugins/plugintypes"
@@ -102,7 +103,8 @@ func (t Plugin) IsZero() bool {
 	return t.ID == ""
 }
 
-type SourceTargetPath struct {
-	SourcePath string `toml:"source_path"`
-	TargetPath string `toml:"target_path"`
+type ArchiveFileInfo struct {
+	SourcePath string      `toml:"source_path"`
+	TargetPath string      `toml:"target_path"`
+	Mode       fs.FileMode `toml:"mode"`
 }
