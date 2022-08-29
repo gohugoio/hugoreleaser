@@ -23,14 +23,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
 	"github.com/gohugoio/hugoreleaser/internal/archives"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/plugins"
-	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 
 	"github.com/bep/logg"
-	"github.com/gohugoio/hugoreleaser/plugins/model"
+	"github.com/gohugoio/hugoreleaser-plugins-api/model"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -163,7 +163,8 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					arch.BinaryPath(),
 				)
 
-				if _, err := os.Stat(binaryFilename); err != nil {
+				binFi, err := os.Stat(binaryFilename)
+				if err != nil {
 					return fmt.Errorf("%s: binary file not found: %q", commandName, binaryFilename)
 				}
 
@@ -180,12 +181,14 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
 					SourcePathAbs: binaryFilename,
 					TargetPath:    path.Join(archiveSettings.BinaryDir, arch.BuildSettings.Binary),
+					Mode:          binFi.Mode(),
 				})
 
 				for _, extraFile := range archiveSettings.ExtraFiles {
 					buildRequest.Files = append(buildRequest.Files, archiveplugin.ArchiveFile{
 						SourcePathAbs: filepath.Join(b.core.ProjectDir, extraFile.SourcePath),
 						TargetPath:    extraFile.TargetPath,
+						Mode:          extraFile.Mode,
 					})
 				}
 

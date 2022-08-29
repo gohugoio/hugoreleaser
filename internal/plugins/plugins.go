@@ -21,9 +21,9 @@ import (
 	"github.com/bep/execrpc"
 	"github.com/bep/execrpc/codecs"
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
+	"github.com/gohugoio/hugoreleaser-plugins-api/server"
 	"github.com/gohugoio/hugoreleaser/internal/config"
-	"github.com/gohugoio/hugoreleaser/plugins"
-	"github.com/gohugoio/hugoreleaser/plugins/archiveplugin"
 )
 
 // StartArchivePlugin starts a archive plugin.
@@ -53,7 +53,7 @@ func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSetting
 				OnMessage: func(msg execrpc.Message) {
 					statusCode := msg.Header.Status
 					switch statusCode {
-					case plugins.StatusInfoLog:
+					case server.StatusInfoLog:
 						infoLogger.Log(logg.String(string(msg.Body)))
 					}
 				},

@@ -33,7 +33,7 @@ project = "hugoreleaser"
         extension = ".tar.gz"
 
 [release_settings]
-    name             = "${HR_RELEASE_NAME}" # Env variable set in hugoreleaser.env.
+    name             = "${HUGORELEASER_TAG}"
     type             = "github"
     repository       = "hugoreleaser"
     repository_owner = "gohugoio"
@@ -105,6 +105,8 @@ project = "hugoreleaser"
 [[archives]]
     paths = ["builds/**/linux/amd64"]
     [archives.archive_settings]
+        binary_dir  = "/usr/local/bin"
+        extra_files = []
         [archives.archive_settings.type]
             # When format is _plugin,
             # archive_settings.plugin must also be configured.

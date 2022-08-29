@@ -29,8 +29,9 @@ require (
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
 )
 
+require github.com/gohugoio/hugoreleaser-plugins-api v0.6.0
+
 require (
-	github.com/gohugoio/hugoreleaser-plugins-api v0.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect

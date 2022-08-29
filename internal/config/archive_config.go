@@ -73,11 +73,11 @@ type BuildArchPath struct {
 type ArchiveSettings struct {
 	Type ArchiveType `toml:"type"`
 
-	BinaryDir    string             `toml:"binary_dir"`
-	NameTemplate string             `toml:"name_template"`
-	ExtraFiles   []SourceTargetPath `toml:"extra_files"`
-	Replacements map[string]string  `toml:"replacements"`
-	Plugin       Plugin             `toml:"plugin"`
+	BinaryDir    string            `toml:"binary_dir"`
+	NameTemplate string            `toml:"name_template"`
+	ExtraFiles   []ArchiveFileInfo `toml:"extra_files"`
+	Replacements map[string]string `toml:"replacements"`
+	Plugin       Plugin            `toml:"plugin"`
 
 	// CustomSettings is archive type specific metadata.
 	// See in the documentation for the configured archive type.

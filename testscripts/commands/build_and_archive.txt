@@ -1,6 +1,9 @@
 
 env READMEFILE=README.md
 
+# Change permissions of one of the files
+chmod 643 license.txt
+
 # Build binaries.
 hugoreleaser build -tag v1.2.0
 ! stderr .
@@ -22,6 +25,9 @@ hugoreleaser archive -tag v1.2.0
 ! stderr .
 stdout 'Archive file.*macOS-64bit'
 
+ls $WORK/dist/hugo/v1.2.0/builds/main/base/darwin/amd64
+# Re. Windows, see comment below.
+[!windows] stdout '-rwxr-xr-x 0755 hugo'
 
 # Check some samples.
 exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/amd64/hugo_1.2.0_macOS-64bit.tar.gz
@@ -30,6 +36,17 @@ exists  $WORK/dist/hugo/v1.2.0/archives/main/base/windows/amd64/hugo_1.2.0_Windo
 ! exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.zip
 ! exists $WORK/dist/hugo/v1.2.0/archives/main/base/darwin/arm64/hugo_1.2.0_macOS-ARM64.tar.gz
 
+printarchive $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-64bit.tar.gz
+# This prints 0666 hugo on Windows
+# This is a big topic that I'm not prepared to take on now, see https://github.com/golang/go/issues/41809
+[!windows] stdout '-rwxr-xr-x 0755 hugo'
+
+# TODO(bep) check why these fail on Windows. 
+# It looks like nothing gets printed, so I suspect it's printarchive that somehow fails.
+[!windows] stdout '-rw-r--r-- 0644 README.md'
+[!windows] stdout '-rw-r---wx 0643 license.txt'
+[!windows] stdout '-rw-r---w- 0642 subdir/myconfig.toml'
+
 # Test files
 -- hugoreleaser.toml --
 project = "hugo"
@@ -37,7 +54,7 @@ project = "hugo"
 binary = "hugo"
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
+extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }, { source_path = "hugoreleaser.toml", target_path = "subdir/myconfig.toml", mode = 0o642 }]
 [archive_settings.type]
 format        = "tar.gz"
 extension = ".tar.gz"
