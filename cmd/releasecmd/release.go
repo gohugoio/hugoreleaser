@@ -290,12 +290,15 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 		if shortTitle == "" {
 			shortTitle = "What's Changed"
 		}
-		changeGroups = []config.ReleaseNotesGroup{
-			{
-				Title:          shortTitle,
-				RegexpCompiled: matchers.MatchEverything,
-			},
+		var changeGroupsShort []config.ReleaseNotesGroup
+		// Preserve any ignore groups.
+		for _, g := range changeGroups {
+			if g.Ignore {
+				changeGroupsShort = append(changeGroupsShort, g)
+			}
 		}
+		changeGroupsShort = append(changeGroupsShort, config.ReleaseNotesGroup{Title: shortTitle, RegexpCompiled: matchers.MatchEverything})
+		changeGroups = changeGroupsShort
 	}
 
 	infosGrouped, err := changelog.GroupByTitleFunc(infos, func(change changelog.Change) (string, int, bool) {
