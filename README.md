@@ -136,4 +136,4 @@ For the third option, you can set a custom release notes template to use in `tem
 
 If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map of that project. 
 
-Hugo used this tool for its [v0.102.0 Release](https://github.com/gohugoio/hugo/releases/tag/v0.102.0). If you also want to use this tool and have a complex setup, you may want to wait for a conclusion to [Issue #27](https://github.com/gohugoio/hugoreleaser/issues/27) first.
+Hugo has used this tool for all of its releases since [v0.102.0](https://github.com/gohugoio/hugo/releases/tag/v0.102.0).
