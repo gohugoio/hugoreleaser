@@ -228,7 +228,10 @@ func gitTagExists(repo, tag string) (bool, error) {
 }
 
 func gitVersionTagBefore(repo, ref string) (string, error) {
-	return gitShort(repo, "describe", "--tags", "--abbrev=0", "--always", "--match", "v[0-9]*", ref+"^")
+	if strings.HasPrefix(ref, "v") {
+		ref += "^"
+	}
+	return gitShort(repo, "describe", "--tags", "--abbrev=0", "--always", "--match", "v[0-9]*", ref)
 }
 
 var issueRe = regexp.MustCompile(`(?i)(?:Updates?|Closes?|Fix.*|See) #(\d+)`)
