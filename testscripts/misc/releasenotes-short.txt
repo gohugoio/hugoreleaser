@@ -2,10 +2,10 @@ env GITHUB_TOKEN=faketoken
 env HUGORELEASER_CHANGELOG_GITREPO=$SOURCE
 
 # Build binaries.
-hugoreleaser all -tag v0.53.3 -commitish main
+hugoreleaser all -tag v0.53.2 -commitish main
 ! stderr .
 
-cmp $WORK/dist/hugoreleaser/v0.53.3/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
+cmp $WORK/dist/hugoreleaser/v0.53.2/releases/myrelease/release-notes.md $WORK/expected/release-notes.md
 
 # Test files
 # Expected release notes
@@ -13,7 +13,6 @@ cmp $WORK/dist/hugoreleaser/v0.53.3/releases/myrelease/release-notes.md $WORK/ex
 ## Short release
 
 * testing: Cosmetic change5 to test patch releases 1a9c566 #30 
-* testing: Cosmetic change4 to test patch releases 74317ba #30 
 * testing: Cosmetic change3 to test patch releases 0ae1602 #30 
 
 
@@ -30,6 +29,9 @@ draft = true
 generate = true
 short_threshold = 10
 short_title = "Short release"
+groups = [
+{ regexp = "change4", ignore = true }          
+]
 [archive_settings]
 name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
 [archive_settings.type]
