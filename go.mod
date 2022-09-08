@@ -3,7 +3,7 @@ module github.com/gohugoio/hugoreleaser
 go 1.18
 
 require (
-	github.com/bep/execrpc v0.7.0
+	github.com/bep/execrpc v0.7.1
 	github.com/bep/helpers v0.3.1
 	github.com/bep/logg v0.2.0
 	github.com/bep/workers v1.1.0
@@ -29,12 +29,14 @@ require (
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
 )
 
-require github.com/gohugoio/hugoreleaser-plugins-api v0.6.0
+require (
+	github.com/gohugoio/hugoreleaser-plugins-api v0.6.0
+	golang.org/x/sync v0.0.0-20220907140024-f12130a52804
+)
 
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )

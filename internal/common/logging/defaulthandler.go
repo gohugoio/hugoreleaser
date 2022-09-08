@@ -41,7 +41,7 @@ func NewDefaultHandler(outWriter, errWriter io.Writer) logg.Handler {
 	return &DefaultHandler{
 		outWriter: outWriter,
 		errWriter: errWriter,
-		Padding:   3,
+		Padding:   0,
 	}
 }
 
@@ -89,7 +89,7 @@ func (h *DefaultHandler) HandleLog(e *logg.Entry) error {
 	}
 
 	if prefix != "" {
-		prefix = strings.ToUpper(prefix) + ":\t"
+		prefix = strings.ToLower(prefix) + ": "
 	}
 
 	color.Fprintf(w, "%s %s%s", bold.Sprintf("%*s", h.Padding+1, level), color.Sprint(prefix), e.Message)

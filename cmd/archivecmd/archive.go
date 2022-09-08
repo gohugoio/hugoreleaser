@@ -78,8 +78,8 @@ func (b *Archivist) Init() error {
 			// Already started.
 			return nil
 		}
-		infoCtx := c.InfoLog.WithField("plugin", p.ID)
-		client, err := plugins.StartArchivePlugin(c.InfoLog, c.Config.GoSettings, p)
+		infoCtx := c.InfoLog.WithField("cmd", fmt.Sprintf("%s %s", commandName, p.ID))
+		client, err := plugins.StartArchivePlugin(infoCtx, c.Config.GoSettings, p)
 		if err != nil {
 			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
 		}
