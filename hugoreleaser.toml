@@ -81,14 +81,17 @@ project = "hugoreleaser"
     path = "unix"
 
     [[builds.os]]
-        goos = "darwin"
-        [[builds.os.archs]]
-            goarch = "universal"
-
-    [[builds.os]]
         goos = "linux"
         [[builds.os.archs]]
             goarch = "amd64"
+
+[[builds]]
+    path = "macos"
+
+    [[builds.os]]
+        goos = "darwin"
+        [[builds.os.archs]]
+            goarch = "universal"
 
 [[builds]]
     path = "windows"
@@ -102,6 +105,35 @@ project = "hugoreleaser"
 
 [[archives]]
     paths = ["builds/unix/**"]
+[[archives]]
+    paths = ["builds/macos/**"]
+    [archives.archive_settings]
+        extra_files = []
+        [archives.archive_settings.type]
+            # When format is _plugin,
+            # archive_settings.plugin must also be configured.
+            format    = "_plugin"
+            extension = ".pkg"
+        [archives.archive_settings.plugin]
+            id   = "macospkgremote"
+            type = "gorun"
+            # Note there is a "local" variant of this that may be simpler to set up, see
+            # https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/macospkg
+            command = "github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@v0.1.1"
+        [archives.archive_settings.custom_settings]
+            # Package settings
+            package_identifier = "io.gohugo.hugoreleaser"
+            package_version    = "${HUGORELEASER_TAG}"
+
+            # Apple settings. Only needed in the "local" variant of this plugin.
+            # apple_signing_identity = "${BUILDPKG_APPLE_DEVELOPER_SIGNING_IDENTITY}"
+
+            # AWS Settings
+            bucket            = "s3fptest"
+            queue             = "https://sqs.eu-north-1.amazonaws.com/656975317043/s3fptest_client"
+            access_key_id     = "${S3RPC_CLIENT_ACCESS_KEY_ID}"
+            secret_access_key = "${S3RPC_CLIENT_SECRET_ACCESS_KEY}"
+
 [[archives]]
     paths = ["builds/**/linux/amd64"]
     [archives.archive_settings]
@@ -119,7 +151,7 @@ project = "hugoreleaser"
             # If the plugin source lives locally, this can also be a file path,
             # e.g. './myplugin'. In those setups you may need to set dir to the directory path,
             # and use "." for the command.
-            command = "github.com/gohugoio/hugoreleaser-archive-plugins/deb@latest"
+            command = "github.com/gohugoio/hugoreleaser-archive-plugins/deb@v0.6.1"
         [archives.archive_settings.custom_settings]
             # Custom settings as defined by the Deb plugin.
             vendor      = "gohugo.io"

@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bep/logg"
@@ -34,9 +36,12 @@ import (
 	"github.com/gohugoio/hugoreleaser/internal/common/logging"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
+	log.SetFlags(0)
+
 	if err := parseAndRun(os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
@@ -117,18 +122,40 @@ func parseAndRun(args []string) (err error) {
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), core.Timeout)
+	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	done := make(chan struct{})
 
-	if err := core.Init(); err != nil {
-		return fmt.Errorf("error initializing config: %w", err)
-	}
+	g, ctx := errgroup.WithContext(ctx)
 
-	if err := coreCommand.Run(ctx); err != nil {
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-			return fmt.Errorf("command timed out after %s; increase -timeout if needed", core.Timeout)
+	g.Go(func() error {
+		if err := core.Init(); err != nil {
+			return fmt.Errorf("error initializing config: %w", err)
 		}
-		return fmt.Errorf("error running command: %w", err)
-	}
+		if err := coreCommand.Run(ctx); err != nil {
+			return fmt.Errorf("error running command: %w", err)
+		}
+		done <- struct{}{}
+		return nil
+	})
+
+	g.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				err := ctx.Err()
+				if errors.Is(err, context.DeadlineExceeded) {
+					log.Fatalf("command timed out after %s; increase -timeout if needed", core.Timeout)
+				}
+				return err
+			case <-done:
+				return nil
+			}
+		}
+	})
+
+	err = g.Wait()
 
 	return err
+
 }
