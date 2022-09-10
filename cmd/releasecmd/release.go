@@ -201,22 +201,22 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 
 	}
 
-	if len(archiveFilenames) == 0 {
-		return fmt.Errorf("%s: no files found for release %q", commandName, release.Path)
-	}
-
 	if b.core.Try {
 		return nil
 	}
 
-	checksumFilename, err := b.generateChecksumTxt(rctx, archiveFilenames...)
-	if err != nil {
-		return err
+	if len(archiveFilenames) > 0 {
+
+		checksumFilename, err := b.generateChecksumTxt(rctx, archiveFilenames...)
+		if err != nil {
+			return err
+		}
+
+		archiveFilenames = append(archiveFilenames, checksumFilename)
+
+		logCtx.Logf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)
+
 	}
-
-	archiveFilenames = append(archiveFilenames, checksumFilename)
-
-	logCtx.Logf("Prepared %d files to archive: %v", len(archiveFilenames), archiveFilenames)
 
 	// Generate release notes if needed.
 	// Write them to the release dir in dist to make testing easier.
