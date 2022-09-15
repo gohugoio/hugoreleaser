@@ -29,6 +29,7 @@ import (
 	"github.com/gohugoio/hugoreleaser/internal/config"
 	"github.com/gohugoio/hugoreleaser/internal/plugins"
 
+	"github.com/bep/helpers/filehelpers"
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser-plugins-api/model"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -201,6 +202,17 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 
 				if err != nil {
 					return err
+				}
+
+				for _, alias := range archPath.Aliases {
+					aliasFilename := filepath.Join(
+						outDir,
+						alias,
+					)
+					b.infoLog.WithField("file", aliasFilename).Log(logg.String("Alias"))
+					if err := filehelpers.CopyFile(outFilename, aliasFilename); err != nil {
+						return err
+					}
 				}
 
 				return nil

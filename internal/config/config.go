@@ -23,7 +23,8 @@ import (
 )
 
 type Config struct {
-	Project string `toml:"project"`
+	Project                  string            `toml:"project"`
+	ArchiveAliasReplacements map[string]string `toml:"archive_alias_replacements"`
 
 	GoSettings GoSettings `toml:"go_settings"`
 

@@ -198,7 +198,9 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 			filepath.FromSlash(archPath.Path),
 		)
 		archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, archPath.Name))
-
+		for _, alias := range archPath.Aliases {
+			archiveFilenames = append(archiveFilenames, filepath.Join(archiveDir, alias))
+		}
 	}
 
 	if b.core.Try {

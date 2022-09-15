@@ -384,6 +384,15 @@ func (c *Core) Init() error {
 			}
 			name = archiveSettings.ReplacementsCompiled.Replace(name) + archiveSettings.Type.Extension
 			archPath.Name = name
+
+			if c.Config.ArchiveAliasReplacements != nil {
+				for k, v := range c.Config.ArchiveAliasReplacements {
+					if strings.Contains(name, k) {
+						archPath.Aliases = append(archPath.Aliases, strings.ReplaceAll(name, k, v))
+					}
+				}
+			}
+
 			c.Config.Archives[i].ArchsCompiled = append(c.Config.Archives[i].ArchsCompiled, archPath)
 		}
 	}
