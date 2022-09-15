@@ -68,6 +68,9 @@ type BuildArchPath struct {
 
 	// Name is the name of the archive with the extension.
 	Name string `toml:"name"`
+
+	// Any archive aliase names, with the extension.
+	Aliases []string `toml:"aliases"`
 }
 
 type ArchiveSettings struct {
