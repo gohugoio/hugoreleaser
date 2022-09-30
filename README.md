@@ -5,6 +5,7 @@
 
 * [Configuration](#configuration)
     * [Configuration File](#configuration-file)
+        * [Archive Aliases](#archive-aliases)
     * [Template Expansion](#template-expansion)
     * [Environment Variables](#environment-variables)
 * [Glob Matching](#glob-matching)
@@ -20,6 +21,10 @@
 ### Configuration File
 
 Hugoreleaser reads its main configuration from a file named `hugoreleaser.toml` in the working directory. See [this project's configuration](./hugoreleaser.toml) for an annotated example.
+
+### Archive Aliases
+
+See Hugo's use [here](https://github.com/gohugoio/hugo/blob/ec02c537edf7c027e7470126eb913e84fb626216/hugoreleaser.toml#L11).
 
 ### Template Expansion
 
