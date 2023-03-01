@@ -35,6 +35,10 @@ import (
 
 const commandName = "build"
 
+// From Go 1.20 the math/rand package started to seed the global random number generator (used by top-level functions like Float64 and Int) with a random value.
+// This broke chunking logic in Hugoreleaser. We need the same shuffle for each build.
+var rand1 = rand.New(rand.NewSource(1))
+
 // New returns a usable ffcli.Command for the build subcommand.
 func New(core *corecmd.Core) *ffcli.Command {
 	fs := flag.NewFlagSet(corecmd.CommandName+" "+commandName, flag.ExitOnError)
@@ -105,7 +109,7 @@ func (b *Builder) Exec(ctx context.Context, args []string) error {
 	if b.chunks > 0 {
 		// Resource-heavy builds tend to be configured in proximity to eachother,
 		// so this shuffle may help avoid clustering these slow builds in the same partition.
-		rand.Shuffle(len(archs), func(i, j int) {
+		rand1.Shuffle(len(archs), func(i, j int) {
 			archs[i], archs[j] = archs[j], archs[i]
 		})
 
