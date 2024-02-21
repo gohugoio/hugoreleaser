@@ -81,7 +81,6 @@ func UploadAssetsFileWithRetries(ctx context.Context, client Client, info Releas
 		}
 		return err, false
 	})
-
 }
 
 // UsernameResolver is an interface that allows to resolve the username of a commit.
@@ -115,7 +114,7 @@ func (c *GitHubClient) ResolveUsername(ctx context.Context, sha, author string, 
 		return "", nil
 	}
 
-	if r.Author.Login == nil {
+	if r.Author == nil || r.Author.Login == nil {
 		return "", nil
 	}
 
@@ -188,7 +187,6 @@ func (c *GitHubClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f
 	}
 
 	return TemporaryError{err}
-
 }
 
 type TemporaryError struct {
