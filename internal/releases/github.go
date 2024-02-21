@@ -143,6 +143,11 @@ func (c *GitHubClient) Release(ctx context.Context, info ReleaseInfo) (int64, er
 		body = string(b)
 	}
 
+	// Truncate body.
+	if len(body) > 100000 {
+		body = body[:100000]
+	}
+
 	r := &github.RepositoryRelease{
 		TagName:              s(info.Tag),
 		TargetCommitish:      s(info.Commitish),
