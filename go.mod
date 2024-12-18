@@ -1,6 +1,6 @@
 module github.com/gohugoio/hugoreleaser
 
-go 1.19
+go 1.22.0
 
 require (
 	github.com/bep/execrpc v0.7.1
