@@ -128,7 +128,7 @@ archive_alias_replacements = {}
             type = "gorun"
             # Note there is a "local" variant of this that may be simpler to set up, see
             # https://github.com/gohugoio/hugoreleaser-archive-plugins/tree/main/macospkg
-            command = "github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@v0.1.1"
+            command = "github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@newapi"
         [archives.archive_settings.custom_settings]
             # Package settings
             package_identifier = "io.gohugo.hugoreleaser"
@@ -160,7 +160,7 @@ archive_alias_replacements = {}
             # If the plugin source lives locally, this can also be a file path,
             # e.g. './myplugin'. In those setups you may need to set dir to the directory path,
             # and use "." for the command.
-            command = "github.com/gohugoio/hugoreleaser-archive-plugins/deb@v0.6.1"
+            command = "github.com/gohugoio/hugoreleaser-archive-plugins/deb@newapi"
         [archives.archive_settings.custom_settings]
             # Custom settings as defined by the Deb plugin.
             vendor      = "gohugo.io"

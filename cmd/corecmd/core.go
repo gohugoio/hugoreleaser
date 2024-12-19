@@ -32,6 +32,7 @@ import (
 	"github.com/bep/logg/handlers/multi"
 	"github.com/bep/workers"
 	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
+	apimodel "github.com/gohugoio/hugoreleaser-plugins-api/model"
 	"github.com/gohugoio/hugoreleaser/internal/common/errorsh"
 	"github.com/gohugoio/hugoreleaser/internal/common/logging"
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
@@ -134,7 +135,7 @@ type Core struct {
 	Workforce *workers.Workforce
 
 	// Archive plugins started and ready to use.
-	PluginsRegistryArchive map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response]
+	PluginsRegistryArchive map[string]*execrpc.Client[apimodel.Config, archiveplugin.Request, any, apimodel.Receipt]
 }
 
 // Exec function for this command.
@@ -161,7 +162,6 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 	fs.DurationVar(&c.Timeout, "timeout", 55*time.Minute, "Global timeout.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
 	fs.BoolVar(&c.Try, "try", false, "Trial run, no builds, archives or releases.")
-
 }
 
 // PreInit is called before the flags are parsed.
@@ -353,7 +353,6 @@ func (c *Core) Init() error {
 	defer f.Close()
 
 	c.Config, err = config.DecodeAndApplyDefaults(f)
-
 	if err != nil {
 		msg := "error decoding config file"
 		switch v := err.(type) {
@@ -416,7 +415,7 @@ func (c *Core) Init() error {
 	}
 
 	// Registry for archive plugins.
-	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[archiveplugin.Request, archiveplugin.Response])
+	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[apimodel.Config, archiveplugin.Request, any, apimodel.Receipt])
 
 	return nil
 }

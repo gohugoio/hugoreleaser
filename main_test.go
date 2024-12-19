@@ -52,7 +52,7 @@ func TestMisc(t *testing.T) {
 	setup := testSetupFunc()
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/misc",
-		//UpdateScripts: true,
+		// UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -69,8 +69,8 @@ func TestUnfinished(t *testing.T) {
 
 	testscript.Run(t, testscript.Params{
 		Dir: "testscripts/unfinished",
-		//TestWork: true,
-		//UpdateScripts: true,
+		// TestWork: true,
+		// UpdateScripts: true,
 		Setup: func(env *testscript.Env) error {
 			return setup(env)
 		},
@@ -128,7 +128,7 @@ func TestMain(m *testing.M) {
 					fatalf("%v", err)
 				}
 				b = bytes.Replace(b, []byte("\r\n"), []byte{'\n'}, -1)
-				if err := os.WriteFile(filename, b, 0666); err != nil {
+				if err := os.WriteFile(filename, b, 0o666); err != nil {
 					fatalf("%v", err)
 				}
 				return 0
@@ -199,7 +199,6 @@ func TestMain(m *testing.M) {
 				}
 
 				return 0
-
 			},
 
 			// cpdir copies a file.
@@ -216,7 +215,7 @@ func TestMain(m *testing.M) {
 					fromFile = filepath.Join(os.Getenv("SOURCE"), fromFile)
 				}
 
-				if err := os.MkdirAll(filepath.Dir(toFile), 0755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(toFile), 0o755); err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					return 1
 				}

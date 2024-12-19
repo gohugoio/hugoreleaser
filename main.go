@@ -118,7 +118,6 @@ func parseAndRun(args []string) (err error) {
 				os.Setenv(envName, f.Value.String())
 			}
 		}
-
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), core.Timeout)
@@ -157,5 +156,4 @@ func parseAndRun(args []string) (err error) {
 	err = g.Wait()
 
 	return err
-
 }

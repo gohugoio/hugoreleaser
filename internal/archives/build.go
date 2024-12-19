@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
@@ -85,10 +84,6 @@ func Build(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.Archive
 func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config.ArchiveSettings, req archiveplugin.Request) error {
 	infoLogger = infoLogger.WithField("plugin", settings.Plugin.ID)
 
-	if c.Try {
-		req.Heartbeat = fmt.Sprintf("heartbeat-%s", time.Now())
-	}
-
 	pluginSettings := settings.Plugin
 
 	client, found := c.PluginsRegistryArchive[pluginSettings.ID]
@@ -96,17 +91,13 @@ func buildExternal(c *corecmd.Core, infoLogger logg.LevelLogger, settings config
 		return fmt.Errorf("archive plugin %q not found in registry", pluginSettings.ID)
 	}
 
-	resp, err := client.Execute(req)
-	if err != nil {
+	result := client.Execute(req)
+	if err := result.Err(); err != nil {
 		return err
 	}
-
-	if err := resp.Err(); err != nil {
-		return err
-	}
-
-	if req.Heartbeat != resp.Heartbeat {
-		return fmt.Errorf("heartbeat mismatch: expected %q, got %q", req.Heartbeat, resp.Heartbeat)
+	receipt := <-result.Receipt()
+	if receipt.Error != nil {
+		return receipt.Error
 	}
 
 	return nil
