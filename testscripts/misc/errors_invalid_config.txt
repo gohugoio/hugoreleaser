@@ -1,5 +1,5 @@
 ! hugoreleaser build -tag foo
 stderr 'error decoding config file'
 
--- hugoreleaser.toml --
-foo: bar
+-- hugoreleaser.yaml --
+foo = bar

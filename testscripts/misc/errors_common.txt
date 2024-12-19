@@ -4,6 +4,6 @@
 stderr 'flag -tag is required'
 
 ! hugoreleaser build -tag v1.2.0
-stderr 'error opening config file.*hugoreleaser\.toml'
+stderr 'error opening config file.*hugoreleaser\.yaml'
 
 ! hugoreleaser archive -tag v1.2.0

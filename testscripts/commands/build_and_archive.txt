@@ -45,63 +45,66 @@ printarchive $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_li
 # It looks like nothing gets printed, so I suspect it's printarchive that somehow fails.
 [!windows] stdout '-rw-r--r-- 0644 README.md'
 [!windows] stdout '-rw-r---wx 0643 license.txt'
-[!windows] stdout '-rw-r---w- 0642 subdir/myconfig.toml'
+[!windows] stdout '-rw-r---w- 0642 subdir/myconfig.yaml'
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[build_settings]
-binary = "hugo"
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files  = [{ source_path = "${READMEFILE}", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }, { source_path = "hugoreleaser.toml", target_path = "subdir/myconfig.toml", mode = 0o642 }]
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
-[archive_settings.replacements]
-amd64 ="64bit"
-386 = "32bit"
-arm64 = "ARM64"
-darwin = "macOS"
-windows = "Windows"
+-- hugoreleaser.yaml --
+project: hugo
+build_settings:
+  binary: hugo
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  extra_files:
+    - source_path: ${READMEFILE}
+      target_path: README.md
+    - source_path: license.txt
+      target_path: license.txt
+    - source_path: hugoreleaser.yaml
+      target_path: subdir/myconfig.yaml
+      mode: 418
+  type:
+    format: tar.gz
+    extension: .tar.gz
+  replacements:
+    "386": 32bit
+    amd64: 64bit
+    arm64: ARM64
+    darwin: macOS
+    windows: Windows
+builds:
+  - path: main/base
+    build_settings:
+      env:
+        - CGO_ENABLED=0
+      ldflags: -s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio
+      flags:
+        - -buildmode
+        - exe
+    os:
+      - goos: darwin
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+      - goos: linux
+        archs:
+          - goarch: amd64
+          - goarch: arm
+      - goos: windows
+        build_settings:
+          binary: hugo.exe
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**/{darwin,linux}/amd64
+    archive_settings: {}
+  - paths:
+      - builds/**/windows/*
+    archive_settings:
+      type:
+        format: zip
+        extension: .zip
 
-[[builds]]
-path = "main/base"
-[builds.build_settings]
-env = ["CGO_ENABLED=0"]
-ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
-flags = ["-buildmode", "exe"]
-
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-
-[[builds.os]]
-goos = "linux"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm"
-
-[[builds.os]]
-goos = "windows"
-[builds.os.build_settings]
-binary = "hugo.exe"
-[[builds.os.archs]]
-goarch = "amd64"
-
-[[archives]]
-paths         = ["builds/**/{darwin,linux}/amd64"]
-[archives.archive_settings]
-[[archives]]
-paths         = ["builds/**/windows/*"]
-[archives.archive_settings]
-[archives.archive_settings.type]
-format = "zip"
-extension = ".zip"
 
 -- go.mod --
 module foo

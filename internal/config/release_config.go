@@ -27,18 +27,18 @@ import (
 
 type Release struct {
 	// Paths with Glob of releases paths to release. Multiple paths will be ANDed.
-	Paths []string `toml:"paths"`
+	Paths []string `json:"paths"`
 
 	// Path is the directory below /dist/releases where the release artifacts gets stored.
 	// This must be unique for each release within one configuration file.
-	Path string `toml:"path"`
+	Path string `json:"path"`
 
-	ReleaseSettings ReleaseSettings `toml:"release_settings"`
+	ReleaseSettings ReleaseSettings `json:"release_settings"`
 
-	PathsCompiled matchers.Matcher `toml:"-"`
+	PathsCompiled matchers.Matcher `json:"-"`
 
 	// Builds matching Paths.
-	ArchsCompiled []BuildArchPath `toml:"-"`
+	ArchsCompiled []BuildArchPath `json:"-"`
 }
 
 func (a *Release) Init() error {
@@ -72,29 +72,29 @@ func (a *Release) Init() error {
 }
 
 type ReleaseSettings struct {
-	Type string `toml:"type"`
+	Type string `json:"type"`
 
-	Name            string `toml:"name"`
-	Repository      string `toml:"repository"`
-	RepositoryOwner string `toml:"repository_owner"`
-	Draft           bool   `toml:"draft"`
-	Prerelease      bool   `toml:"prerelease"`
+	Name            string `json:"name"`
+	Repository      string `json:"repository"`
+	RepositoryOwner string `json:"repository_owner"`
+	Draft           bool   `json:"draft"`
+	Prerelease      bool   `json:"prerelease"`
 
-	ReleaseNotesSettings ReleaseNotesSettings `toml:"release_notes_settings"`
+	ReleaseNotesSettings ReleaseNotesSettings `json:"release_notes_settings"`
 
-	TypeParsed releasetypes.Type `toml:"-"`
+	TypeParsed releasetypes.Type `json:"-"`
 }
 
 type ReleaseNotesSettings struct {
-	Generate         bool                `toml:"generate"`
-	GenerateOnHost   bool                `toml:"generate_on_host"`
-	Filename         string              `toml:"filename"`
-	TemplateFilename string              `toml:"template_filename"`
-	Groups           []ReleaseNotesGroup `toml:"groups"`
+	Generate         bool                `json:"generate"`
+	GenerateOnHost   bool                `json:"generate_on_host"`
+	Filename         string              `json:"filename"`
+	TemplateFilename string              `json:"template_filename"`
+	Groups           []ReleaseNotesGroup `json:"groups"`
 
 	// Can be used to collapse releases with a few number (less than threshold) of changes into one title.
-	ShortThreshold int    `toml:"short_threshold"`
-	ShortTitle     string `toml:"short_title"`
+	ShortThreshold int    `json:"short_threshold"`
+	ShortTitle     string `json:"short_title"`
 }
 
 func (g *ReleaseNotesSettings) Init() error {
@@ -107,12 +107,12 @@ func (g *ReleaseNotesSettings) Init() error {
 }
 
 type ReleaseNotesGroup struct {
-	Title   string `toml:"title"`
-	Regexp  string `toml:"regexp"`
-	Ignore  bool   `toml:"ignore"`
-	Ordinal int    `toml:"ordinal"`
+	Title   string `json:"title"`
+	Regexp  string `json:"regexp"`
+	Ignore  bool   `json:"ignore"`
+	Ordinal int    `json:"ordinal"`
 
-	RegexpCompiled matchers.Matcher `toml:"-"`
+	RegexpCompiled matchers.Matcher `json:"-"`
 }
 
 func (g *ReleaseNotesGroup) Init() error {
@@ -136,7 +136,6 @@ func (g *ReleaseNotesGroup) Init() error {
 	})
 
 	return nil
-
 }
 
 func (r *ReleaseSettings) Init() error {

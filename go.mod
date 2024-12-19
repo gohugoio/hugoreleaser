@@ -3,7 +3,7 @@ module github.com/gohugoio/hugoreleaser
 go 1.22.0
 
 require (
-	github.com/bep/execrpc v0.9.0
+	github.com/bep/execrpc v0.10.0
 	github.com/bep/helpers v0.5.0
 	github.com/bep/logg v0.4.0
 	github.com/bep/workers v1.1.0
@@ -29,7 +29,8 @@ require (
 )
 
 require (
-	github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219160743-c3129de2a262
+	github.com/goccy/go-yaml v1.15.11
+	github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241220094410-1f02562cf9b9
 	golang.org/x/sync v0.10.0
 )
 
@@ -44,5 +45,3 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 )
-
-replace github.com/bep/execrpc => /Users/bep/dev/go/bep/execrpc

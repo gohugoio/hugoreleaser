@@ -16,38 +16,41 @@ cmp $WORK/dist/hugoreleaser/v0.53.2/releases/myrelease/release-notes.md $WORK/ex
 * testing: Cosmetic change3 to test patch releases 0ae1602 #30 
 
 
--- hugoreleaser.toml --
-project = "hugoreleaser"
-[build_settings]
-binary = "hugoreleaser"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "gohugoio"
-draft = true
-[release_settings.release_notes_settings]
-generate = true
-short_threshold = 10
-short_title = "Short release"
-groups = [
-{ regexp = "change4", ignore = true }          
-]
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
-[[builds]]
-path = "main"
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "amd64"
-[[archives]]
-paths = ["builds/**"]
-[[releases]]
-paths = ["archives/**"]
-path = "myrelease"
+-- hugoreleaser.yaml --
+project: hugoreleaser
+build_settings:
+  binary: hugoreleaser
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: gohugoio
+  draft: true
+  release_notes_settings:
+    generate: true
+    short_threshold: 10
+    short_title: Short release
+    groups:
+      - regexp: change4
+        ignore: true
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: main
+    os:
+      - goos: darwin
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+
 -- go.mod --
 module foo
 -- main.go --

@@ -10,36 +10,39 @@ stdout 'Prepared 2 files'
 stdout 'Uploading.*darwin-universal'
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[build_settings]
-binary = "hugo"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "bep"
-draft = true
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files  = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
+-- hugoreleaser.yaml --
+project: hugo
+build_settings:
+  binary: hugo
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  draft: true
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  extra_files:
+    - source_path: README.md
+      target_path: README.md
+    - source_path: license.txt
+      target_path: license.txt
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: mac
+    os:
+      - goos: darwin
+        archs:
+          - goarch: universal
+archives:
+  - paths:
+      - builds/mac/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
 
-[[builds]]
-path = "mac"
-
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "universal"
-
-[[archives]]
-paths         = ["builds/mac/**"]
-
-[[releases]]
-paths = ["archives/**"]
-path = "myrelease"
 
 -- go.mod --
 module foo

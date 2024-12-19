@@ -23,18 +23,21 @@ import (
 )
 
 type Config struct {
-	Project                  string            `toml:"project"`
-	ArchiveAliasReplacements map[string]string `toml:"archive_alias_replacements"`
+	// A bucket for anchors that defines reusable YAML fragments.
+	Definitions map[string]any ` json:"definitions"`
 
-	GoSettings GoSettings `toml:"go_settings"`
+	Project                  string            `json:"project"`
+	ArchiveAliasReplacements map[string]string `json:"archive_alias_replacements"`
 
-	Builds   Builds   `toml:"builds"`
-	Archives Archives `toml:"archives"`
-	Releases Releases `toml:"releases"`
+	GoSettings GoSettings `json:"go_settings"`
 
-	BuildSettings   BuildSettings   `toml:"build_settings"`
-	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
-	ReleaseSettings ReleaseSettings `toml:"release_settings"`
+	Builds   Builds   `json:"builds"`
+	Archives Archives `json:"archives"`
+	Releases Releases `json:"releases"`
+
+	BuildSettings   BuildSettings   `json:"build_settings"`
+	ArchiveSettings ArchiveSettings `json:"archive_settings"`
+	ReleaseSettings ReleaseSettings `json:"release_settings"`
 }
 
 func (c Config) FindReleases(filter matchers.Matcher) []Release {
@@ -66,13 +69,13 @@ func (c Config) FindArchs(filter matchers.Matcher) []BuildArchPath {
 }
 
 type Plugin struct {
-	ID      string   `toml:"id"`
-	Type    string   `toml:"type"`
-	Command string   `toml:"command"`
-	Dir     string   `toml:"dir"`
-	Env     []string `toml:"env"`
+	ID      string   `json:"id"`
+	Type    string   `json:"type"`
+	Command string   `json:"command"`
+	Dir     string   `json:"dir"`
+	Env     []string `json:"env"`
 
-	TypeParsed plugintypes.Type `toml:"-"`
+	TypeParsed plugintypes.Type `json:"-"`
 }
 
 func (t *Plugin) Clear() {
@@ -105,7 +108,7 @@ func (t Plugin) IsZero() bool {
 }
 
 type ArchiveFileInfo struct {
-	SourcePath string      `toml:"source_path"`
-	TargetPath string      `toml:"target_path"`
-	Mode       fs.FileMode `toml:"mode"`
+	SourcePath string      `json:"source_path"`
+	TargetPath string      `json:"target_path"`
+	Mode       fs.FileMode `json:"mode"`
 }
