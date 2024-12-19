@@ -15,7 +15,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/peterbourgon/ff/v3 v3.4.0
-	github.com/rogpeppe/go-internal v1.10.0
+	github.com/rogpeppe/go-internal v1.13.1
 	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/oauth2 v0.24.0
 )
@@ -29,11 +29,14 @@ require (
 )
 
 require (
-	github.com/gohugoio/hugoreleaser-plugins-api v0.7.0
+	github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219160743-c3129de2a262
 	golang.org/x/sync v0.10.0
 )
 
-require github.com/google/go-querystring v1.1.0 // indirect
+require (
+	github.com/google/go-querystring v1.1.0 // indirect
+	golang.org/x/tools v0.28.0 // indirect
+)
 
 require (
 	github.com/gobwas/glob v0.2.3
@@ -41,3 +44,5 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 )
+
+replace github.com/bep/execrpc => /Users/bep/dev/go/bep/execrpc

@@ -22,13 +22,22 @@ import (
 	"github.com/bep/execrpc/codecs"
 	"github.com/bep/logg"
 	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
-	"github.com/gohugoio/hugoreleaser-plugins-api/server"
+	"github.com/gohugoio/hugoreleaser-plugins-api/model"
 	"github.com/gohugoio/hugoreleaser/internal/config"
 )
 
+type ArchivePluginConfig struct {
+	Infol      logg.LevelLogger
+	Try        bool
+	GoSettings config.GoSettings
+	Options    config.Plugin
+	Project    string
+	Tag        string
+}
+
 // StartArchivePlugin starts a archive plugin.
-func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSettings, options config.Plugin) (*execrpc.Client[archiveplugin.Request, archiveplugin.Response], error) {
-	env := options.Env
+func StartArchivePlugin(cfg ArchivePluginConfig) (*execrpc.Client[model.Config, archiveplugin.Request, any, model.Receipt], error) {
+	env := cfg.Options.Env
 	var hasGoProxy bool
 	for _, e := range env {
 		if strings.HasPrefix(e, "GOPROXY=") {
@@ -37,28 +46,45 @@ func StartArchivePlugin(infoLogger logg.LevelLogger, goSettings config.GoSetting
 		}
 	}
 	if !hasGoProxy {
-		env = append(env, "GOPROXY="+goSettings.GoProxy)
+		env = append(env, "GOPROXY="+cfg.GoSettings.GoProxy)
 	}
 
-	return execrpc.StartClient(
-		execrpc.ClientOptions[archiveplugin.Request, archiveplugin.Response]{
+	serverCfg := model.Config{
+		Version: 0, // TODO1
+		Try:     cfg.Try,
+		ProjectInfo: model.ProjectInfo{
+			Project: cfg.Project,
+			Tag:     cfg.Tag,
+		},
+	}
+
+	client, err := execrpc.StartClient(
+		execrpc.ClientOptions[model.Config, archiveplugin.Request, any, model.Receipt]{
+			Config: serverCfg,
 			ClientRawOptions: execrpc.ClientRawOptions{
 				Version: 1,
-				Cmd:     goSettings.GoExe,
-				Args:    []string{"run", options.Command},
-				Dir:     options.Dir,
+				Cmd:     cfg.GoSettings.GoExe,
+				Args:    []string{"run", cfg.Options.Command},
+				Dir:     cfg.Options.Dir,
 				Env:     env,
 				Timeout: 20 * time.Minute,
-
-				OnMessage: func(msg execrpc.Message) {
-					statusCode := msg.Header.Status
-					switch statusCode {
-					case server.StatusInfoLog:
-						infoLogger.Log(logg.String(string(msg.Body)))
-					}
-				},
 			},
-			Codec: codecs.TOMLCodec[archiveplugin.Request, archiveplugin.Response]{},
+			Codec: codecs.TOMLCodec{},
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for msg := range client.MessagesRaw() {
+			statusCode := msg.Header.Status
+			switch statusCode {
+			case model.StatusInfoLog:
+				cfg.Infol.Log(logg.String(string(msg.Body)))
+			}
+		}
+	}()
+
+	return client, nil
 }

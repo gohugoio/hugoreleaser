@@ -21,7 +21,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
 
 	"github.com/gohugoio/hugoreleaser-plugins-api/archiveplugin"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
@@ -64,7 +63,6 @@ func NewArchivist(core *corecmd.Core) *Archivist {
 	return &Archivist{
 		core: core,
 	}
-
 }
 
 func (b *Archivist) Init() error {
@@ -80,20 +78,19 @@ func (b *Archivist) Init() error {
 			return nil
 		}
 		infoCtx := c.InfoLog.WithField("cmd", fmt.Sprintf("%s %s", commandName, p.ID))
-		client, err := plugins.StartArchivePlugin(infoCtx, c.Config.GoSettings, p)
+		cfg := plugins.ArchivePluginConfig{
+			Infol:      infoCtx,
+			Try:        c.Try,
+			GoSettings: c.Config.GoSettings,
+			Options:    p,
+			Project:    c.Config.Project,
+			Tag:        c.Tag,
+		}
+		client, err := plugins.StartArchivePlugin(cfg)
 		if err != nil {
 			return fmt.Errorf("error starting archive plugin %q: %w", p.ID, err)
 		}
 
-		// Send a heartbeat to the plugin to make sure it's alive.
-		heartbeat := fmt.Sprintf("heartbeat-%s", time.Now())
-		resp, err := client.Execute(archiveplugin.Request{Heartbeat: heartbeat})
-		if err != nil {
-			return fmt.Errorf("error testing archive plugin %q: %w", p.ID, err)
-		}
-		if resp.Heartbeat != heartbeat {
-			return fmt.Errorf("error testing archive plugin %q: unexpected heartbeat response", p.ID)
-		}
 		infoCtx.Log(logg.String("Archive plugin started and ready for use"))
 		c.PluginsRegistryArchive[p.ID] = client
 		return nil
@@ -134,15 +131,12 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 			archPath := archPath
 			archiveSettings := archive.ArchiveSettings
 			arch := archPath.Arch
-			buildInfo := model.BuildInfo{
-				Project: b.core.Config.Project,
-				Tag:     b.core.Tag,
-				Goos:    arch.Os.Goos,
-				Goarch:  arch.Goarch,
+			goInfo := model.GoInfo{
+				Goos:   arch.Os.Goos,
+				Goarch: arch.Goarch,
 			}
 
 			r.Run(func() (err error) {
-
 				outDir := filepath.Join(archiveDistDir, filepath.FromSlash(archPath.Path))
 
 				outFilename := filepath.Join(
@@ -174,7 +168,7 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				}
 
 				buildRequest := archiveplugin.Request{
-					BuildInfo:   buildInfo,
+					GoInfo:      goInfo,
 					Settings:    archiveSettings.CustomSettings,
 					OutFilename: outFilename,
 				}
@@ -199,7 +193,6 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 					archiveSettings,
 					buildRequest,
 				)
-
 				if err != nil {
 					return err
 				}
@@ -216,12 +209,10 @@ func (b *Archivist) Exec(ctx context.Context, args []string) error {
 				}
 
 				return nil
-
 			})
 
 		}
 	}
 
 	return r.Wait()
-
 }

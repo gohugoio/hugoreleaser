@@ -18,8 +18,12 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
 github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
-github.com/gohugoio/hugoreleaser-plugins-api v0.7.0 h1:GzQ+KYibq8Ltm3sfG5tNwZqoUcROGh5FTBJm8K6ba98=
-github.com/gohugoio/hugoreleaser-plugins-api v0.7.0/go.mod h1:zjt/fqbUJzhtSEEgaK7MeHu/x0RJ2stRvhgMgbO1Xr4=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219113101-e613cfc24c82 h1:IdctCMa9e/yCyJGQU7IeYmcYYHyiZccu5OcFwSOJoTo=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219113101-e613cfc24c82/go.mod h1:3pnrMYKsGrzACVwKU/R72UpRUnR+W7E5laXurS2QGMc=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219154512-07cffd8e9e37 h1:nyRm3Qt2Wl0dyEdPIsXkmmxXuRf5KSMtBC84s8p2h9E=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219154512-07cffd8e9e37/go.mod h1:3pnrMYKsGrzACVwKU/R72UpRUnR+W7E5laXurS2QGMc=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219160743-c3129de2a262 h1:T7uoNqJOnE1YiCs0bJus8J5ytTFfdZj31uNhb80GTcE=
+github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241219160743-c3129de2a262/go.mod h1:3pnrMYKsGrzACVwKU/R72UpRUnR+W7E5laXurS2QGMc=
 github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220822083757-38d81884db04 h1:VNOiFvTuhXc2eoDvBVQHsfxl1TTS2/EF1wFs1YttIlA=
 github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220822083757-38d81884db04/go.mod h1:P3JlkmIYwGFlTf8/MhkR4P+mvidrYo28Fudx4wcR7f0=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
@@ -55,8 +59,8 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
-github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=
-github.com/rogpeppe/go-internal v1.10.0/go.mod h1:UQnix2H7Ngw/k4C5ijL5+65zddjncjaFoBhdsK/akog=
+github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=
+github.com/rogpeppe/go-internal v1.13.1/go.mod h1:uMEvuHeurkdAXX61udpOXGD/AzZDWNMNyH2VO9fmH0o=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 golang.org/x/crypto v0.31.0 h1:ihbySMvVjLAeSH1IbfcRTkD/iNscyz8rGzjF/E5hV6U=
@@ -72,6 +76,8 @@ golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.28.0 h1:Fksou7UEQUWlKvIdsqzJmUmCX3cZuD2+P3XyyzwMhlA=
 golang.org/x/sys v0.28.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
+golang.org/x/tools v0.28.0 h1:WuB6qZ4RPCQo5aP3WdKZS7i595EdWqWR8vqJTlwTVK8=
+golang.org/x/tools v0.28.0/go.mod h1:dcIOrVd3mfQKTgrDVQHqCPMWy6lnhfhtX3hLXYVLfRw=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
