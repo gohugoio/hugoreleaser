@@ -13,34 +13,37 @@ cmp $WORK/dist/hugoreleaser/v0.51.0/releases/myrelease/release-notes.md $WORK/ex
 {{ range .ChangeGroups }}{{ range .Changes }}Subject: {{ .Subject }}, Hash: {{ .Hash }}|{{ end }}{{ end }}
 -- expected/release-notes.md --
 Subject: Shuffle chunked builds, Hash: 515615e|Subject: Throw an error on duplicate archive names in a release, Hash: 8b4ede0|Subject: Fix failing tests, Hash: 130ca16|
--- hugoreleaser.toml --
-project = "hugoreleaser"
-[build_settings]
-binary = "hugoreleaser"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "gohugoio"
-draft = true
-[release_settings.release_notes_settings]
-generate = true
-template_filename = "mytemplates/custom.txt"
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
-[[builds]]
-path = "main"
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "amd64"
-[[archives]]
-paths = ["builds/**"]
-[[releases]]
-paths = ["archives/**"]
-path = "myrelease"
+-- hugoreleaser.yaml --
+project: hugoreleaser
+build_settings:
+  binary: hugoreleaser
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: gohugoio
+  draft: true
+  release_notes_settings:
+    generate: true
+    template_filename: mytemplates/custom.txt
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: main
+    os:
+      - goos: darwin
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+
 -- go.mod --
 module foo
 -- main.go --

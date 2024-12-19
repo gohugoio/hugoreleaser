@@ -20,11 +20,30 @@
 
 ### Configuration File
 
-Hugoreleaser reads its main configuration from a file named `hugoreleaser.toml` in the working directory. See [this project's configuration](./hugoreleaser.toml) for an annotated example.
+Hugoreleaser reads its main configuration from a file named `hugoreleaser.yaml` in the working directory. See [this project's configuration](./hugoreleaser.yaml) for an annotated example.
+
+
+### Definitions
+
+Hugoreleaser supports YAML anchors and aliases, and has a reserved section for `definitions`. This is useful for defining common settings that can be reused in multiple places, e.g.
+
+```yaml
+definitions:
+  archive_type_zip: &archive_type_zip
+    type:
+      format: zip
+      extension: .zip
+
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**/windows/**
+    archive_settings: *archive_type_zip
+```
 
 ### Archive Aliases
 
-See Hugo's use [here](https://github.com/gohugoio/hugo/blob/ec02c537edf7c027e7470126eb913e84fb626216/hugoreleaser.toml#L11).
+See Hugo's use [here](TODO(bep)).
 
 ### Template Expansion
 
@@ -63,7 +82,7 @@ The order of presedence for environment variables/flags:
 
 A `hugoreleaser.env` file will, if found in the current directory, be parsed and loaded into the environment of the running process. The format is simple, a text files of key-value-pairs on the form `KEY=value`, empty lines and lines starting with `#` is ignored:
 
-Environment variable expressions in `hugoreleaser.toml` on the form `${VAR}` will be expanded before it's parsed.
+Environment variable expressions in `hugoreleaser.yaml` on the form `${VAR}` will be expanded before it's parsed.
 
 An example `hugoreleaser.env` with the enviromnent for the next release may look like this:
 
@@ -76,12 +95,11 @@ MYPROJECT_RELEASE_DRAFT=false
 
 In the above, the variables prefixed `HUGORELEASER_` will be used to set the flags when running the `hugoreleaser` commands.
 
-The other custom variables can be used in `hugoreleaser.toml`, e.g:
+The other custom variables can be used in `hugoreleaser.yaml`, e.g:
 
 ```toml
-[release_settings]
-    name                           = "${MYPROJECT_RELEASE_NAME}"
-    draft                          = "${MYPROJECT_RELEASE_DRAFT@U}"
+release_settings:
+  name: ${MYPROJECT_RELEASE_NAME}
 ```
 
 Note the special `@U` (_Unquoute_) syntax. The field `draft` is a boolean and cannot be quouted, but this would create ugly validation errors in TOML aware editors. The construct above signals that the quoutes (single or double) should be removed before doing any variable expansion.
@@ -133,12 +151,15 @@ The config map `release_notes_settings` has 3 options for how to handle release 
 2. Set `generate_on_host=true` and let GitHub do it.
 3. Set `generate=true` and let Hugoreleaser do it.
 
-There are more details about change grouping etc. in this [this project's configuration](./hugoreleaser.toml).
+There are more details about change grouping etc. in this [this project's configuration](./hugoreleaser.yaml).
 
 For the third option, you can set a custom release notes template to use in `template_filename`. See the default template in [staticfiles/templates/release-notes.gotmpl](./staticfiles/templates/release-notes.gotmpl) for an example.
 
 ## Why another Go release tool?
 
-If you need a Go build/release tool with all the bells and whistles, check out [GoReleaser](https://github.com/goreleaser/goreleaser). This project was created because [Hugo](https://github.com/gohugoio/hugo) needed some features not on the road map of that project. 
+This project was created because [Hugo](https://github.com/gohugoio/hugo) had some issues that seemed unsolvable with Goreleaser:
 
-Hugo has used this tool for all of its releases since [v0.102.0](https://github.com/gohugoio/hugo/releases/tag/v0.102.0).
+* We had a CI release that timed out a lot (1 hour). And since Goreleaser creates the tag as the first step, we often ended up having to delete the tag and start over, creating all sorts of issues.
+* We wanted to add more build variants, but we couldn't.
+
+Hugo has used this tool for all of its releases since [v0.102.0](https://github.com/gohugoio/hugo/releases/tag/v0.102.0), and the release time has gone down from 50-60 minutes to around 10 minutes.

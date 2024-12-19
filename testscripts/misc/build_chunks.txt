@@ -20,68 +20,61 @@ checkfilecount 9 $WORK/dist/hugo/v1.2.0/builds
 
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[build_settings]
-binary = "hugo"
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
-[archive_settings.replacements]
-amd64 ="64bit"
-386 = "32bit"
-arm64 = "ARM64"
-darwin = "macOS"
-windows = "Windows"
-[[builds]]
-path = "main/base"
-[builds.build_settings]
-env = ["CGO_ENABLED=0"]
-ldflags = "-s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio"
-flags = ["-buildmode", "exe"]
+-- hugoreleaser.yaml --
+project: hugo
+build_settings:
+  binary: hugo
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+  replacements:
+    "386": 32bit
+    amd64: 64bit
+    arm64: ARM64
+    darwin: macOS
+    windows: Windows
+builds:
+  - path: main/base
+    build_settings:
+      env:
+        - CGO_ENABLED=0
+      ldflags: -s -w -X github.com/gohugoio/hugo/common/hugo.vendorInfo=gohugoio
+      flags:
+        - -buildmode
+        - exe
+    os:
+      - goos: darwin
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+      - goos: freebsd
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+      - goos: linux
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+          - goarch: arm
+      - goos: windows
+        build_settings:
+          binary: hugo.exe
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+archives:
+  - paths:
+      - builds/**/{darwin,linux}/amd64
+    archive_settings: {}
+  - paths:
+      - builds/**/windows/*
+    archive_settings:
+      type:
+        format: zip
+        extension: .zip
 
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-
-[[builds.os]]
-goos = "freebsd"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-
-[[builds.os]]
-goos = "linux"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-[[builds.os.archs]]
-goarch = "arm"
-
-[[builds.os]]
-goos = "windows"
-[builds.os.build_settings]
-binary = "hugo.exe"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-[[archives]]
-paths         = ["builds/**/{darwin,linux}/amd64"]
-[archives.archive_settings]
-[[archives]]
-paths         = ["builds/**/windows/*"]
-[archives.archive_settings]
-[archives.archive_settings.type]
-format = "zip"
-extension = ".zip"
 
 -- go.mod --
 module foo

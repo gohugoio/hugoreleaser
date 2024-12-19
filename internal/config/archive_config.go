@@ -31,11 +31,11 @@ var (
 
 type Archive struct {
 	// Glob of Build paths to archive. Multiple paths will be ANDed.
-	Paths           []string        `toml:"paths"`
-	ArchiveSettings ArchiveSettings `toml:"archive_settings"`
+	Paths           []string        `json:"paths"`
+	ArchiveSettings ArchiveSettings `json:"archive_settings"`
 
-	PathsCompiled matchers.Matcher `toml:"-"`
-	ArchsCompiled []BuildArchPath  `toml:"-"`
+	PathsCompiled matchers.Matcher `json:"-"`
+	ArchsCompiled []BuildArchPath  `json:"-"`
 }
 
 func (a *Archive) Init() error {
@@ -63,30 +63,30 @@ func (a *Archive) Init() error {
 }
 
 type BuildArchPath struct {
-	Arch BuildArch `toml:"arch"`
-	Path string    `toml:"path"`
+	Arch BuildArch `json:"arch"`
+	Path string    `json:"path"`
 
 	// Name is the name of the archive with the extension.
-	Name string `toml:"name"`
+	Name string `json:"name"`
 
 	// Any archive aliase names, with the extension.
-	Aliases []string `toml:"aliases"`
+	Aliases []string `json:"aliases"`
 }
 
 type ArchiveSettings struct {
-	Type ArchiveType `toml:"type"`
+	Type ArchiveType `json:"type"`
 
-	BinaryDir    string            `toml:"binary_dir"`
-	NameTemplate string            `toml:"name_template"`
-	ExtraFiles   []ArchiveFileInfo `toml:"extra_files"`
-	Replacements map[string]string `toml:"replacements"`
-	Plugin       Plugin            `toml:"plugin"`
+	BinaryDir    string            `json:"binary_dir"`
+	NameTemplate string            `json:"name_template"`
+	ExtraFiles   []ArchiveFileInfo `json:"extra_files"`
+	Replacements map[string]string `json:"replacements"`
+	Plugin       Plugin            `json:"plugin"`
 
 	// CustomSettings is archive type specific metadata.
 	// See in the documentation for the configured archive type.
-	CustomSettings map[string]any `toml:"custom_settings"`
+	CustomSettings map[string]any `json:"custom_settings"`
 
-	ReplacementsCompiled *strings.Replacer `toml:"-"`
+	ReplacementsCompiled *strings.Replacer `json:"-"`
 }
 
 func (a *ArchiveSettings) Init() error {
@@ -119,10 +119,10 @@ func (a *ArchiveSettings) Init() error {
 }
 
 type ArchiveType struct {
-	Format    string `toml:"format"`
-	Extension string `toml:"extension"`
+	Format    string `json:"format"`
+	Extension string `json:"extension"`
 
-	FormatParsed archiveformats.Format `toml:"-"`
+	FormatParsed archiveformats.Format `json:"-"`
 }
 
 func (a *ArchiveType) Init() error {

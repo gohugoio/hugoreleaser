@@ -21,64 +21,56 @@ hugoreleaser release -paths releases/bsd
 stdout 'Prepared 3 files' # 2 archives + checksums.txt.
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[build_settings]
-binary = "hugo"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "bep"
-draft = true
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-extra_files  = [{ source_path = "README.md", target_path = "README.md" }, { source_path = "license.txt", target_path = "license.txt" }]
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
+-- hugoreleaser.yaml --
+project: hugo
+build_settings:
+  binary: hugo
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  draft: true
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  extra_files:
+    - source_path: README.md
+      target_path: README.md
+    - source_path: license.txt
+      target_path: license.txt
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: unix
+    os:
+      - goos: freebsd
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+          - goarch: arm
+          - goarch: "386"
+      - goos: linux
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+          - goarch: arm
+  - path: win
+    os:
+      - goos: windows
+        archs:
+          - goarch: amd64
+          - goarch: arm64
+archives:
+  - paths:
+      - builds/unix/**
+releases:
+  - paths:
+      - archives/**/freebsd/arm*
+    path: bsd
+  - paths:
+      - archives/win/**
+    path: win
 
-[[builds]]
-path = "unix"
-
-[[builds.os]]
-goos = "freebsd"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-[[builds.os.archs]]
-goarch = "arm"
-[[builds.os.archs]]
-goarch = "386"
-
-[[builds.os]]
-goos = "linux"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-[[builds.os.archs]]
-goarch = "arm"
-
-[[builds]]
-path = "win"
-
-[[builds.os]]
-goos = "windows"
-[[builds.os.archs]]
-goarch = "amd64"
-[[builds.os.archs]]
-goarch = "arm64"
-
-[[archives]]
-paths         = ["builds/unix/**"]
-
-[[releases]]
-paths = ["archives/**/freebsd/arm*"]
-path = "bsd"
-[[releases]]
-paths = ["archives/win/**"]
-path = "win"
 
 -- go.mod --
 module foo

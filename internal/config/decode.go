@@ -21,8 +21,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/goccy/go-yaml"
+
 	"github.com/bep/helpers/envhelpers"
-	"github.com/pelletier/go-toml/v2"
 )
 
 var zeroType = reflect.TypeOf((*zeroer)(nil)).Elem()
@@ -46,9 +47,10 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 		return os.Getenv(k)
 	})
 
-	d := toml.NewDecoder(strings.NewReader(s))
+	d := yaml.NewDecoder(strings.NewReader(s),
+		yaml.DisallowUnknownField(),
+	)
 
-	d.DisallowUnknownFields()
 	err = d.Decode(cfg)
 	if err != nil {
 		return *cfg, err

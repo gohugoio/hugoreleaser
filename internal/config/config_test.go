@@ -20,8 +20,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pelletier/go-toml/v2"
-
 	qt "github.com/frankban/quicktest"
 )
 
@@ -43,22 +41,13 @@ format = "foo"
 func TestDecodeFile(t *testing.T) {
 	c := qt.New(t)
 
-	f, err := os.Open("../../hugoreleaser.toml")
+	f, err := os.Open("../../hugoreleaser.yaml")
 	c.Assert(err, qt.IsNil)
 	defer f.Close()
 
 	cfg, err := DecodeAndApplyDefaults(f)
 	if err != nil {
-		switch v := err.(type) {
-		case *toml.DecodeError:
-			row, col := v.Position()
-			fmt.Printf("%d:%d:%s:%v\n", row, col, v.Key(), v.Error())
-
-		case *toml.StrictMissingError:
-			fmt.Println(v.Errors)
-		default:
-			fmt.Printf("%v\n", err)
-		}
+		fmt.Printf("%v\n", err)
 	}
 
 	c.Assert(err, qt.IsNil)
@@ -82,4 +71,6 @@ func TestDecodeFile(t *testing.T) {
 			}
 		}
 	}
+
+	fmt.Println("===> FI", cfg.ReleaseSettings.ReleaseNotesSettings.Filename)
 }

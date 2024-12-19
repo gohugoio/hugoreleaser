@@ -7,22 +7,24 @@ hugoreleaser archive -tag v1.2.0 -quiet
 ! stdout .
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[build_settings]
-binary = "hugo"
-[[builds]]
-[[builds.os]]
-goos = "linux"
-[[builds.os.archs]]
-goarch = "amd64"
-[[archives]]
-paths = ["builds/**"]
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
+-- hugoreleaser.yaml --
+project: hugo
+build_settings:
+  binary: hugo
+builds:
+  - os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+
 
 -- go.mod --
 module foo

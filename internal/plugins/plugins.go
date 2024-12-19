@@ -26,6 +26,10 @@ import (
 	"github.com/gohugoio/hugoreleaser/internal/config"
 )
 
+// This represents a major version.
+// Increment this only when there are breaking changes to the plugin protocol.
+const pluginProtocolVersion = 2
+
 type ArchivePluginConfig struct {
 	Infol      logg.LevelLogger
 	Try        bool
@@ -50,8 +54,7 @@ func StartArchivePlugin(cfg ArchivePluginConfig) (*execrpc.Client[model.Config, 
 	}
 
 	serverCfg := model.Config{
-		Version: 0, // TODO1
-		Try:     cfg.Try,
+		Try: cfg.Try,
 		ProjectInfo: model.ProjectInfo{
 			Project: cfg.Project,
 			Tag:     cfg.Tag,
@@ -62,7 +65,7 @@ func StartArchivePlugin(cfg ArchivePluginConfig) (*execrpc.Client[model.Config, 
 		execrpc.ClientOptions[model.Config, archiveplugin.Request, any, model.Receipt]{
 			Config: serverCfg,
 			ClientRawOptions: execrpc.ClientRawOptions{
-				Version: 1,
+				Version: pluginProtocolVersion,
 				Cmd:     cfg.GoSettings.GoExe,
 				Args:    []string{"run", cfg.Options.Command},
 				Dir:     cfg.Options.Dir,

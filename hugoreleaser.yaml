@@ -1,0 +1,132 @@
+project: hugoreleaser
+
+# definitions can be used to define anchors for common blocks and values.
+# But note that build_settings and archive_settings can be set on any level and will merged downwards.
+# Any zero config value will be replaced with the first non-zero value found above.
+definitions:
+
+# Useful if you have changed archive naming scheme, but want to preserve some backwards compability with the most
+# common variants, e.g. "linux-amd64.tar.gz: Linux-64bit.tar.gz"
+archive_alias_replacements: {}
+
+go_settings:
+  go_proxy: https://proxy.golang.org
+  go_exe: go
+
+# This can be overridden for each build, goos, or goarch if needed.
+build_settings:
+  binary: hugoreleaser
+  flags:
+    - -buildmode
+    - exe
+  env:
+    - CGO_ENABLED=0
+  ldflags: ""
+
+# This can be overridden for each archive.
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  extra_files:
+    - source_path: README.md
+      target_path: README.md
+    - source_path: LICENSE
+      target_path: LICENSE
+  type:
+    format: tar.gz
+    extension: .tar.gz
+release_settings:
+  name: ${HUGORELEASER_TAG}
+  type: github
+  repository: hugoreleaser
+  repository_owner: gohugoio
+  draft: true
+  prerelease: false
+  release_notes_settings:
+    generate: true
+    generate_on_host: false
+    filename: ""
+    template_filename: ""
+    short_threshold: 10
+    short_title: What's Changed
+    groups:
+      - regexp: snapcraft:|Merge commit|Squashed
+        ignore: true
+      - title: Bug fixes
+        regexp: fix
+        ordinal: 20
+      - title: Dependency Updates
+        regexp: deps
+        ordinal: 30
+      - title: Documentation
+        regexp: doc
+        ordinal: 40
+      - title: Improvements
+        regexp: .*
+        ordinal: 10
+builds:
+  - path: unix
+    os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+  - path: macos
+    os:
+      - goos: darwin
+        archs:
+          - goarch: universal
+  - path: windows
+    os:
+      - goos: windows
+        build_settings:
+          binary: hugoreleaser.exe
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/unix/**
+  - paths:
+      - builds/macos/**
+    archive_settings:
+      extra_files: []
+      type:
+        format: _plugin
+        extension: .pkg
+      plugin:
+        id: macospkgremote
+        type: gorun
+        command: github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@latest
+      custom_settings:
+        package_identifier: io.gohugo.hugoreleaser
+        package_version: ${HUGORELEASER_TAG}
+        bucket: s3fptest
+        queue: https://sqs.eu-north-1.amazonaws.com/656975317043/s3fptest_client
+        access_key_id: ${S3RPC_CLIENT_ACCESS_KEY_ID}
+        secret_access_key: ${S3RPC_CLIENT_SECRET_ACCESS_KEY}
+  - paths:
+      - builds/**/linux/amd64
+    archive_settings:
+      binary_dir: /usr/local/bin
+      extra_files: []
+      type:
+        format: _plugin
+        extension: .deb
+      plugin:
+        id: deb
+        type: gorun
+        command: github.com/gohugoio/hugoreleaser-archive-plugins/deb@latest
+      custom_settings:
+        vendor: gohugo.io
+        homepage: https://github.com/gohugoio/hugoreleaser
+        maintainer: Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>
+        description: Build, archive and release Go programs.
+        license: Apache-2.0
+  - paths:
+      - builds/windows/**
+    archive_settings:
+      type:
+        format: zip
+        extension: .zip
+releases:
+  - paths:
+      - archives/**
+    path: myrelease

@@ -10,7 +10,7 @@ env NAME3_FROM_ENV=name3os
 # * Setting flags in hugoreleaser.env
 # * Having the same env in OS as in hugoreleaser.env (OS will win).
 # * Do env var replacement in hugoreleaser.toml.
-# 
+#  
 
 hugoreleaser all
 
@@ -21,31 +21,34 @@ stdout 'First Release!'
 ! stderr .
 exists $WORK/dist/hugo/v1.2.3/archives/mybuilds/darwin/amd64/name1_darwin_name2-name3os-amd64.zip
 
--- hugoreleaser.toml --
-project = "hugo"
-[archive_settings]
-name_template = "${NAME1_FROM_ENV}_{{ .Goos }}_${NAME2_FROM_ENV}-${NAME3_FROM_ENV}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "zip"
-extension = ".zip"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "bep"
-name = "${MYPROJECT_RELEASE_NAME}"
-draft = "${MYPROJECT_RELEASE_DRAFT@U}"
-[[builds]]
-path = "mybuilds"
-[builds.build_settings]
-[[builds.os]]
-goos = "darwin"
-[[builds.os.archs]]
-goarch = "amd64"
-[[archives]]
-paths         = ["builds/**"]
-[[releases]]
-paths = ["archives/**"]
-path = "myrelease"
+-- hugoreleaser.yaml --
+project: hugo
+archive_settings:
+  name_template: ${NAME1_FROM_ENV}_{{ .Goos
+    }}_${NAME2_FROM_ENV}-${NAME3_FROM_ENV}-{{ .Goarch }}
+  type:
+    format: zip
+    extension: .zip
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  name: ${MYPROJECT_RELEASE_NAME}
+  draft: "${MYPROJECT_RELEASE_DRAFT@U}"
+builds:
+  - path: mybuilds
+    build_settings: {}
+    os:
+      - goos: darwin
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
 -- go.mod --
 module foo
 -- main.go --

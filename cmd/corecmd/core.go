@@ -77,6 +77,8 @@ func New() (*ffcli.Command, *Core) {
 	}, &cfg
 }
 
+const configName = "hugoreleaser.yaml"
+
 // Core holds common config settings and objects.
 type Core struct {
 	// The parsed config.
@@ -157,7 +159,6 @@ func (c *Core) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&c.Tag, "tag", "", "The name of the release tag (e.g. v1.2.0). Does not need to exist.")
 	fs.Var(&c.Paths, "paths", "Paths to include in the command.")
 	fs.StringVar(&c.DistDir, "dist", "dist", "Directory to store the built artifacts in.")
-	fs.StringVar(&c.ConfigFile, "config", "hugoreleaser.toml", "The config file to use.")
 	fs.IntVar(&c.NumWorkers, "workers", numWorkers, "Number of parallel builds.")
 	fs.DurationVar(&c.Timeout, "timeout", 55*time.Minute, "Global timeout.")
 	fs.BoolVar(&c.Quiet, "quiet", false, "Don't output anything to stdout.")
@@ -342,9 +343,7 @@ func (c *Core) Init() error {
 		c.NumWorkers = runtime.NumCPU()
 	}
 
-	if !filepath.IsAbs(c.ConfigFile) {
-		c.ConfigFile = filepath.Join(c.ProjectDir, c.ConfigFile)
-	}
+	c.ConfigFile = filepath.Join(c.ProjectDir, configName)
 
 	f, err := os.Open(c.ConfigFile)
 	if err != nil {

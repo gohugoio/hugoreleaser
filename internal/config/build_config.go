@@ -26,10 +26,10 @@ import (
 var _ model.Initializer = (*Build)(nil)
 
 type Build struct {
-	Path string    `toml:"path"`
-	Os   []BuildOs `toml:"os"`
+	Path string    `json:"path"`
+	Os   []BuildOs `json:"os"`
 
-	BuildSettings BuildSettings `toml:"build_settings"`
+	BuildSettings BuildSettings `json:"build_settings"`
 }
 
 func (b *Build) Init() error {
@@ -50,13 +50,13 @@ func (b Build) IsZero() bool {
 var _ logg.Fielder = BuildSettings{}
 
 type BuildSettings struct {
-	Binary string `toml:"binary"`
+	Binary string `json:"binary"`
 
-	Env     []string `toml:"env"`
-	Ldflags string   `toml:"ldflags"`
-	Flags   []string `toml:"flags"`
+	Env     []string `json:"env"`
+	Ldflags string   `json:"ldflags"`
+	Flags   []string `json:"flags"`
 
-	GoSettings GoSettings `toml:"go_settings"`
+	GoSettings GoSettings `json:"go_settings"`
 }
 
 // Fields is used by the logging framework.
@@ -68,20 +68,20 @@ func (b BuildSettings) Fields() logg.Fields {
 }
 
 type GoSettings struct {
-	GoExe   string `toml:"go_exe"`
-	GoProxy string `toml:"go_proxy"`
+	GoExe   string `json:"go_exe"`
+	GoProxy string `json:"go_proxy"`
 }
 
 type Builds []Build
 
 type BuildArch struct {
-	Goarch string `toml:"goarch"`
+	Goarch string `json:"goarch"`
 
-	BuildSettings BuildSettings `toml:"build_settings"`
+	BuildSettings BuildSettings `json:"build_settings"`
 
 	// Tree navigation.
-	Build *Build   `toml:"-"`
-	Os    *BuildOs `toml:"-"`
+	Build *Build   `json:"-"`
+	Os    *BuildOs `json:"-"`
 }
 
 // BinaryPath returns the path to the built binary starting below /builds.
@@ -90,11 +90,11 @@ func (b BuildArch) BinaryPath() string {
 }
 
 type BuildOs struct {
-	Goos  string      `toml:"goos"`
-	Archs []BuildArch `toml:"archs"`
+	Goos  string      `json:"goos"`
+	Archs []BuildArch `json:"archs"`
 
-	BuildSettings BuildSettings `toml:"build_settings"`
+	BuildSettings BuildSettings `json:"build_settings"`
 
 	// Tree navigation.
-	Build *Build `toml:"-"`
+	Build *Build `json:"-"`
 }

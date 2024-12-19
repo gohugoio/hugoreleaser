@@ -10,30 +10,32 @@ stdout 'Archive file.*hugo_1.2.0_linux-amd64.tar.gz'
 hugoreleaser release -tag v1.2.0 -commitish main -try
 
 # Test files
--- hugoreleaser.toml --
-project = "hugo"
-[release_settings]
-type = "github"
-repository = "hugoreleaser"
-repository_owner = "bep"
-draft = true
-[build_settings]
-binary = "hugo"
-[[builds]]
-[[builds.os]]
-goos = "linux"
-[[builds.os.archs]]
-goarch = "amd64"
-[[archives]]
-paths = ["builds/**"]
-[archive_settings]
-name_template = "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
-[archive_settings.type]
-format        = "tar.gz"
-extension = ".tar.gz"
-[[releases]]
-paths = ["archives/**"]
-path  = "myrelease"
+-- hugoreleaser.yaml --
+project: hugo
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  draft: true
+build_settings:
+  binary: hugo
+builds:
+  - os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
 
 -- go.mod --
 module foo
