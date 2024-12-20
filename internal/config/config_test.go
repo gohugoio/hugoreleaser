@@ -71,6 +71,4 @@ func TestDecodeFile(t *testing.T) {
 			}
 		}
 	}
-
-	fmt.Println("===> FI", cfg.ReleaseSettings.ReleaseNotesSettings.Filename)
 }

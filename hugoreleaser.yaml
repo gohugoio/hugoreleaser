@@ -21,7 +21,7 @@ build_settings:
     - exe
   env:
     - CGO_ENABLED=0
-  ldflags: ""
+  ldflags: "-s -w -X main.tag=${HUGORELEASER_TAG}"
 
 # This can be overridden for each archive.
 archive_settings:

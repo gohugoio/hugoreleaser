@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/goccy/go-yaml v1.15.11
+	github.com/goccy/go-yaml v1.15.13-0.20241221080047-87aec7d7f886
 	github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241220094410-1f02562cf9b9
 	golang.org/x/sync v0.10.0
 )
