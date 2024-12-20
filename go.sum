@@ -18,8 +18,8 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
 github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
-github.com/goccy/go-yaml v1.15.11 h1:XeEd/2INF0TXXWMzJ9ALqJLGjGDl4PIi1gmrK+7KpAs=
-github.com/goccy/go-yaml v1.15.11/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
+github.com/goccy/go-yaml v1.15.13-0.20241221080047-87aec7d7f886 h1:DGV2XraUpNBGuKdxYuNFmlm4feqfEFMm+48p2YUQnqw=
+github.com/goccy/go-yaml v1.15.13-0.20241221080047-87aec7d7f886/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
 github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241220094410-1f02562cf9b9 h1:JT6XVa3wBdkwrgcV4EYku7fZOfLX2MjWgWWtHtp5IQs=
 github.com/gohugoio/hugoreleaser-plugins-api v0.7.1-0.20241220094410-1f02562cf9b9/go.mod h1:Qheg3q6TF7pq9etJBNceTqGaM1VfkYDnm2k2KIIC/Ac=
 github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220822083757-38d81884db04 h1:VNOiFvTuhXc2eoDvBVQHsfxl1TTS2/EF1wFs1YttIlA=

@@ -39,6 +39,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var (
+	commit = "none"
+	tag    = "(devel)"
+	date   = "unknown"
+)
+
 func main() {
 	log.SetFlags(0)
 
@@ -70,6 +76,7 @@ func parseAndRun(args []string) (err error) {
 		archiveCommand,
 		releaseCommand,
 		allCommand,
+		newVersionCommand(),
 	}
 
 	opts := []ff.Option{
@@ -156,4 +163,36 @@ func parseAndRun(args []string) (err error) {
 	err = g.Wait()
 
 	return err
+}
+
+func newVersionCommand() *ffcli.Command {
+	return &ffcli.Command{
+		Name:       "version",
+		ShortUsage: "hugoreleaser version",
+		ShortHelp:  "Print the version",
+		LongHelp:   "Print the version",
+		Exec: func(context.Context, []string) error {
+			initVersionInfo()
+			fmt.Printf("hugoreleaser %v, commit %v, built at %v\n", tag, commit, date)
+			return nil
+		},
+	}
+}
+
+func initVersionInfo() {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+
+	for _, s := range bi.Settings {
+		switch s.Key {
+		case "vcs":
+		case "vcs.revision":
+			commit = s.Value
+		case "vcs.time":
+			date = s.Value
+		case "vcs.modified":
+		}
+	}
 }
