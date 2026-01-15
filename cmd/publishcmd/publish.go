@@ -164,18 +164,12 @@ func (p *Publisher) updateHomebrewCask(
 	version := strings.TrimPrefix(p.core.Tag, "v")
 
 	// Find the first .pkg archive matching the path pattern.
-	pkgFilename, err := p.findPkgArchive(release, caskSettings)
+	pkgInfo, err := p.findPkgArchive(release, caskSettings)
 	if err != nil {
 		return err
 	}
 
-	logCtx.WithField("pkg", pkgFilename).Log(logg.String("Found pkg archive"))
-
-	// Get SHA256 from checksums file.
-	sha256, err := p.getSHA256ForFile(pkgFilename)
-	if err != nil {
-		return fmt.Errorf("failed to get SHA256 for %s: %v", pkgFilename, err)
-	}
+	logCtx.WithField("pkg", pkgInfo.Name).Log(logg.String("Found pkg archive"))
 
 	// Build download URL.
 	downloadURL := fmt.Sprintf(
@@ -183,7 +177,7 @@ func (p *Publisher) updateHomebrewCask(
 		releaseSettings.RepositoryOwner,
 		releaseSettings.Repository,
 		p.core.Tag,
-		pkgFilename,
+		pkgInfo.Name,
 	)
 
 	// Build cask context.
@@ -191,11 +185,11 @@ func (p *Publisher) updateHomebrewCask(
 		Name:             caskSettings.Name,
 		DisplayName:      p.core.Config.Project,
 		Version:          version,
-		SHA256:           sha256,
+		SHA256:           pkgInfo.SHA256,
 		URL:              downloadURL,
 		Description:      caskSettings.Description,
 		Homepage:         caskSettings.Homepage,
-		PkgFilename:      pkgFilename,
+		PkgFilename:      pkgInfo.Name,
 		BundleIdentifier: caskSettings.BundleIdentifier,
 	}
 
@@ -253,8 +247,14 @@ func (p *Publisher) updateHomebrewCask(
 	return nil
 }
 
+// pkgArchiveInfo contains information about a .pkg archive.
+type pkgArchiveInfo struct {
+	Name   string
+	SHA256 string
+}
+
 // findPkgArchive finds the first .pkg archive for darwin matching the path pattern.
-func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.HomebrewCaskSettings) (string, error) {
+func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.HomebrewCaskSettings) (pkgArchiveInfo, error) {
 	pathMatcher := caskSettings.PathCompiled
 
 	for _, archPath := range release.ArchsCompiled {
@@ -270,51 +270,12 @@ func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.H
 
 		// Check if it's a .pkg file.
 		if strings.HasSuffix(archPath.Name, ".pkg") {
-			return archPath.Name, nil
+			return pkgArchiveInfo{
+				Name:   archPath.Name,
+				SHA256: archPath.SHA256,
+			}, nil
 		}
 	}
 
-	return "", fmt.Errorf("no .pkg archive found for darwin matching path pattern %q", caskSettings.Path)
-}
-
-// getSHA256ForFile extracts the SHA256 checksum for a specific file from the checksums file.
-func (p *Publisher) getSHA256ForFile(filename string) (string, error) {
-	// Find the release directory.
-	release := p.core.Config.Releases[0]
-	releaseDir := filepath.Join(
-		p.core.DistDir,
-		p.core.Config.Project,
-		p.core.Tag,
-		p.core.DistRootReleases,
-		filepath.FromSlash(release.Path),
-	)
-
-	// Checksums filename follows the pattern from releasecmd.
-	checksumFilename := fmt.Sprintf("%s_%s_checksums.txt",
-		p.core.Config.Project,
-		strings.TrimPrefix(p.core.Tag, "v"),
-	)
-	checksumPath := filepath.Join(releaseDir, checksumFilename)
-
-	content, err := os.ReadFile(checksumPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to read checksums file %s: %v", checksumPath, err)
-	}
-
-	// Parse checksums file (format: "sha256  filename").
-	for _, line := range strings.Split(string(content), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, "  ", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		if parts[1] == filename {
-			return parts[0], nil
-		}
-	}
-
-	return "", fmt.Errorf("checksum not found for file %s in %s", filename, checksumPath)
+	return pkgArchiveInfo{}, fmt.Errorf("no .pkg archive found for darwin matching path pattern %q", caskSettings.Path)
 }

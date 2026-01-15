@@ -45,9 +45,9 @@ func TestCreateChecksumLines(t *testing.T) {
 		filenames = append(filenames, filename)
 	}
 
-	checksums, err := CreateChecksumLines(w, filenames...)
+	result, err := CreateChecksumLines(w, filenames...)
 	c.Assert(err, qt.IsNil)
-	c.Assert(checksums, qt.DeepEquals, []string{
+	c.Assert(result.Lines, qt.DeepEquals, []string{
 		"196373310827669cb58f4c688eb27aabc40e600dc98615bd329f410ab7430cff  file6.txt",
 		"47ea70cf08872bdb4afad3432b01d963ac7d165f6b575cd72ef47498f4459a90  file3.txt",
 		"4e74512f1d8e5016f7a9d9eaebbeedb1549fed5b63428b736eecfea98292d75f  file9.txt",
@@ -59,4 +59,9 @@ func TestCreateChecksumLines(t *testing.T) {
 		"bd4c6c665a1b8b4745bcfd3d744ea37488237108681a8ba4486a76126327d3f2  file8.txt",
 		"e361a57a7406adee653f1dcff660d84f0ca302907747af2a387f67821acfce33  file4.txt",
 	})
+
+	// Verify the checksums map for programmatic access.
+	c.Assert(result.Checksums["file0.txt"], qt.Equals, "5a936ee19a0cf3c70d8cb0006111b7a52f45ec01703e0af8cdc8c6d81ac5850c")
+	c.Assert(result.Checksums["file9.txt"], qt.Equals, "4e74512f1d8e5016f7a9d9eaebbeedb1549fed5b63428b736eecfea98292d75f")
+	c.Assert(len(result.Checksums), qt.Equals, 10)
 }

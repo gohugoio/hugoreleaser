@@ -118,13 +118,16 @@ func (b *Releaser) Exec(ctx context.Context, args []string) error {
 	logCtx := b.infoLog.WithFields(logFields)
 
 	logCtx.Log(logg.String("Finding releases"))
-	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
 
-	for _, release := range releaseMatches {
+	// Iterate over the original releases slice so we can update SHA256 checksums.
+	for i := range b.core.Config.Releases {
+		release := &b.core.Config.Releases[i]
+		if b.core.PathsReleasesCompiled != nil && !b.core.PathsReleasesCompiled.Match(release.Path) {
+			continue
+		}
 		if err := b.handleRelease(ctx, logCtx, release); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -138,7 +141,7 @@ type releaseContext struct {
 	Info       releases.ReleaseInfo
 }
 
-func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, release config.Release) error {
+func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, release *config.Release) error {
 	releaseDir := filepath.Join(
 		b.core.DistDir,
 		b.core.Config.Project,
@@ -209,9 +212,16 @@ func (b *Releaser) handleRelease(ctx context.Context, logCtx logg.LevelLogger, r
 
 	if len(archiveFilenames) > 0 {
 
-		checksumFilename, err := b.generateChecksumTxt(rctx, archiveFilenames...)
+		checksumFilename, checksums, err := b.generateChecksumTxt(rctx, archiveFilenames...)
 		if err != nil {
 			return err
+		}
+
+		// Store SHA256 checksums in the ArchsCompiled for use by the publish command.
+		for i := range release.ArchsCompiled {
+			if sha, ok := checksums[release.ArchsCompiled[i].Name]; ok {
+				release.ArchsCompiled[i].SHA256 = sha
+			}
 		}
 
 		archiveFilenames = append(archiveFilenames, checksumFilename)
@@ -318,7 +328,6 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 		}
 		return "", 0, false
 	})
-
 	if err != nil {
 		return "", err
 	}
@@ -356,7 +365,6 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 			}
 		} else {
 			t = staticfiles.ReleaseNotesTemplate
-
 		}
 
 		if err := t.Execute(f, rnc); err != nil {
@@ -365,7 +373,6 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 
 		return nil
 	}()
-
 	if err != nil {
 		return "", fmt.Errorf("%s: failed to create release notes file %q: %s", commandName, releaseNotesFilename, err)
 	}
@@ -375,11 +382,11 @@ func (b *Releaser) generateReleaseNotes(rctx releaseContext) (string, error) {
 	return releaseNotesFilename, nil
 }
 
-func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...string) (string, error) {
+func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...string) (string, map[string]string, error) {
 	// Create a checksums.txt file.
-	checksumLines, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
+	checksumResult, err := releases.CreateChecksumLines(b.core.Workforce, archiveFilenames...)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	// This is what Hugo got out of the box from Goreleaser. No settings for now.
 	name := fmt.Sprintf("%s_%s_checksums.txt", rctx.Info.Project, strings.TrimPrefix(rctx.Info.Tag, "v"))
@@ -392,7 +399,7 @@ func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...
 		}
 		defer f.Close()
 
-		for _, line := range checksumLines {
+		for _, line := range checksumResult.Lines {
 			_, err := f.WriteString(line + "\n")
 			if err != nil {
 				return err
@@ -401,12 +408,11 @@ func (b *Releaser) generateChecksumTxt(rctx releaseContext, archiveFilenames ...
 
 		return nil
 	}()
-
 	if err != nil {
-		return "", fmt.Errorf("%s: failed to create checksum file %q: %s", commandName, checksumFilename, err)
+		return "", nil, fmt.Errorf("%s: failed to create checksum file %q: %s", commandName, checksumFilename, err)
 	}
 
 	rctx.Log.WithField("filename", checksumFilename).Log(logg.String("Created checksum file"))
 
-	return checksumFilename, nil
+	return checksumFilename, checksumResult.Checksums, nil
 }
