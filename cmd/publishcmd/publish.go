@@ -25,9 +25,12 @@ import (
 	"text/template"
 
 	"github.com/bep/logg"
+	"github.com/gohugoio/hugoreleaser-plugins-api/model"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/common/templ"
 	"github.com/gohugoio/hugoreleaser/internal/config"
+	"github.com/gohugoio/hugoreleaser/internal/publish/publishformats"
 	"github.com/gohugoio/hugoreleaser/internal/releases"
 	"github.com/gohugoio/hugoreleaser/staticfiles"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -46,7 +49,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       commandName,
 		ShortUsage: corecmd.CommandName + " publish [flags]",
-		ShortHelp:  "Publish a draft release and update package managers.",
+		ShortHelp:  "Publish releases and update package managers.",
 		FlagSet:    fs,
 		Exec:       publisher.Exec,
 	}
@@ -77,20 +80,42 @@ func (p *Publisher) Exec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	// Get release settings from config.
-	if len(p.core.Config.Releases) == 0 {
-		return fmt.Errorf("%s: no releases defined in config", commandName)
+	if len(p.core.Config.Publishers) == 0 {
+		p.infoLog.Log(logg.String("No publishers configured"))
+		return nil
 	}
-
-	// Use first release for settings (consistent with release command behavior).
-	release := p.core.Config.Releases[0]
-	settings := release.ReleaseSettings
 
 	logFields := logg.Fields{
 		{Name: "tag", Value: p.core.Tag},
-		{Name: "repository", Value: fmt.Sprintf("%s/%s", settings.RepositoryOwner, settings.Repository)},
 	}
 	logCtx := p.infoLog.WithFields(logFields)
+
+	// Process each publisher.
+	for i := range p.core.Config.Publishers {
+		pub := &p.core.Config.Publishers[i]
+
+		if len(pub.ReleasesCompiled) == 0 {
+			continue
+		}
+
+		// Process each release that matches this publisher.
+		for _, release := range pub.ReleasesCompiled {
+			if err := p.handlePublisher(ctx, logCtx, pub, release); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (p *Publisher) handlePublisher(
+	ctx context.Context,
+	logCtx logg.LevelLogger,
+	pub *config.Publisher,
+	release *config.Release,
+) error {
+	settings := release.ReleaseSettings
 
 	// Create client.
 	var client releases.PublishClient
@@ -108,7 +133,31 @@ func (p *Publisher) Exec(ctx context.Context, args []string) error {
 		}
 	}
 
-	// Step 1: Check and publish the GitHub release.
+	switch pub.Type.FormatParsed {
+	case publishformats.GitHubRelease:
+		return p.publishGitHubRelease(ctx, logCtx, client, release)
+	case publishformats.HomebrewCask:
+		return p.updateHomebrewCask(ctx, logCtx, client, pub, release)
+	case publishformats.Plugin:
+		return fmt.Errorf("%s: plugin publishers not yet implemented", commandName)
+	default:
+		return fmt.Errorf("%s: unknown publisher format: %s", commandName, pub.Type.Format)
+	}
+}
+
+func (p *Publisher) publishGitHubRelease(
+	ctx context.Context,
+	logCtx logg.LevelLogger,
+	client releases.PublishClient,
+	release *config.Release,
+) error {
+	settings := release.ReleaseSettings
+
+	logCtx = logCtx.WithFields(logg.Fields{
+		{Name: "action", Value: "github_release"},
+		{Name: "repository", Value: fmt.Sprintf("%s/%s", settings.RepositoryOwner, settings.Repository)},
+	})
+
 	logCtx.Log(logg.String("Checking release status"))
 
 	releaseID, isDraft, err := client.GetReleaseByTag(ctx, settings.RepositoryOwner, settings.Repository, p.core.Tag)
@@ -126,15 +175,18 @@ func (p *Publisher) Exec(ctx context.Context, args []string) error {
 		logCtx.Log(logg.String("Release is already published"))
 	}
 
-	// Step 2: Update Homebrew cask if enabled.
-	caskSettings := p.core.Config.PublishSettings.HomebrewCask
-	if caskSettings.Enabled {
-		if err := p.updateHomebrewCask(ctx, logCtx, client, release, caskSettings); err != nil {
-			return fmt.Errorf("%s: failed to update Homebrew cask: %v", commandName, err)
-		}
-	}
-
 	return nil
+}
+
+// HomebrewCaskSettings holds the custom settings for homebrew_cask publisher.
+type HomebrewCaskSettings struct {
+	BundleIdentifier string `mapstructure:"bundle_identifier"`
+	TapRepository    string `mapstructure:"tap_repository"`
+	Name             string `mapstructure:"name"`
+	CaskPath         string `mapstructure:"cask_path"`
+	TemplateFilename string `mapstructure:"template_filename"`
+	Description      string `mapstructure:"description"`
+	Homepage         string `mapstructure:"homepage"`
 }
 
 // HomebrewCaskContext holds data for the Homebrew cask template.
@@ -154,17 +206,34 @@ func (p *Publisher) updateHomebrewCask(
 	ctx context.Context,
 	logCtx logg.LevelLogger,
 	client releases.PublishClient,
-	release config.Release,
-	caskSettings config.HomebrewCaskSettings,
+	pub *config.Publisher,
+	release *config.Release,
 ) error {
-	logCtx = logCtx.WithField("action", "homebrew-cask")
+	logCtx = logCtx.WithField("action", "homebrew_cask")
 	logCtx.Log(logg.String("Updating Homebrew cask"))
 
 	releaseSettings := release.ReleaseSettings
 	version := strings.TrimPrefix(p.core.Tag, "v")
 
-	// Find the first .pkg archive matching the path pattern.
-	pkgInfo, err := p.findPkgArchive(release, caskSettings)
+	// Read settings from custom_settings.
+	settings, err := model.FromMap[any, HomebrewCaskSettings](pub.CustomSettings)
+	if err != nil {
+		return fmt.Errorf("failed to parse homebrew_cask settings: %w", err)
+	}
+
+	// Apply defaults.
+	if settings.TapRepository == "" {
+		settings.TapRepository = "homebrew-tap"
+	}
+	if settings.Name == "" {
+		settings.Name = p.core.Config.Project
+	}
+	if settings.CaskPath == "" {
+		settings.CaskPath = fmt.Sprintf("Casks/%s.rb", settings.Name)
+	}
+
+	// Find the first .pkg archive matching the archive paths pattern.
+	pkgInfo, err := p.findPkgArchive(release, pub.ArchivePathsCompiled)
 	if err != nil {
 		return err
 	}
@@ -182,23 +251,23 @@ func (p *Publisher) updateHomebrewCask(
 
 	// Build cask context.
 	caskCtx := HomebrewCaskContext{
-		Name:             caskSettings.Name,
+		Name:             settings.Name,
 		DisplayName:      p.core.Config.Project,
 		Version:          version,
 		SHA256:           pkgInfo.SHA256,
 		URL:              downloadURL,
-		Description:      caskSettings.Description,
-		Homepage:         caskSettings.Homepage,
+		Description:      settings.Description,
+		Homepage:         settings.Homepage,
 		PkgFilename:      pkgInfo.Name,
-		BundleIdentifier: caskSettings.BundleIdentifier,
+		BundleIdentifier: settings.BundleIdentifier,
 	}
 
 	// Render cask template.
 	var caskContent bytes.Buffer
 	var tmpl *template.Template
 
-	if caskSettings.TemplateFilename != "" {
-		templatePath := caskSettings.TemplateFilename
+	if settings.TemplateFilename != "" {
+		templatePath := settings.TemplateFilename
 		if !filepath.IsAbs(templatePath) {
 			templatePath = filepath.Join(p.core.ProjectDir, templatePath)
 		}
@@ -219,11 +288,11 @@ func (p *Publisher) updateHomebrewCask(
 	}
 
 	// Update file in tap repository.
-	commitMessage := fmt.Sprintf("Update %s to %s", caskSettings.Name, p.core.Tag)
+	commitMessage := fmt.Sprintf("Update %s to %s", settings.Name, p.core.Tag)
 
 	logCtx.WithFields(logg.Fields{
-		{Name: "tap", Value: fmt.Sprintf("%s/%s", releaseSettings.RepositoryOwner, caskSettings.TapRepository)},
-		{Name: "path", Value: caskSettings.CaskPath},
+		{Name: "tap", Value: fmt.Sprintf("%s/%s", releaseSettings.RepositoryOwner, settings.TapRepository)},
+		{Name: "path", Value: settings.CaskPath},
 	}).Log(logg.String("Committing cask update"))
 
 	if p.core.Try {
@@ -234,8 +303,8 @@ func (p *Publisher) updateHomebrewCask(
 	sha, err := client.UpdateFileInRepo(
 		ctx,
 		releaseSettings.RepositoryOwner,
-		caskSettings.TapRepository,
-		caskSettings.CaskPath,
+		settings.TapRepository,
+		settings.CaskPath,
 		commitMessage,
 		caskContent.Bytes(),
 	)
@@ -253,10 +322,8 @@ type pkgArchiveInfo struct {
 	SHA256 string
 }
 
-// findPkgArchive finds the first .pkg archive for darwin matching the path pattern.
-func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.HomebrewCaskSettings) (pkgArchiveInfo, error) {
-	pathMatcher := caskSettings.PathCompiled
-
+// findPkgArchive finds the first .pkg archive for darwin matching the archive paths pattern.
+func (p *Publisher) findPkgArchive(release *config.Release, archivePathsMatcher matchers.Matcher) (pkgArchiveInfo, error) {
 	for _, archPath := range release.ArchsCompiled {
 		// Only consider darwin archives.
 		if archPath.Arch.Os == nil || archPath.Arch.Os.Goos != "darwin" {
@@ -264,7 +331,7 @@ func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.H
 		}
 
 		// Check if the path matches the pattern.
-		if pathMatcher != nil && !pathMatcher.Match(archPath.Path) {
+		if archivePathsMatcher != nil && !archivePathsMatcher.Match(archPath.Path) {
 			continue
 		}
 
@@ -277,5 +344,5 @@ func (p *Publisher) findPkgArchive(release config.Release, caskSettings config.H
 		}
 	}
 
-	return pkgArchiveInfo{}, fmt.Errorf("no .pkg archive found for darwin matching path pattern %q", caskSettings.Path)
+	return pkgArchiveInfo{}, fmt.Errorf("no .pkg archive found for darwin")
 }

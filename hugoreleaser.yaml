@@ -131,7 +131,14 @@ releases:
       - archives/**
     path: myrelease
 
-publish_settings:
-  homebrew_cask:
-    enabled: true
-    bundle_identifier: io.gohugo.hugoreleaser
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
+  - paths:
+      - releases/**/archives/macos/**
+    type:
+      format: homebrew_cask
+    custom_settings:
+      bundle_identifier: io.gohugo.hugoreleaser

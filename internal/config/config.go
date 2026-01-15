@@ -17,10 +17,14 @@ package config
 import (
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
 	"github.com/gohugoio/hugoreleaser/internal/plugins/plugintypes"
 )
+
+// Reserved path element names that cannot be used in path identifiers.
+var reservedPathElements = []string{"builds", "archives", "releases"}
 
 type Config struct {
 	// A bucket for anchors that defines reusable YAML fragments.
@@ -31,9 +35,10 @@ type Config struct {
 
 	GoSettings GoSettings `json:"go_settings"`
 
-	Builds   Builds   `json:"builds"`
-	Archives Archives `json:"archives"`
-	Releases Releases `json:"releases"`
+	Builds     Builds     `json:"builds"`
+	Archives   Archives   `json:"archives"`
+	Releases   Releases   `json:"releases"`
+	Publishers Publishers `json:"publishers"`
 
 	BuildSettings   BuildSettings   `json:"build_settings"`
 	ArchiveSettings ArchiveSettings `json:"archive_settings"`
@@ -112,4 +117,30 @@ type ArchiveFileInfo struct {
 	SourcePath string      `json:"source_path"`
 	TargetPath string      `json:"target_path"`
 	Mode       fs.FileMode `json:"mode"`
+}
+
+// NormalizePath trims leading/trailing slashes from a path.
+func NormalizePath(p string) string {
+	return strings.Trim(p, "/")
+}
+
+// ValidatePathElement checks that a path doesn't contain reserved keywords as path elements.
+// Reserved keywords (builds, archives, releases) cause ambiguity when used as path elements.
+// Returns an error if the path contains a reserved keyword as a path element.
+// Examples:
+//   - "builds" -> error (reserved keyword)
+//   - "foo/builds" -> error (builds is a path element)
+//   - "foo/builds/bar" -> error (builds is a path element)
+//   - "foo-builds" -> OK (builds is part of a larger element)
+//   - "mybuilds" -> OK (builds is part of a larger element)
+func ValidatePathElement(p string) error {
+	elements := strings.Split(p, "/")
+	for _, elem := range elements {
+		for _, reserved := range reservedPathElements {
+			if elem == reserved {
+				return fmt.Errorf("path %q contains reserved keyword %q as a path element", p, reserved)
+			}
+		}
+	}
+	return nil
 }

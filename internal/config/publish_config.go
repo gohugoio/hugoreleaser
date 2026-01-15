@@ -19,94 +19,155 @@ import (
 	"strings"
 
 	"github.com/gohugoio/hugoreleaser/internal/common/matchers"
+	"github.com/gohugoio/hugoreleaser/internal/publish/publishformats"
 )
 
-// PublishSettings contains settings for the publish command.
+// PublishSettings contains shared defaults for publishers.
 type PublishSettings struct {
-	HomebrewCask HomebrewCaskSettings `json:"homebrew_cask"`
+	// Shared settings that can be overridden per publisher (extensible).
 }
 
-// HomebrewCaskSettings contains settings for updating a Homebrew cask.
-type HomebrewCaskSettings struct {
-	// Enable or disable Homebrew cask publishing.
-	Enabled bool `json:"enabled"`
-
-	// The tap repository name (e.g., "homebrew-tap").
-	// Full repo will be: <repository_owner>/<tap_repository>
-	TapRepository string `json:"tap_repository"`
-
-	// The cask name (e.g., "hugo").
-	Name string `json:"name"`
-
-	// Description shown in the cask.
-	Description string `json:"description"`
-
-	// Homepage URL.
-	Homepage string `json:"homepage"`
-
-	// The macOS bundle identifier (e.g., "io.gohugo.hugo").
-	BundleIdentifier string `json:"bundle_identifier"`
-
-	// Path is a glob pattern to match the archive path for the macOS pkg.
-	// This should match a .pkg archive in the release.
-	// Example: "macos/**" or "darwin/**"
-	// Default: "**" (matches first .pkg found)
-	Path string `json:"path"`
-
-	// Path to the cask file in the tap repository.
-	// Default: "Casks/<name>.rb"
-	CaskPath string `json:"cask_path"`
-
-	// Custom cask template file (optional).
-	// If not set, uses built-in template.
-	TemplateFilename string `json:"template_filename"`
-
-	// PathCompiled is the compiled matcher for the Path glob.
-	PathCompiled matchers.Matcher `json:"-"`
+func (p *PublishSettings) Init() error {
+	return nil
 }
 
-func (h *HomebrewCaskSettings) Init(projectName string) error {
-	if !h.Enabled {
-		return nil
+// Publisher represents a single publish target.
+type Publisher struct {
+	// Paths with glob patterns to match releases and optionally filter archives.
+	// Format: releases/<release-pattern>[/archives/<archive-pattern>]
+	// Examples:
+	// - "releases/**" matches all releases, all archives
+	// - "releases/myrelease/**" matches specific release, all archives
+	// - "releases/**/archives/macos/**" matches all releases, only macos archives
+	// - "releases/myrelease/archives/macos/**" matches specific release, only macos archives
+	// Default (no paths): matches all releases and all archives.
+	Paths []string `json:"paths"`
+
+	Type   PublishType `json:"type"`
+	Plugin Plugin      `json:"plugin"`
+
+	// CustomSettings contains type-specific settings.
+	// For homebrew_cask: bundle_identifier, tap_repository, name, cask_path, etc.
+	CustomSettings map[string]any `json:"custom_settings"`
+
+	// Compiled fields
+	ReleasePathsCompiled matchers.Matcher `json:"-"`
+	ArchivePathsCompiled matchers.Matcher `json:"-"`
+	ReleasesCompiled     []*Release       `json:"-"`
+}
+
+func (p *Publisher) Init() error {
+	what := fmt.Sprintf("publishers: %v", p.Paths)
+
+	if err := p.Type.Init(); err != nil {
+		return fmt.Errorf("%s: %v", what, err)
 	}
 
-	what := "publish_settings.homebrew_cask"
-
-	// Set defaults.
-	if h.TapRepository == "" {
-		h.TapRepository = "homebrew-tap"
-	}
-	if h.Name == "" {
-		h.Name = projectName
-	}
-
-	if h.BundleIdentifier == "" {
-		return fmt.Errorf("%s: bundle_identifier is required", what)
+	// Validate format setup.
+	switch p.Type.FormatParsed {
+	case publishformats.Plugin:
+		if err := p.Plugin.Init(); err != nil {
+			return fmt.Errorf("%s: %v", what, err)
+		}
+	default:
+		// Clear it so we don't need to start it.
+		p.Plugin.Clear()
 	}
 
-	if h.Path == "" {
-		h.Path = "**"
-	}
-	if h.CaskPath == "" {
-		h.CaskPath = fmt.Sprintf("Casks/%s.rb", h.Name)
+	// Parse unified path format: releases/<release-pattern>[/archives/<archive-pattern>]
+	var releasePaths, archivePaths []string
+	const (
+		releasesPrefix    = "releases/"
+		archivesSeparator = "/archives/"
+	)
+
+	for _, path := range p.Paths {
+		if !strings.HasPrefix(path, releasesPrefix) {
+			return fmt.Errorf("%s: paths must start with %q, got %q", what, releasesPrefix, path)
+		}
+
+		rest := path[len(releasesPrefix):]
+
+		// Check if path contains "/archives/" separator
+		if idx := strings.Index(rest, archivesSeparator); idx != -1 {
+			releasePart := rest[:idx]
+			archivePart := rest[idx+len(archivesSeparator):]
+			if releasePart == "" {
+				releasePart = "**"
+			}
+			releasePaths = append(releasePaths, releasePart)
+			archivePaths = append(archivePaths, archivePart)
+		} else {
+			// No archive filter - match all archives
+			releasePaths = append(releasePaths, rest)
+		}
 	}
 
-	// Compile the path matcher.
-	// Strip "archives/" prefix if present (similar to release paths).
-	path := strings.TrimPrefix(h.Path, "archives/")
+	// Compile release paths if provided.
+	if len(releasePaths) > 0 {
+		var err error
+		p.ReleasePathsCompiled, err = matchers.Glob(releasePaths...)
+		if err != nil {
+			return fmt.Errorf("%s: failed to compile release paths glob: %v", what, err)
+		}
+	}
+
+	// Compile archive paths if provided.
+	if len(archivePaths) > 0 {
+		var err error
+		p.ArchivePathsCompiled, err = matchers.Glob(archivePaths...)
+		if err != nil {
+			return fmt.Errorf("%s: failed to compile archive paths glob: %v", what, err)
+		}
+	}
+
+	// Validate type-specific settings.
+	switch p.Type.FormatParsed {
+	case publishformats.HomebrewCask:
+		if err := p.validateHomebrewCaskSettings(); err != nil {
+			return fmt.Errorf("%s: %v", what, err)
+		}
+	}
+
+	return nil
+}
+
+func (p *Publisher) validateHomebrewCaskSettings() error {
+	what := "homebrew_cask"
+
+	// bundle_identifier is required.
+	if _, ok := p.CustomSettings["bundle_identifier"]; !ok {
+		return fmt.Errorf("%s: bundle_identifier is required in custom_settings", what)
+	}
+
+	return nil
+}
+
+// PublishType represents the type of publisher.
+type PublishType struct {
+	Format string `json:"format"` // github_release, homebrew_cask, _plugin
+
+	FormatParsed publishformats.Format `json:"-"`
+}
+
+func (t *PublishType) Init() error {
+	what := "type"
+	if t.Format == "" {
+		return fmt.Errorf("%s: has no format", what)
+	}
 
 	var err error
-	h.PathCompiled, err = matchers.Glob(path)
-	if err != nil {
-		return fmt.Errorf("%s: failed to compile path glob %q: %v", what, h.Path, err)
-	}
-
-	return nil
-}
-
-func (p *PublishSettings) Init(projectName string) error {
-	if err := p.HomebrewCask.Init(projectName); err != nil {
+	if t.FormatParsed, err = publishformats.Parse(t.Format); err != nil {
 		return err
 	}
+
 	return nil
 }
+
+// IsZero is needed to get the shallow merge correct.
+func (t PublishType) IsZero() bool {
+	return t.Format == ""
+}
+
+// Publishers is a slice of Publisher.
+type Publishers []Publisher

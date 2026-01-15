@@ -121,8 +121,15 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	}
 
 	// Init and validate publish settings.
-	if err := cfg.PublishSettings.Init(cfg.Project); err != nil {
+	if err := cfg.PublishSettings.Init(); err != nil {
 		return *cfg, err
+	}
+
+	// Init and validate publisher configs.
+	for i := range cfg.Publishers {
+		if err := cfg.Publishers[i].Init(); err != nil {
+			return *cfg, err
+		}
 	}
 
 	// Apply some convenient navigation helpers.

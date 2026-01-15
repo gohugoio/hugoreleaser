@@ -33,6 +33,12 @@ type Build struct {
 }
 
 func (b *Build) Init() error {
+	// Normalize and validate path.
+	b.Path = NormalizePath(b.Path)
+	if err := ValidatePathElement(b.Path); err != nil {
+		return fmt.Errorf("builds: %w", err)
+	}
+
 	for _, os := range b.Os {
 		for _, arch := range os.Archs {
 			if arch.Goarch == builds.UniversalGoarch && os.Goos != "darwin" {

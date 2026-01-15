@@ -413,6 +413,18 @@ func (c *Core) Init() error {
 		}
 	}
 
+	// Precompile publisher -> release mappings.
+	for i := range c.Config.Publishers {
+		pub := &c.Config.Publishers[i]
+		for j := range c.Config.Releases {
+			release := &c.Config.Releases[j]
+			// If no release paths specified, match all releases.
+			if pub.ReleasePathsCompiled == nil || pub.ReleasePathsCompiled.Match(release.Path) {
+				pub.ReleasesCompiled = append(pub.ReleasesCompiled, release)
+			}
+		}
+	}
+
 	// Registry for archive plugins.
 	c.PluginsRegistryArchive = make(map[string]*execrpc.Client[apimodel.Config, archiveplugin.Request, any, apimodel.Receipt])
 

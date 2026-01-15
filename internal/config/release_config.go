@@ -48,7 +48,10 @@ func (a *Release) Init() error {
 		return fmt.Errorf("%s: dir is required", what)
 	}
 
-	a.Path = path.Clean(filepath.ToSlash(a.Path))
+	a.Path = NormalizePath(path.Clean(filepath.ToSlash(a.Path)))
+	if err := ValidatePathElement(a.Path); err != nil {
+		return fmt.Errorf("%s: %w", what, err)
+	}
 
 	const prefix = "archives/"
 	for i, p := range a.Paths {

@@ -29,10 +29,6 @@ archive_settings:
   type:
     format: tar.gz
     extension: .pkg
-publish_settings:
-  homebrew_cask:
-    enabled: true
-    bundle_identifier: io.gohugo.hugo
 builds:
   - path: mac
     os:
@@ -46,6 +42,17 @@ releases:
   - paths:
       - archives/**
     path: myrelease
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
+  - paths:
+      - releases/**
+    type:
+      format: homebrew_cask
+    custom_settings:
+      bundle_identifier: io.gohugo.hugo
 
 # Pre-created release artifacts (simulating what release command would create)
 -- dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt --

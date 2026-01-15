@@ -79,7 +79,6 @@ func (b *Releaser) Init() error {
 	}
 
 	b.infoLog = b.core.InfoLog.WithField("cmd", commandName)
-
 	releaseMatches := b.core.Config.FindReleases(b.core.PathsReleasesCompiled)
 	if len(releaseMatches) == 0 {
 		return fmt.Errorf("%s: no releases found matching -paths %v", commandName, b.core.Paths)

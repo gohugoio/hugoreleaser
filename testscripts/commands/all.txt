@@ -10,7 +10,7 @@ hugoreleaser all -tag v1.2.0 -commitish main
 stdout 'Prepared 2 files'
 stdout 'Uploading'
 
-# Publish assertions (no homebrew cask enabled, so just check release publish)
+# Publish assertions
 stdout 'GetReleaseByTag'
 stdout 'PublishRelease'
 
@@ -50,6 +50,11 @@ releases:
   - paths:
       - archives/**
     path: myrelease
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
 
 
 -- go.mod --
