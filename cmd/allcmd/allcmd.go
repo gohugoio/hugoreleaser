@@ -1,4 +1,4 @@
-// Copyright 2022 The Hugoreleaser Authors
+// Copyright 2026 The Hugoreleaser Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"github.com/gohugoio/hugoreleaser/cmd/archivecmd"
 	"github.com/gohugoio/hugoreleaser/cmd/buildcmd"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/cmd/publishcmd"
 	"github.com/gohugoio/hugoreleaser/cmd/releasecmd"
 
 	"github.com/bep/logg"
@@ -39,6 +40,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 		builder:   builder,
 		archivist: archivecmd.NewArchivist(core),
 		releaser:  releasecmd.NewReleaser(core, fs),
+		publisher: publishcmd.NewPublisher(core, fs),
 	}
 
 	core.RegisterFlags(fs)
@@ -46,7 +48,7 @@ func New(core *corecmd.Core) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       commandName,
 		ShortUsage: corecmd.CommandName + " " + commandName + " [flags] <action>",
-		ShortHelp:  "Runs the commands build, archive and release in sequence.",
+		ShortHelp:  "Runs the commands build, archive, release and publish in sequence.",
 		FlagSet:    fs,
 		Exec:       a.Exec,
 	}
@@ -59,6 +61,7 @@ type all struct {
 	builder   *buildcmd.Builder
 	archivist *archivecmd.Archivist
 	releaser  *releasecmd.Releaser
+	publisher *publishcmd.Publisher
 }
 
 func (a *all) Init() error {
@@ -75,6 +78,7 @@ func (a *all) Exec(ctx context.Context, args []string) error {
 		a.builder,
 		a.archivist,
 		a.releaser,
+		a.publisher,
 	}
 
 	for _, commandHandler := range commandHandlers {

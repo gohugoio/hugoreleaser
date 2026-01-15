@@ -1,4 +1,4 @@
-// Copyright 2022 The Hugoreleaser Authors
+// Copyright 2026 The Hugoreleaser Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	"github.com/gohugoio/hugoreleaser/cmd/archivecmd"
 	"github.com/gohugoio/hugoreleaser/cmd/buildcmd"
 	"github.com/gohugoio/hugoreleaser/cmd/corecmd"
+	"github.com/gohugoio/hugoreleaser/cmd/publishcmd"
 	"github.com/gohugoio/hugoreleaser/cmd/releasecmd"
 	"github.com/gohugoio/hugoreleaser/internal/common/logging"
 	"github.com/peterbourgon/ff/v3"
@@ -68,6 +69,7 @@ func parseAndRun(args []string) (err error) {
 		buildCommand      = buildcmd.New(core)
 		archiveCommand    = archivecmd.New(core)
 		releaseCommand    = releasecmd.New(core)
+		publishCommand    = publishcmd.New(core)
 		allCommand        = allcmd.New(core)
 	)
 
@@ -75,6 +77,7 @@ func parseAndRun(args []string) (err error) {
 		buildCommand,
 		archiveCommand,
 		releaseCommand,
+		publishCommand,
 		allCommand,
 		newVersionCommand(),
 	}

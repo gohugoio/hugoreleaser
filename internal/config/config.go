@@ -1,4 +1,4 @@
-// Copyright 2022 The Hugoreleaser Authors
+// Copyright 2026 The Hugoreleaser Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ type Config struct {
 	BuildSettings   BuildSettings   `json:"build_settings"`
 	ArchiveSettings ArchiveSettings `json:"archive_settings"`
 	ReleaseSettings ReleaseSettings `json:"release_settings"`
+	PublishSettings PublishSettings `json:"publish_settings"`
 }
 
 func (c Config) FindReleases(filter matchers.Matcher) []Release {

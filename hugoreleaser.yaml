@@ -130,3 +130,8 @@ releases:
   - paths:
       - archives/**
     path: myrelease
+
+publish_settings:
+  homebrew_cask:
+    enabled: true
+    bundle_identifier: io.gohugo.hugoreleaser

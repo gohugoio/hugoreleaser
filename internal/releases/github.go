@@ -1,4 +1,4 @@
-// Copyright 2022 The Hugoreleaser Authors
+// Copyright 2026 The Hugoreleaser Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -196,6 +196,57 @@ func (c *GitHubClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f
 
 type TemporaryError struct {
 	error
+}
+
+// Ensure GitHubClient implements PublishClient.
+var _ PublishClient = &GitHubClient{}
+
+func (c *GitHubClient) GetReleaseByTag(ctx context.Context, owner, repo, tag string) (int64, bool, error) {
+	release, resp, err := c.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return 0, false, fmt.Errorf("release not found for tag %q", tag)
+		}
+		return 0, false, err
+	}
+
+	return release.GetID(), release.GetDraft(), nil
+}
+
+func (c *GitHubClient) PublishRelease(ctx context.Context, owner, repo string, releaseID int64) error {
+	_, _, err := c.client.Repositories.EditRelease(ctx, owner, repo, releaseID, &github.RepositoryRelease{
+		Draft: github.Bool(false),
+	})
+	return err
+}
+
+func (c *GitHubClient) UpdateFileInRepo(ctx context.Context, owner, repo, path, message string, content []byte) (string, error) {
+	// First try to get existing file to get its SHA.
+	fileContent, _, resp, err := c.client.Repositories.GetContents(ctx, owner, repo, path, nil)
+	var sha string
+	if err == nil && fileContent != nil {
+		sha = fileContent.GetSHA()
+	} else if resp != nil && resp.StatusCode != http.StatusNotFound {
+		// Return error only if it's not a 404 (file doesn't exist is OK).
+		return "", fmt.Errorf("failed to get file %s: %w", path, err)
+	}
+
+	opts := &github.RepositoryContentFileOptions{
+		Message: github.String(message),
+		Content: content,
+	}
+
+	if sha != "" {
+		// File exists, update it.
+		opts.SHA = github.String(sha)
+	}
+
+	result, _, err := c.client.Repositories.CreateFile(ctx, owner, repo, path, opts)
+	if err != nil {
+		return "", fmt.Errorf("failed to create/update file %s: %w", path, err)
+	}
+
+	return result.GetSHA(), nil
 }
 
 // isTemporaryHttpStatus returns true if the status code is considered temporary, returning
