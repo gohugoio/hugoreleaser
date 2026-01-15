@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 name: Test
 jobs:
@@ -8,46 +8,46 @@ jobs:
     strategy:
       matrix:
         go-version: [1.22.x, 1.23.x]
-        platform: [  macos-latest, ubuntu-latest, windows-latest]
+        platform: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
-    - name: Install Go
-      uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Install staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
-      shell: bash
-    - name: Install golint
-      run: go install golang.org/x/lint/golint@latest
-      shell: bash
-    - name: Update PATH
-      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-      shell: bash
-    - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
           fetch-depth: 0
-    - name: Fmt
-      if: matrix.platform != 'windows-latest' # :(
-      run: "diff <(gofmt -d .) <(printf '')"
-      shell: bash
-    - name: Vet
-      run: go vet ./...
-    - name: Staticcheck
-      run: staticcheck ./...
-    #- name: Lint
-    #  run: golint ./...
-    - name: Test
-      run: go test -race ./... -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic
-    - name: Upload coverage
-      if: success() && matrix.platform == 'ubuntu-latest'
-      run: |
-        curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
-        curl -Os https://uploader.codecov.io/latest/linux/codecov
-        curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
-        curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
-        gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-        shasum -a 256 -c codecov.SHA256SUM
-        chmod +x codecov
-        ./codecov 
+      - name: Install Go
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+        shell: bash
+      - name: Install golint
+        run: go install golang.org/x/lint/golint@latest
+        shell: bash
+      - name: Update PATH
+        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+      - name: Fmt
+        if: matrix.platform != 'windows-latest' # :(
+        run: "diff <(gofmt -d .) <(printf '')"
+        shell: bash
+      - name: Vet
+        run: go vet ./...
+      - name: Staticcheck
+        run: staticcheck ./...
+      #- name: Lint
+      #  run: golint ./...
+      - name: Test
+        run: go test -race ./... -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic
+      - name: Upload coverage
+        if: success() && matrix.platform == 'ubuntu-latest'
+        run: |
+          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+          gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+          shasum -a 256 -c codecov.SHA256SUM
+          chmod +x codecov
+          ./codecov
