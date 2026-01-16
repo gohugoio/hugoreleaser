@@ -94,7 +94,7 @@ archives:
       plugin:
         id: macospkgremote
         type: gorun
-        command: github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@latest
+        command: github.com/gohugoio/hugoreleaser-archive-plugins/macospkgremote@5cf673e24cb39d8bbe63930fe6c499211b43c633
       custom_settings:
         package_identifier: io.gohugo.hugoreleaser
         package_version: ${HUGORELEASER_TAG}
