@@ -12,7 +12,7 @@ require (
 	github.com/gohugoio/hugoreleaser/plugins v0.1.1-0.20220822083757-38d81884db04
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rogpeppe/go-internal v1.14.1

@@ -1,0 +1,13 @@
+cask "{{ .Name }}" do
+  version "{{ .Version }}"
+  sha256 "{{ .SHA256 }}"
+
+  url "{{ .URL }}"
+  name "{{ .DisplayName }}"
+  desc "{{ .Description }}"
+  homepage "{{ .Homepage }}"
+
+  pkg "{{ .PkgFilename }}"
+
+  uninstall pkgutil: "{{ .BundleIdentifier }}"
+end

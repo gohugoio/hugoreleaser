@@ -27,11 +27,21 @@ import (
 	"github.com/bep/workers"
 )
 
+// ChecksumResult contains the checksum lines and a map of filename to checksum.
+type ChecksumResult struct {
+	// Lines contains the checksum lines in "sha256  filename" format.
+	Lines []string
+	// Checksums maps base filename to its SHA256 checksum.
+	Checksums map[string]string
+}
+
 // CreateChecksumLines writes the SHA256 checksums as lowercase hex digits followed by
 // two spaces and then the base of filename and returns a sorted slice.
-func CreateChecksumLines(w *workers.Workforce, filenames ...string) ([]string, error) {
+// It also returns a map of base filename -> checksum for programmatic access.
+func CreateChecksumLines(w *workers.Workforce, filenames ...string) (ChecksumResult, error) {
 	var mu sync.Mutex
-	var result []string
+	var result ChecksumResult
+	result.Checksums = make(map[string]string)
 
 	r, _ := w.Start(context.Background())
 
@@ -55,8 +65,10 @@ func CreateChecksumLines(w *workers.Workforce, filenames ...string) ([]string, e
 			if err != nil {
 				return err
 			}
+			baseName := filepath.Base(filename)
 			mu.Lock()
-			result = append(result, checksum+"  "+filepath.Base(filename))
+			result.Lines = append(result.Lines, checksum+"  "+baseName)
+			result.Checksums[baseName] = checksum
 			mu.Unlock()
 
 			return nil
@@ -64,10 +76,10 @@ func CreateChecksumLines(w *workers.Workforce, filenames ...string) ([]string, e
 	}
 
 	if err := r.Wait(); err != nil {
-		return nil, err
+		return ChecksumResult{}, err
 	}
 
-	sort.Strings(result)
+	sort.Strings(result.Lines)
 
 	return result, nil
 }

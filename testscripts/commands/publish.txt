@@ -1,0 +1,67 @@
+
+# faketoken is a magic string that will create a FakeClient.
+env GITHUB_TOKEN=faketoken
+
+# Run publish command with pre-created release artifacts.
+hugoreleaser publish -tag v1.2.0
+! stderr .
+
+# Check that it found and published the release
+stdout 'GetReleaseByTag.*owner=bep.*repo=hugoreleaser.*tag=v1.2.0'
+stdout 'PublishRelease'
+
+# Check that it updated the homebrew cask
+stdout 'Found pkg archive.*hugo_1.2.0_darwin-universal.pkg'
+stdout 'UpdateFileInRepo.*owner=bep.*repo=homebrew-tap.*path=Casks/hugo.rb'
+
+# Test files
+-- hugoreleaser.yaml --
+project: hugo
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  draft: true
+build_settings:
+  binary: hugo
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .pkg
+builds:
+  - path: mac
+    os:
+      - goos: darwin
+        archs:
+          - goarch: universal
+archives:
+  - paths:
+      - builds/mac/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
+  - paths:
+      - releases/**
+    type:
+      format: homebrew_cask
+    custom_settings:
+      bundle_identifier: io.gohugo.hugo
+
+# Pre-created release artifacts (simulating what release command would create)
+-- dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt --
+abc123def456  hugo_1.2.0_darwin-universal.pkg
+
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}

@@ -6,8 +6,13 @@ env GITHUB_TOKEN=faketoken
 hugoreleaser all -tag v1.2.0 -commitish main
 ! stderr .
 
+# Release assertions
 stdout 'Prepared 2 files'
 stdout 'Uploading'
+
+# Publish assertions
+stdout 'GetReleaseByTag'
+stdout 'PublishRelease'
 
 # Test files
 -- hugoreleaser.yaml --
@@ -45,6 +50,11 @@ releases:
   - paths:
       - archives/**
     path: myrelease
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
 
 
 -- go.mod --

@@ -34,3 +34,22 @@ func (c *FakeClient) UploadAssetsFile(ctx context.Context, info ReleaseInfo, f *
 	}
 	return nil
 }
+
+// Ensure FakeClient implements PublishClient.
+var _ PublishClient = &FakeClient{}
+
+func (c *FakeClient) GetReleaseByTag(ctx context.Context, owner, repo, tag string) (int64, bool, error) {
+	fmt.Printf("fake: GetReleaseByTag: owner=%s repo=%s tag=%s\n", owner, repo, tag)
+	c.releaseID = rand.Int63()
+	return c.releaseID, true, nil // Return as draft for testing.
+}
+
+func (c *FakeClient) PublishRelease(ctx context.Context, owner, repo string, releaseID int64) error {
+	fmt.Printf("fake: PublishRelease: owner=%s repo=%s releaseID=%d\n", owner, repo, releaseID)
+	return nil
+}
+
+func (c *FakeClient) UpdateFileInRepo(ctx context.Context, owner, repo, path, message string, content []byte) (string, error) {
+	fmt.Printf("fake: UpdateFileInRepo: owner=%s repo=%s path=%s message=%q\n", owner, repo, path, message)
+	return "fakesha123", nil
+}

@@ -130,3 +130,15 @@ releases:
   - paths:
       - archives/**
     path: myrelease
+
+publishers:
+  - paths:
+      - releases/**
+    type:
+      format: github_release
+  - paths:
+      - releases/**/archives/macos/**
+    type:
+      format: homebrew_cask
+    custom_settings:
+      bundle_identifier: io.gohugo.hugoreleaser

@@ -1,4 +1,4 @@
-// Copyright 2022 The Hugoreleaser Authors
+// Copyright 2026 The Hugoreleaser Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -116,6 +116,18 @@ func DecodeAndApplyDefaults(r io.Reader) (Config, error) {
 	// Init and validate release configs.
 	for i := range cfg.Releases {
 		if err := cfg.Releases[i].Init(); err != nil {
+			return *cfg, err
+		}
+	}
+
+	// Init and validate publish settings.
+	if err := cfg.PublishSettings.Init(); err != nil {
+		return *cfg, err
+	}
+
+	// Init and validate publisher configs.
+	for i := range cfg.Publishers {
+		if err := cfg.Publishers[i].Init(); err != nil {
 			return *cfg, err
 		}
 	}

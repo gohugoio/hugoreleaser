@@ -71,6 +71,10 @@ type BuildArchPath struct {
 
 	// Any archive aliase names, with the extension.
 	Aliases []string `json:"aliases"`
+
+	// SHA256 is the SHA256 checksum of the archive file.
+	// This is populated by the release command after computing checksums.
+	SHA256 string `json:"-"`
 }
 
 type ArchiveSettings struct {
