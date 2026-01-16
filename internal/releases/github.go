@@ -202,15 +202,28 @@ type TemporaryError struct {
 var _ PublishClient = &GitHubClient{}
 
 func (c *GitHubClient) GetReleaseByTag(ctx context.Context, owner, repo, tag string) (int64, bool, error) {
-	release, resp, err := c.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
-	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return 0, false, fmt.Errorf("release not found for tag %q", tag)
+	// List releases to find by tag name. We can't use GetReleaseByTag because
+	// draft releases don't have their git tag created yet.
+	opts := &github.ListOptions{PerPage: 100}
+	for {
+		releases, resp, err := c.client.Repositories.ListReleases(ctx, owner, repo, opts)
+		if err != nil {
+			return 0, false, err
 		}
-		return 0, false, err
+
+		for _, release := range releases {
+			if release.GetTagName() == tag {
+				return release.GetID(), release.GetDraft(), nil
+			}
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 
-	return release.GetID(), release.GetDraft(), nil
+	return 0, false, fmt.Errorf("release not found for tag %q", tag)
 }
 
 func (c *GitHubClient) PublishRelease(ctx context.Context, owner, repo string, releaseID int64) error {
