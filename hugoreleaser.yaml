@@ -142,3 +142,5 @@ publishers:
       format: homebrew_cask
     custom_settings:
       bundle_identifier: io.gohugo.hugoreleaser
+      homepage: "https://github.com/gohugoio/hugoreleaser"
+      description: "Build, archive and release Go programs."

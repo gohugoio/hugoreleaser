@@ -17,8 +17,11 @@ package publishcmd
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -187,6 +190,8 @@ type HomebrewCaskSettings struct {
 	TemplateFilename string `mapstructure:"template_filename"`
 	Description      string `mapstructure:"description"`
 	Homepage         string `mapstructure:"homepage"`
+	BinaryName       string `mapstructure:"binary_name"`
+	BinaryLocation   string `mapstructure:"binary_location"`
 }
 
 // HomebrewCaskContext holds data for the Homebrew cask template.
@@ -200,6 +205,9 @@ type HomebrewCaskContext struct {
 	Homepage         string
 	PkgFilename      string
 	BundleIdentifier string
+
+	// TODO(bep) check how goreleaser does this.
+	BinaryPath string // Full path to binary, e.g. /usr/local/bin/hugoreleaser
 }
 
 func (p *Publisher) updateHomebrewCask(
@@ -231,6 +239,12 @@ func (p *Publisher) updateHomebrewCask(
 	if settings.CaskPath == "" {
 		settings.CaskPath = fmt.Sprintf("Casks/%s.rb", settings.Name)
 	}
+	if settings.BinaryName == "" {
+		settings.BinaryName = p.core.Config.BuildSettings.Binary
+	}
+	if settings.BinaryLocation == "" {
+		settings.BinaryLocation = "/usr/local/bin"
+	}
 
 	// Find the first .pkg archive matching the archive paths pattern.
 	pkgInfo, err := p.findPkgArchive(release, pub.ArchivePathsCompiled)
@@ -249,6 +263,12 @@ func (p *Publisher) updateHomebrewCask(
 		pkgInfo.Name,
 	)
 
+	// Build binary path if binary_name is configured.
+	var binaryPath string
+	if settings.BinaryName != "" {
+		binaryPath = filepath.Join(settings.BinaryLocation, settings.BinaryName)
+	}
+
 	// Build cask context.
 	caskCtx := HomebrewCaskContext{
 		Name:             settings.Name,
@@ -260,6 +280,7 @@ func (p *Publisher) updateHomebrewCask(
 		Homepage:         settings.Homepage,
 		PkgFilename:      pkgInfo.Name,
 		BundleIdentifier: settings.BundleIdentifier,
+		BinaryPath:       binaryPath,
 	}
 
 	// Render cask template.
@@ -337,12 +358,42 @@ func (p *Publisher) findPkgArchive(release *config.Release, archivePathsMatcher 
 
 		// Check if it's a .pkg file.
 		if strings.HasSuffix(archPath.Name, ".pkg") {
+			// Calculate SHA256 from the actual file.
+			archiveFile := filepath.Join(
+				p.core.DistDir,
+				p.core.Config.Project,
+				p.core.Tag,
+				p.core.DistRootArchives,
+				filepath.FromSlash(archPath.Path),
+				archPath.Name,
+			)
+
+			checksum, err := calculateSHA256(archiveFile)
+			if err != nil {
+				return pkgArchiveInfo{}, fmt.Errorf("failed to calculate SHA256 for %s: %w", archPath.Name, err)
+			}
+
 			return pkgArchiveInfo{
 				Name:   archPath.Name,
-				SHA256: archPath.SHA256,
+				SHA256: checksum,
 			}, nil
 		}
 	}
 
 	return pkgArchiveInfo{}, fmt.Errorf("no .pkg archive found for darwin")
+}
+
+// calculateSHA256 calculates the SHA256 checksum of a file.
+func calculateSHA256(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

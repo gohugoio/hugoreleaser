@@ -58,6 +58,10 @@ publishers:
 -- dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt --
 abc123def456  hugo_1.2.0_darwin-universal.pkg
 
+# The actual pkg archive (needed for SHA256 calculation)
+-- dist/hugo/v1.2.0/archives/mac/darwin/universal/hugo_1.2.0_darwin-universal.pkg --
+dummy pkg content for testing
+
 -- go.mod --
 module foo
 -- main.go --

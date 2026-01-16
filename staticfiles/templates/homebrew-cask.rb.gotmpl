@@ -8,6 +8,10 @@ cask "{{ .Name }}" do
   homepage "{{ .Homepage }}"
 
   pkg "{{ .PkgFilename }}"
+{{- if .BinaryPath }}
+
+  binary "{{ .BinaryPath }}"
+{{- end }}
 
   uninstall pkgutil: "{{ .BundleIdentifier }}"
 end
