@@ -182,32 +182,32 @@ func (p *Publisher) publishGitHubRelease(
 }
 
 // HomebrewCaskSettings holds the custom settings for homebrew_cask publisher.
+// Field names match their Homebrew cask stanza counterparts.
 type HomebrewCaskSettings struct {
+	Name             string `mapstructure:"name"`
+	Desc             string `mapstructure:"desc"`
+	Homepage         string `mapstructure:"homepage"`
+	Pkg              string `mapstructure:"pkg"`    // Override pkg filename
+	Binary           string `mapstructure:"binary"` // Full path to binary, e.g. /usr/local/bin/hugoreleaser
 	BundleIdentifier string `mapstructure:"bundle_identifier"`
 	TapRepository    string `mapstructure:"tap_repository"`
-	Name             string `mapstructure:"name"`
 	CaskPath         string `mapstructure:"cask_path"`
 	TemplateFilename string `mapstructure:"template_filename"`
-	Description      string `mapstructure:"description"`
-	Homepage         string `mapstructure:"homepage"`
-	BinaryName       string `mapstructure:"binary_name"`
-	BinaryLocation   string `mapstructure:"binary_location"`
 }
 
 // HomebrewCaskContext holds data for the Homebrew cask template.
+// Field names match their Homebrew cask stanza counterparts.
 type HomebrewCaskContext struct {
-	Name             string
-	DisplayName      string
+	Token            string // Cask identifier, e.g. "hugoreleaser"
 	Version          string
 	SHA256           string
 	URL              string
-	Description      string
+	Name             string // Display name for "name" stanza
+	Desc             string
 	Homepage         string
-	PkgFilename      string
+	Pkg              string
+	Binary           string
 	BundleIdentifier string
-
-	// TODO(bep) check how goreleaser does this.
-	BinaryPath string // Full path to binary, e.g. /usr/local/bin/hugoreleaser
 }
 
 func (p *Publisher) updateHomebrewCask(
@@ -239,12 +239,6 @@ func (p *Publisher) updateHomebrewCask(
 	if settings.CaskPath == "" {
 		settings.CaskPath = fmt.Sprintf("Casks/%s.rb", settings.Name)
 	}
-	if settings.BinaryName == "" {
-		settings.BinaryName = p.core.Config.BuildSettings.Binary
-	}
-	if settings.BinaryLocation == "" {
-		settings.BinaryLocation = "/usr/local/bin"
-	}
 
 	// Find the first .pkg archive matching the archive paths pattern.
 	pkgInfo, err := p.findPkgArchive(release, pub.ArchivePathsCompiled)
@@ -253,6 +247,12 @@ func (p *Publisher) updateHomebrewCask(
 	}
 
 	logCtx.WithField("pkg", pkgInfo.Name).Log(logg.String("Found pkg archive"))
+
+	// Use pkg filename from settings if provided, otherwise from archive.
+	pkgFilename := settings.Pkg
+	if pkgFilename == "" {
+		pkgFilename = pkgInfo.Name
+	}
 
 	// Build download URL.
 	downloadURL := fmt.Sprintf(
@@ -263,24 +263,18 @@ func (p *Publisher) updateHomebrewCask(
 		pkgInfo.Name,
 	)
 
-	// Build binary path if binary_name is configured.
-	var binaryPath string
-	if settings.BinaryName != "" {
-		binaryPath = filepath.Join(settings.BinaryLocation, settings.BinaryName)
-	}
-
 	// Build cask context.
 	caskCtx := HomebrewCaskContext{
-		Name:             settings.Name,
-		DisplayName:      p.core.Config.Project,
+		Token:            settings.Name,
+		Name:             p.core.Config.Project,
 		Version:          version,
 		SHA256:           pkgInfo.SHA256,
 		URL:              downloadURL,
-		Description:      settings.Description,
+		Desc:             settings.Desc,
 		Homepage:         settings.Homepage,
-		PkgFilename:      pkgInfo.Name,
+		Pkg:              pkgFilename,
+		Binary:           settings.Binary,
 		BundleIdentifier: settings.BundleIdentifier,
-		BinaryPath:       binaryPath,
 	}
 
 	// Render cask template.
