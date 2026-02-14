@@ -1,10 +1,10 @@
 module github.com/gohugoio/hugoreleaser
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/bep/execrpc v0.10.0
-	github.com/bep/helpers v0.6.0
+	github.com/bep/helpers v0.7.0
 	github.com/bep/logg v0.4.0
 	github.com/bep/workers v1.1.0
 	github.com/fatih/color v1.18.0
@@ -16,16 +16,16 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rogpeppe/go-internal v1.14.1
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a
+	golang.org/x/oauth2 v0.35.0
 )
 
 require (
 	github.com/bep/clocks v0.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )
 
 require (
@@ -36,7 +36,7 @@ require (
 
 require (
 	github.com/google/go-querystring v1.2.0 // indirect
-	golang.org/x/tools v0.41.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
 )
 
 require (
