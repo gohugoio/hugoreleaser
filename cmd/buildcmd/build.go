@@ -157,7 +157,7 @@ func (b *Builder) buildArch(ctx context.Context, archPath config.BuildArchPath) 
 		arch.BuildSettings.Binary,
 	)
 
-	b.infoLog.WithField("binary", outFilename).WithFields(b.core.Config.BuildSettings).Log(logg.String("Building"))
+	b.infoLog.WithField("binary", outFilename).WithFields(arch.BuildSettings).Log(logg.String("Building"))
 
 	if b.core.Try {
 		return nil
