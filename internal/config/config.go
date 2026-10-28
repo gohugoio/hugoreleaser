@@ -33,6 +33,11 @@ type Config struct {
 	Project                  string            `json:"project"`
 	ArchiveAliasReplacements map[string]string `json:"archive_alias_replacements"`
 
+	// ArchiveAliases maps an archive name to a list of alias names.
+	// Both the keys and the values are Go templates receiving the same data as the archive name_template,
+	// and they include the archive extension.
+	ArchiveAliases map[string][]string `json:"archive_aliases"`
+
 	GoSettings GoSettings `json:"go_settings"`
 
 	Builds     Builds     `json:"builds"`
