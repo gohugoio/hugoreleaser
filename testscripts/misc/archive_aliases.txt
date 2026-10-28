@@ -1,0 +1,140 @@
+env GOPATH=$WORK/gopath
+env GITHUB_TOKEN=faketoken
+
+# Skip build, use these fake binaries.
+dostounix dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo
+dostounix dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo
+
+# Build archives
+hugoreleaser archive -tag v1.2.0
+! stderr .
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_linux-amd64.tar.gz
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_extended_1.2.0_linux-amd64.tar.gz
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/amd64/hugo_1.2.0_Linux-64bit.tar.gz
+exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/arm/hugo_1.2.0_linux-arm.tar.gz
+! exists $WORK/dist/hugo/v1.2.0/archives/main/base/linux/arm/hugo_extended_1.2.0_linux-arm.tar.gz
+
+# Run with the a faketoken to avoid actually creating a remote release.
+hugoreleaser release -tag v1.2.0 -commitish main
+# 2 archives + 2 aliases + checksums.txt
+stdout 'Prepared 5 files to archive'
+grep 'hugo_extended_1.2.0_linux-amd64.tar.gz' $WORK/dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt
+grep 'hugo_1.2.0_Linux-64bit.tar.gz' $WORK/dist/hugo/v1.2.0/releases/myrelease/hugo_1.2.0_checksums.txt
+
+# Alias keys that do not match any archive is an error.
+cp hugoreleaser.yaml hugoreleaser.yaml.orig
+cp hugoreleaser_nomatch.yaml hugoreleaser.yaml
+! hugoreleaser archive -tag v1.2.0
+stderr 'archive alias key "hugo_{{ .Tag }}_linux-386.tar.gz" does not match any archive name'
+
+# Aliases that clashes with other archive names is an error.
+cp hugoreleaser_duplicate.yaml hugoreleaser.yaml
+! hugoreleaser archive -tag v1.2.0
+stderr 'same archive name "hugo_1.2.0_linux-arm.tar.gz"'
+
+# Test files
+# Release notes
+-- temp/my-release-notes.md --
+## Release notes
+* Change 1
+# Fake binaries.
+-- dist/hugo/v1.2.0/builds/main/base/linux/amd64/hugo --
+linux-amd64
+-- dist/hugo/v1.2.0/builds/main/base/linux/arm/hugo --
+linux-arm
+-- hugoreleaser.yaml --
+project: hugo
+archive_aliases:
+  "hugo_{{ .Tag | trimPrefix `v` }}_linux-amd64.tar.gz":
+    - "hugo_extended_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}.tar.gz"
+    - "hugo_{{ .Tag | trimPrefix `v` }}_Linux-64bit.tar.gz"
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+  draft: true
+  release_notes_settings:
+    filename: temp/my-release-notes.md
+build_settings:
+  binary: hugo
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: main/base
+    os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+          - goarch: arm
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+-- hugoreleaser_nomatch.yaml --
+project: hugo
+archive_aliases:
+  "hugo_{{ .Tag }}_linux-386.tar.gz":
+    - "hugo_extended_{{ .Tag }}_linux-386.tar.gz"
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: main/base
+    os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+-- hugoreleaser_duplicate.yaml --
+project: hugo
+archive_aliases:
+  "hugo_{{ .Tag | trimPrefix `v` }}_linux-amd64.tar.gz":
+    - "hugo_{{ .Tag | trimPrefix `v` }}_linux-arm.tar.gz"
+release_settings:
+  type: github
+  repository: hugoreleaser
+  repository_owner: bep
+archive_settings:
+  name_template: "{{ .Project }}_{{ .Tag | trimPrefix `v` }}_{{ .Goos }}-{{ .Goarch }}"
+  type:
+    format: tar.gz
+    extension: .tar.gz
+builds:
+  - path: main/base
+    os:
+      - goos: linux
+        archs:
+          - goarch: amd64
+          - goarch: arm
+archives:
+  - paths:
+      - builds/**
+releases:
+  - paths:
+      - archives/**
+    path: myrelease
+-- go.mod --
+module foo
+-- main.go --
+package main
+func main() {
+
+}

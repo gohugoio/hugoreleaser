@@ -365,6 +365,7 @@ func (c *Core) Init() error {
 	}
 
 	// Precompile the common navigation for all archives.
+	archiveAliasesMatched := make(map[string]bool)
 	for i, archive := range c.Config.Archives {
 		archiveSettings := archive.ArchiveSettings
 		archs := c.Config.FindArchs(archive.PathsCompiled)
@@ -391,7 +392,31 @@ func (c *Core) Init() error {
 				}
 			}
 
+			for k, v := range c.Config.ArchiveAliases {
+				aliasedName, err := templ.Sprintt(k, buildInfo)
+				if err != nil {
+					return fmt.Errorf("error compiling archive alias key %q: %w", k, err)
+				}
+				if aliasedName != name {
+					continue
+				}
+				archiveAliasesMatched[k] = true
+				for _, aliasTemplate := range v {
+					alias, err := templ.Sprintt(aliasTemplate, buildInfo)
+					if err != nil {
+						return fmt.Errorf("error compiling archive alias %q: %w", aliasTemplate, err)
+					}
+					archPath.Aliases = append(archPath.Aliases, alias)
+				}
+			}
+
 			c.Config.Archives[i].ArchsCompiled = append(c.Config.Archives[i].ArchsCompiled, archPath)
+		}
+	}
+
+	for k := range c.Config.ArchiveAliases {
+		if !archiveAliasesMatched[k] {
+			return fmt.Errorf("archive alias key %q does not match any archive name", k)
 		}
 	}
 
@@ -403,10 +428,12 @@ func (c *Core) Init() error {
 		for _, archive := range c.Config.Archives {
 			for _, archPath := range archive.ArchsCompiled {
 				if release.PathsCompiled.Match(archPath.Path) {
-					if _, found := seen[archPath.Name]; found {
-						return fmt.Errorf("path %q and %q end up with the same archive name %q within the same release", seen[archPath.Name].Path, archPath.Path, archPath.Name)
+					for _, name := range append([]string{archPath.Name}, archPath.Aliases...) {
+						if _, found := seen[name]; found {
+							return fmt.Errorf("path %q and %q end up with the same archive name %q within the same release", seen[name].Path, archPath.Path, name)
+						}
+						seen[name] = archPath
 					}
-					seen[archPath.Name] = archPath
 					c.Config.Releases[i].ArchsCompiled = append(c.Config.Releases[i].ArchsCompiled, archPath)
 				}
 			}

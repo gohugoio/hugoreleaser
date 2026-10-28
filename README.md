@@ -43,7 +43,18 @@ archives:
 
 ### Archive Aliases
 
-See Hugo's use [here](TODO(bep)).
+Use `archive_aliases` to publish copies of an archive under other names, e.g. to keep old download URLs working after an archive has been renamed or removed. The map key is the name of the archive to copy and the values are the alias names. Both are Go templates receiving the same data as `name_template` (see [Template Expansion](#template-expansion)), and both include the archive extension:
+
+```yaml
+archive_aliases:
+  "hugo_{{ .Tag | trimPrefix `v` }}_linux-amd64.tar.gz":
+    - "hugo_extended_{{ .Tag | trimPrefix `v` }}_linux-amd64.tar.gz"
+    - "hugo_{{ .Tag | trimPrefix `v` }}_Linux-64bit.tar.gz"
+```
+
+A key that does not match any archive name is an error, as is an alias that ends up with the same name as another archive in the same release.
+
+See Hugo's use [here](https://github.com/gohugoio/hugo/blob/master/hugoreleaser.yaml).
 
 ### Template Expansion
 
