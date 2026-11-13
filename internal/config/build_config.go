@@ -67,10 +67,14 @@ type BuildSettings struct {
 
 // Fields is used by the logging framework.
 func (b BuildSettings) Fields() logg.Fields {
-	return logg.Fields{
+	fields := logg.Fields{
 		logg.Field{Name: "flags", Value: b.Flags},
 		logg.Field{Name: "ldflags", Value: b.Ldflags},
 	}
+	if len(b.Env) > 0 {
+		fields = append(fields, logg.Field{Name: "env", Value: b.Env})
+	}
+	return fields
 }
 
 type GoSettings struct {
